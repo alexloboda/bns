@@ -1,25 +1,25 @@
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 import static java.lang.Math.log;
 
-public class Model {
-    private static double LADD = log(0.5);
-    private static double LOTH = log(2.0);
+public class Model extends Thread {
+    private static final double LADD = log(0.5);
+    private static final double LOTH = log(2.0);
 
     private int n;
     private int bound;
     private int[][] hits;
     private int[][] time;
     private double[] loglik;
-    private long overall_hits;
     private Graph graph;
     private ScoringFunction sf;
-    private int edges;
     private int steps;
     private Random random;
 
     public Model(int n, int bound, ScoringFunction sf) {
+        super();
         this.n = n;
         this.bound = bound;
         hits = new int[n][n];
@@ -27,6 +27,10 @@ public class Model {
         graph = new Graph(n);
         this.sf = sf;
         random = new Random();
+        time = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            loglik[i] = sf.score(i, Collections.emptyList());
+        }
     }
 
     public void step(boolean warmingup) {
@@ -110,4 +114,12 @@ public class Model {
            add_edge(v, u, score);
        }
    }
+
+    public void finish() {
+        for (int u = 0; u < n; u++) {
+            for (int v : graph.ingoing_edges(u)) {
+                remove_edge(v, u, sf.score(u, Collections.emptyList()));
+            }
+        }
+    }
 }
