@@ -7,8 +7,12 @@ public class Graph {
     private Edge[][] edges;
 
     public Graph(int n) {
-        adj = new ArrayList<>(n);
-        radj = new ArrayList<>(n);
+        adj = new ArrayList<>();
+        radj = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            adj.add(new ArrayList<>());
+            radj.add(new ArrayList<>());
+        }
         edges = new Edge[n][n];
     }
 
@@ -73,7 +77,7 @@ public class Graph {
     }
 
     public void add_edge(int v, int u) {
-        edges[v][u] = new Edge(v, u, adj.get(v).size() - 1, radj.get(v).size() - 1);
+        edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
         adj.get(v).add(edges[v][u]);
         radj.get(u).add(edges[v][u]);
     }
@@ -84,11 +88,11 @@ public class Graph {
         List<Edge> rnei = radj.get(u);
         Collections.swap(nei, e.pos, nei.size() - 1);
         Collections.swap(rnei, e.rpos, rnei.size() - 1);
+        nei.get(e.pos).pos = e.pos;
+        rnei.get(e.rpos).rpos = e.rpos;
         nei.remove(nei.size() - 1);
         rnei.remove(rnei.size() - 1);
         edges[v][u] = null;
-        nei.get(e.pos).pos = e.pos;
-        rnei.get(e.rpos).rpos = e.rpos;
     }
 
     public int in_degree(int v) {

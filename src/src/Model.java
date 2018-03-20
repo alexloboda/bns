@@ -17,6 +17,7 @@ public class Model extends Thread {
     private ScoringFunction sf;
     private int steps;
     private Random random;
+    private int accepts;
 
     public Model(int n, int bound, ScoringFunction sf) {
         super();
@@ -54,9 +55,17 @@ public class Model extends Thread {
         }
     }
 
+    public int[][] hits() {
+        return hits;
+    }
+
+    public int accepts() {
+        return accepts;
+    }
+
     private double score_after_deletion(int v, int u) {
         List<Integer> ingoing = graph.ingoing_edges(u);
-        ingoing.remove(v);
+        ingoing.remove((Integer)v);
         return sf.score(u, ingoing);
     }
 
@@ -72,6 +81,7 @@ public class Model extends Thread {
             graph.add_edge(v, u);
             return;
         }
+        graph.add_edge(v, u);
         double sd = score_after_deletion(v, u);
         double sa = score_after_insertion(u, v);
         double log_accept = sd + sa - loglik[v] - loglik[u];
@@ -97,6 +107,7 @@ public class Model extends Thread {
         double score = score_after_deletion(v, u);
         double log_accept = score - loglik[u] + LOTH;
         if (log(random.nextDouble()) < log_accept) {
+            accepts++;
             remove_edge(v, u, score);
         }
     }
@@ -111,6 +122,7 @@ public class Model extends Thread {
        double score = score_after_insertion(v, u);
        double log_accept = score - loglik[u] + LADD;
        if (log(random.nextDouble()) < log_accept) {
+           accepts++;
            add_edge(v, u, score);
        }
    }
