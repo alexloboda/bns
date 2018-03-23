@@ -44,6 +44,10 @@ public class Graph {
        return radj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
     }
 
+    public List<Integer> outgoing_edges(int v) {
+        return adj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
+    }
+
     public boolean path_exists(int v, int u) {
         // men meet in the middle
         int[] vis = new int[adj.size()];
