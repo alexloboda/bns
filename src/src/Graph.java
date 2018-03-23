@@ -7,7 +7,7 @@ public class Graph {
     private List<List<Edge>> radj;
     private Edge[][] edges;
 
-    public Graph(int n) {
+    Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -60,14 +60,13 @@ public class Graph {
         return result;
     }
 
-    public int size() {
+    private int size() {
         return adj.size();
     }
 
     private int dfs(int v, List<Boolean> vis, List<Integer> out, int time) {
         vis.set(v, true);
-        for (Edge e : adj.get(v)) {
-            int u = e.u();
+        for (int u : outgoing_edges(v)) {
             if (!vis.get(u)) {
                 time = dfs(u, vis, out, time + 1);
             }
@@ -81,7 +80,7 @@ public class Graph {
     }
 
     public List<Integer> outgoing_edges(int v) {
-        return adj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
+        return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 
     public boolean path_exists(int v, int u) {
@@ -152,11 +151,11 @@ public class Graph {
             this.rpos = rpos;
         }
 
-        public int v() {
+        int v() {
             return v;
         }
 
-        public int u() {
+        int u() {
             return u;
         }
     }
