@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Graph {
     private List<List<Edge>> adj;
@@ -38,6 +39,41 @@ public class Graph {
             }
         }
         return false;
+    }
+
+    private List<Integer> top_sort() {
+        List<Boolean> vis = new ArrayList<>(Collections.nCopies(size(), false));
+        List<Integer> out = new ArrayList<>(Collections.nCopies(size(), 0));
+        int time = 0;
+        for (int i = 0; i < size(); i++) {
+            if (radj.get(i).isEmpty()) {
+                time = dfs(i, vis, out, time);
+            }
+        }
+
+        List<Integer> result = IntStream.range(0, size()).boxed().collect(Collectors.toList());
+
+        Comparator<Integer> cmp = (v, u) -> -Integer.compare(out.get(v), out.get(u));
+
+        result.sort(cmp);
+
+        return result;
+    }
+
+    public int size() {
+        return adj.size();
+    }
+
+    private int dfs(int v, List<Boolean> vis, List<Integer> out, int time) {
+        vis.set(v, true);
+        for (Edge e : adj.get(v)) {
+            int u = e.u();
+            if (!vis.get(u)) {
+                time = dfs(u, vis, out, time + 1);
+            }
+        }
+        out.set(v, ++time);
+        return time;
     }
 
     public List<Integer> ingoing_edges(int v) {
@@ -109,7 +145,7 @@ public class Graph {
         private int pos;
         private int rpos;
 
-        public Edge(int v, int u, int pos, int rpos) {
+        Edge(int v, int u, int pos, int rpos) {
             this.v = v;
             this.u = u;
             this.pos = pos;

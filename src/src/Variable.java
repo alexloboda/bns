@@ -4,6 +4,7 @@ import java.util.stream.IntStream;
 
 public class Variable {
     private String name;
+    private int default_num_classes;
 
     private List<Double> data;
     private List<Integer> uniq;
@@ -11,9 +12,11 @@ public class Variable {
     private List<Integer> discrete;
     private List<Double> edges;
 
-    public Variable(String name, List<Double> data, int disc_points) {
+    public Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
         this.data = new ArrayList<>(data);
+        default_num_classes = disc_classes;
+
         ordered_obs = IntStream.range(0, data.size()).boxed().collect(Collectors.toList());
 
         Comparator<Integer> cmp = Comparator.comparingDouble(data::get);
@@ -31,23 +34,26 @@ public class Variable {
                 }
             }
         }
+
+        initial(disc_classes);
     }
 
     public void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
+
         List<List<Double>> h = compute_hs(parents, children, spouse_sets);
+
         int l_card = max_card(parents, children, spouse_sets);
         List<Double> S = new ArrayList<>();
         List<Double> W = initW(l_card);
         List<List<Double>> lambda = new ArrayList<>();
-        double whl_rng = data.get(ordered_obs.get(data.size() - 1)) - data.get(ordered_obs.get(0));
+        double whl_rng = data.get(get_uniq(uniq.size() - 1)) - data.get(get_uniq(0));
 
         for (int v = 0; v < uniq.size(); v++) {
-            S.add(0.0);
             if (v == 0) {
-                S.set(v, h.get(v).get(uniq.get(v)) + W.get(v));
+                S.add(v, h.get(v).get(uniq.get(v)) + W.get(v));
                 lambda.add(Collections.singletonList((uniq.get(v) + uniq.get(v + 1)) / 2.0));
             } else {
                 double s_hat = Double.POSITIVE_INFINITY;
@@ -75,8 +81,12 @@ public class Variable {
             }
         }
 
-        this.edges = lambda.get(uniq.size() - 1);
-        write_discretization();
+        edges = lambda.get(uniq.size() - 1);
+        if (edges.isEmpty()) {
+            initial(default_num_classes);
+        } else {
+            write_discretization();
+        }
     }
 
     private void write_discretization() {
@@ -85,10 +95,9 @@ public class Variable {
 
     private List<Double> initW(int max_card) {
         List<Double> W = new ArrayList<>();
-        double max = get_uniq(uniq.size() - 1);
-        double min = get_uniq(0);
+        double rng = data.get(get_uniq(uniq.size() - 1)) - data.get(get_uniq(0));
         for (int i = 0; i < uniq.size() - 1; i++) {
-            double val = -max_card * ((get_uniq(i + 1) - get_uniq(i)) / (max - min));
+            double val = -max_card * ((data.get(get_uniq(i + 1)) - data.get(get_uniq(i))) / rng);
             W.add(-Math.log(1 - val));
         }
         W.add(0.0);
