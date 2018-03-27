@@ -46,9 +46,7 @@ public class Variable {
             discrete.set(i, 0);
         }
 
-        System.err.println("H?");
         List<List<Double>> h = compute_hs(parents, children, spouse_sets);
-        System.err.println("H!");
 
         int l_card = max_card(parents, children, spouse_sets);
         List<Double> S = new ArrayList<>();
@@ -141,84 +139,108 @@ public class Variable {
     }
 
     private List<List<Double>> compute_hs(List<Variable> ps, List<Variable> cs, List<List<Variable>> ss) {
-        List<List<Double>> result = new ArrayList<>();
-        for (int i = 0; i < data.size(); i++) {
-            result.add(new ArrayList<>());
-            for (int j = i; j < data.size(); j++) {
-                double value = 0.0;
-                List<Integer> samples = new ArrayList<>();
-                for (int k = i; k <= j; k++) {
-                    samples.add(ordered_obs.get(k));
-                }
-                value += compute_hs_parent(samples, ps);
-                for (int k = 0; k < cs.size(); k++) {
-                    value += compute_hs_child(samples, cs.get(k), ss.get(k));
-                }
-                result.get(i).add(value);
+        List<List<Double>> result = get_first_term(ps);
+        parents_term(ps, result);
+        child_spouse_term(cs, ss, result);
+        return result;
+    }
+
+    private void child_spouse_term(List<Variable> cs, List<List<Variable>> ss, List<List<Double>> result) {
+        for (int i = 0; i < cs.size(); i++) {
+            one_child_spouse_term(cs.get(i), ss.get(i), result);
+        }
+    }
+
+    private void one_child_spouse_term(Variable child, List<Variable> ss, List<List<Double>> result) {
+        int n = result.size();
+        List<Variable> spouse_and_child = new ArrayList<>(ss);
+        spouse_and_child.add(child);
+        List<Integer> spouse_child_mapping = map_obs(spouse_and_child);
+        List<Integer> spouse_mapping = map_obs(ss);
+        int num_sc_classes = Collections.max(spouse_child_mapping) + 1;
+        int num_spouse_classes = Collections.max(spouse_mapping) + 1;
+        List<Integer> sc_count = new ArrayList<>(Collections.nCopies(num_sc_classes, 0));
+        List<Integer> s_count = new ArrayList<>(Collections.nCopies(num_spouse_classes, 0));
+
+        for (int i = 0; i < n; i++) {
+            double value = 0.0;
+            for (int j = 0; j < n - i; j++) {
+                int v = i + j;
+                int sc_cl = spouse_child_mapping.get(ordered_obs.get(v));
+                int s_cl = spouse_mapping.get(ordered_obs.get(j));
+
+                int curr_sc_count = sc_count.get(sc_cl);
+                int curr_s_count = s_count.get(s_cl);
+
+                sc_count.set(sc_cl, curr_sc_count + 1);
+                s_count.set(s_cl, curr_s_count + 1);
+
+                // last term of h(v, u)
+                value += lf.value(curr_s_count + 1) - lf.value(curr_s_count);
+                value -= lf.value(curr_sc_count + 1) - lf.value(curr_sc_count);
+
+                value -= log_combinations(curr_s_count + child.cardinality() - 1, child.cardinality() - 1);
+                value += log_combinations(curr_s_count + 1 + child.cardinality() - 1, child.cardinality() - 1);
+
+                result.get(i).set(j, result.get(i).get(j) + value);
             }
+        }
+    }
+
+    private List<Integer> map_obs(List<Variable> ps) {
+        Map<List<Integer>, Integer> map = new HashMap<>();
+        List<Integer> result = new ArrayList<>();
+        int m = obsNum();
+
+        for (int i = 0; i < m; i++) {
+            List<Integer> disc_ps = new ArrayList<>();
+            for (Variable p: ps) {
+                disc_ps.add(p.discrete_value(i));
+            }
+
+            if (!map.containsKey(disc_ps)) {
+                map.put(disc_ps, map.size());
+            }
+
+            result.add(map.get(disc_ps));
         }
         return result;
     }
 
-    private double compute_hs_parent(List<Integer> samples, List<Variable> ps) {
-        double value = 0.0;
-        Map<List<Integer>, Integer> insts = new HashMap<>();
-        long class_number = 1;
-        for (Variable v: ps) {
-            class_number *= v.cardinality();
-        }
-        for (int s: samples) {
-            List<Integer> inst = new ArrayList<>();
-            for (Variable v: ps) {
-                inst.add(v.discrete_value(s));
+    private void parents_term(List<Variable> ps, List<List<Double>> result) {
+        List<Integer> mapped_obs = map_obs(ps);
+        int num_classes = Collections.max(mapped_obs) + 1;
+        int n = result.size();
+        for (int i = 0; i < n; i++) {
+            List<Integer> hits = new ArrayList<>(Collections.nCopies(num_classes, 0));
+            double value = 0.0;
+            for (int j = 0; j < n - i; j++) {
+                int v = i + j;
+                int cl = mapped_obs.get(ordered_obs.get(v));
+                int curr = hits.get(cl);
+                value += lf.value(curr);
+                value -= lf.value(curr + 1);
+                hits.set(cl, curr + 1);
+                result.get(i).set(j, result.get(i).get(j) + value + lf.value(j + 1));
             }
-            if (!insts.containsKey(inst)) {
-                insts.put(inst, 0);
-            }
-            insts.put(inst, insts.get(inst) + 1);
         }
-
-        value += log_combinations(samples.size() + class_number - 1, class_number - 1);
-        value += lf.value(samples.size());
-        for (int inst_size: insts.values()) {
-            value -= lf.value(inst_size);
-        }
-        return value;
     }
 
-    private double compute_hs_child(List<Integer> samples, Variable child, List<Variable> ps) {
-        double value = 0.0;
-        Map<List<Integer>, List<Integer>> insts = new HashMap<>();
-        for (int s: samples) {
-            List<Integer> inst = new ArrayList<>();
-            for (Variable v: ps) {
-                inst.add(v.discrete_value(s));
-            }
-            if (!insts.containsKey(inst)) {
-                insts.put(inst, new ArrayList<>());
-            }
-            insts.get(inst).add(s);
+    private List<List<Double>> get_first_term(List<Variable> ps) {
+        List<List<Double>> result = new ArrayList<>();
+        int n = obsNum();
+        int parent_classes = 1;
+        for (Variable p : ps) {
+            parent_classes *= p.cardinality();
         }
-
-        for (List<Integer> inst: insts.keySet()) {
-            Map<Integer, Integer> ch_insts = new HashMap<>();
-            List<Integer> obs = insts.get(inst);
-            for (int ob: obs) {
-                int disc = child.discrete_value(ob);
-                if (!ch_insts.containsKey(disc)) {
-                    ch_insts.put(disc, 0);
-                }
-                ch_insts.put(disc, ch_insts.get(disc) + 1);
-            }
-
-            value += log_combinations(obs.size() + child.cardinality() - 1, child.cardinality() - 1);
-
-            value += lf.value(obs.size());
-            for (int num: ch_insts.values()) {
-                value -= lf.value(num);
+        for (int u = 0; u < n; u++) {
+            result.add(new ArrayList<>());
+            for(int j = 0; j < n - u; j++) {
+                double value = log_combinations(j + 1 + parent_classes - 1, parent_classes - 1);
+                result.get(u).add(value);
             }
         }
-        return value;
+        return result;
     }
 
     String getName() {
