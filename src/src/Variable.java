@@ -11,10 +11,12 @@ public class Variable {
     private List<Integer> ordered_obs;
     private List<Integer> discrete;
     private List<Double> edges;
+    private LogFactorial lf;
 
     Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
         this.data = new ArrayList<>(data);
+        lf = new LogFactorial();
         default_num_classes = disc_classes;
 
         ordered_obs = IntStream.range(0, data.size()).boxed().collect(Collectors.toList());
@@ -161,6 +163,10 @@ public class Variable {
     private double compute_hs_parent(List<Integer> samples, List<Variable> ps) {
         double value = 0.0;
         Map<List<Integer>, Integer> insts = new HashMap<>();
+        long class_number = 1;
+        for (Variable v: ps) {
+            class_number *= v.cardinality();
+        }
         for (int s: samples) {
             List<Integer> inst = new ArrayList<>();
             for (Variable v: ps) {
@@ -172,10 +178,10 @@ public class Variable {
             insts.put(inst, insts.get(inst) + 1);
         }
 
-        value += log_combinations(samples.size() + insts.size() - 1, insts.size() - 1);
-        value += log_factorial(samples.size());
+        value += log_combinations(samples.size() + class_number - 1, class_number - 1);
+        value += lf.value(samples.size());
         for (int inst_size: insts.values()) {
-            value -= log_factorial(inst_size);
+            value -= lf.value(inst_size);
         }
         return value;
     }
@@ -207,9 +213,9 @@ public class Variable {
 
             value += log_combinations(obs.size() + child.cardinality() - 1, child.cardinality() - 1);
 
-            value += log_factorial(obs.size());
+            value += lf.value(obs.size());
             for (int num: ch_insts.values()) {
-                value -= log_factorial(num);
+                value -= lf.value(num);
             }
         }
         return value;
@@ -244,16 +250,8 @@ public class Variable {
         return discrete.get(obs);
     }
 
-    private static double log_factorial(int n) {
-        double val = 0.0;
-        for (int i = 1; i < n; i++) {
-            val += Math.log(i);
-        }
-        return val;
-    }
-
-    private static double log_combinations(int n, int k) {
-        return log_factorial(n) - log_factorial(k) - log_factorial(n - k);
+    private double log_combinations(int n, int k) {
+        return lf.value(n) - lf.value(k) - lf.value(n - k);
     }
 
     public boolean equals(Variable v) {
