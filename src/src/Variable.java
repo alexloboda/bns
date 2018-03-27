@@ -12,7 +12,7 @@ public class Variable {
     private List<Integer> discrete;
     private List<Double> edges;
 
-    public Variable(String name, List<Double> data, int disc_classes) {
+    Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
         this.data = new ArrayList<>(data);
         default_num_classes = disc_classes;
@@ -25,7 +25,7 @@ public class Variable {
 
         uniq = new ArrayList<>();
         if (data.size() > 0) {
-            double last = uniq.get(ordered_obs.get(0));
+            double last = data.get(ordered_obs.get(0));
             for (int i = 1; i < ordered_obs.size(); i++) {
                 double curr = data.get(ordered_obs.get(i));
                 if (curr != last) {
@@ -34,6 +34,7 @@ public class Variable {
                 }
             }
         }
+        uniq.add(data.size() - 1);
 
         initial(disc_classes);
     }
@@ -43,18 +44,21 @@ public class Variable {
             discrete.set(i, 0);
         }
 
+        System.err.println("H?");
         List<List<Double>> h = compute_hs(parents, children, spouse_sets);
+        System.err.println("H!");
 
         int l_card = max_card(parents, children, spouse_sets);
         List<Double> S = new ArrayList<>();
         List<Double> W = initW(l_card);
-        List<List<Double>> lambda = new ArrayList<>();
-        double whl_rng = data.get(get_uniq(uniq.size() - 1)) - data.get(get_uniq(0));
+        List<Set<Double>> lambda = new ArrayList<>();
+        double whl_rng = get_u(uniq.size() - 1) - get_u(0);
 
         for (int v = 0; v < uniq.size(); v++) {
+            lambda.add(new TreeSet<>());
             if (v == 0) {
-                S.add(v, h.get(v).get(uniq.get(v)) + W.get(v));
-                lambda.add(Collections.singletonList((uniq.get(v) + uniq.get(v + 1)) / 2.0));
+                S.add(v, h.get(v).get(uniq.get(v) - v) + W.get(v));
+                lambda.get(v).add((get_u(v) + get_u(v + 1)) / 2.0);
             } else {
                 double s_hat = Double.POSITIVE_INFINITY;
                 int u_hat = 0;
@@ -62,26 +66,30 @@ public class Variable {
                 for (int u = 0; u <= v; u++) {
                     double s_tilde = W.get(v);
                     if (u == v) {
-                        s_tilde += h.get(0).get(get_uniq(v));
-                        s_tilde += l_card * ((data.get(get_uniq(v)) - data.get(get_uniq(0))) / whl_rng);
+                        s_tilde += h.get(0).get(uniq.get(v));
+                        s_tilde += l_card * ((get_u(v) - get_u(0)) / whl_rng);
                     } else {
-                        s_tilde += h.get(get_uniq(u) + 1).get(get_uniq(v));
-                        s_tilde += l_card * ((data.get(get_uniq(v)) - data.get(get_uniq(u + 1))) / whl_rng);
+                        s_tilde += h.get(uniq.get(u) + 1).get(uniq.get(v) - uniq.get(u) - 1);
+                        s_tilde += l_card * ((get_u(v) - get_u(u + 1)) / whl_rng);
                         s_tilde += S.get(u);
                     }
                     if (s_tilde < s_hat) {
                         s_hat = s_tilde;
                         u_hat = u;
-                        disc_edge = (data.get(get_uniq(u)) + data.get(get_uniq(u + 1))) / 2.0;
+                        if (u + 1 < uniq.size()) {
+                            disc_edge = (get_u(u) + get_u(u + 1)) / 2.0;
+                        }
                     }
                 }
                 S.add(s_hat);
-                List<Double> lam = new ArrayList<>(lambda.get(u_hat));
-                lam.add(disc_edge);
+                lambda.get(v).addAll(lambda.get(u_hat));
+                if (disc_edge < Double.POSITIVE_INFINITY) {
+                    lambda.get(v).add(disc_edge);
+                }
             }
         }
 
-        edges = lambda.get(uniq.size() - 1);
+        edges = new ArrayList<>(lambda.get(uniq.size() - 1));
         if (edges.isEmpty()) {
             initial(default_num_classes);
         } else {
@@ -90,15 +98,15 @@ public class Variable {
     }
 
     private void write_discretization() {
-        discrete = data.stream().map(x -> Collections.binarySearch(edges, x)).collect(Collectors.toList());
+        discrete = data.stream().map(x -> -Collections.binarySearch(edges, x)).collect(Collectors.toList());
     }
 
     private List<Double> initW(int max_card) {
         List<Double> W = new ArrayList<>();
-        double rng = data.get(get_uniq(uniq.size() - 1)) - data.get(get_uniq(0));
+        double rng = get_u(uniq.size() - 1) - get_u(0);
         for (int i = 0; i < uniq.size() - 1; i++) {
-            double val = -max_card * ((data.get(get_uniq(i + 1)) - data.get(get_uniq(i))) / rng);
-            W.add(-Math.log(1 - val));
+            double val = 1 - Math.exp(-max_card * ((get_u(i + 1) - get_u(i)) / rng));
+            W.add(-Math.log(val));
         }
         W.add(0.0);
         return W;
@@ -106,6 +114,10 @@ public class Variable {
 
     private int get_uniq(int i) {
         return ordered_obs.get(uniq.get(i));
+    }
+
+    private double get_u(int i) {
+        return data.get(get_uniq(i));
     }
 
     private int max_card(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
@@ -136,7 +148,7 @@ public class Variable {
                 for (int k = i; k <= j; k++) {
                     samples.add(ordered_obs.get(k));
                 }
-                value += compute_hs_parent(samples, this, ps);
+                value += compute_hs_parent(samples, ps);
                 for (int k = 0; k < cs.size(); k++) {
                     value += compute_hs_child(samples, cs.get(k), ss.get(k));
                 }
@@ -146,7 +158,7 @@ public class Variable {
         return result;
     }
 
-    private double compute_hs_parent(List<Integer> samples, Variable variable, List<Variable> ps) {
+    private double compute_hs_parent(List<Integer> samples, List<Variable> ps) {
         double value = 0.0;
         Map<List<Integer>, Integer> insts = new HashMap<>();
         for (int s: samples) {
@@ -193,9 +205,9 @@ public class Variable {
                 ch_insts.put(disc, ch_insts.get(disc) + 1);
             }
 
-            value += log_combinations(inst.size() + ch_insts.size() - 1, ch_insts.size() - 1);
+            value += log_combinations(obs.size() + child.cardinality() - 1, child.cardinality() - 1);
 
-            value += log_factorial(inst.size());
+            value += log_factorial(obs.size());
             for (int num: ch_insts.values()) {
                 value -= log_factorial(num);
             }
@@ -203,35 +215,52 @@ public class Variable {
         return value;
     }
 
+    String getName() {
+        return name;
+    }
+
+    int obsNum() {
+        return data.size();
+    }
+
     private void initial(int num_classes) {
         int num_edges = num_classes - 1;
         if (num_classes > uniq.size()) {
             throw new IllegalArgumentException("Too many classes");
         }
+        edges = new ArrayList<>();
         for (int i = 0; i < num_edges; i++) {
-            int pos = uniq.size() / num_edges;
+            int pos = (int)Math.round(Math.floor(uniq.size() * ((double)i + 1) / num_classes));
             edges.add((data.get(get_uniq(pos)) + data.get(get_uniq(pos + 1))) / 2);
         }
         write_discretization();
     }
 
-    public int cardinality() {
+    private int cardinality() {
         return edges.size() + 1;
     }
 
-    public int discrete_value(int obs) {
+    int discrete_value(int obs) {
         return discrete.get(obs);
     }
 
-    private static int log_factorial(int n) {
-        return ((1 + n) * n) / 2;
+    private static double log_factorial(int n) {
+        double val = 0.0;
+        for (int i = 1; i < n; i++) {
+            val += Math.log(i);
+        }
+        return val;
     }
 
-    public static int log_combinations(int n, int k) {
+    private static double log_combinations(int n, int k) {
         return log_factorial(n) - log_factorial(k) - log_factorial(n - k);
     }
 
     public boolean equals(Variable v) {
         return v != null && name.equals(v.name);
+    }
+
+    List<Double> discretization_edges() {
+        return Collections.unmodifiableList(edges);
     }
 }

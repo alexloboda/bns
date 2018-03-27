@@ -41,7 +41,7 @@ public class Graph {
         return false;
     }
 
-    private List<Integer> top_sort() {
+    public List<Integer> top_sort() {
         List<Boolean> vis = new ArrayList<>(Collections.nCopies(size(), false));
         List<Integer> out = new ArrayList<>(Collections.nCopies(size(), 0));
         int time = 0;
@@ -53,7 +53,7 @@ public class Graph {
 
         List<Integer> result = IntStream.range(0, size()).boxed().collect(Collectors.toList());
 
-        Comparator<Integer> cmp = (v, u) -> -Integer.compare(out.get(v), out.get(u));
+        Comparator<Integer> cmp = Comparator.comparingInt(out::get);
 
         result.sort(cmp);
 
@@ -75,11 +75,11 @@ public class Graph {
         return time;
     }
 
-    public List<Integer> ingoing_edges(int v) {
+    List<Integer> ingoing_edges(int v) {
        return radj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
     }
 
-    public List<Integer> outgoing_edges(int v) {
+    List<Integer> outgoing_edges(int v) {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 
