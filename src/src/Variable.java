@@ -159,11 +159,11 @@ public class Variable {
         List<Integer> spouse_mapping = map_obs(ss);
         int num_sc_classes = Collections.max(spouse_child_mapping) + 1;
         int num_spouse_classes = Collections.max(spouse_mapping) + 1;
-        List<Integer> sc_count = new ArrayList<>(Collections.nCopies(num_sc_classes, 0));
-        List<Integer> s_count = new ArrayList<>(Collections.nCopies(num_spouse_classes, 0));
 
         for (int i = 0; i < n; i++) {
             double value = 0.0;
+            List<Integer> sc_count = new ArrayList<>(Collections.nCopies(num_sc_classes, 0));
+            List<Integer> s_count = new ArrayList<>(Collections.nCopies(num_spouse_classes, 0));
             for (int j = 0; j < n - i; j++) {
                 int v = i + j;
                 int sc_cl = spouse_child_mapping.get(ordered_obs.get(v));
