@@ -313,7 +313,7 @@ public class Variable {
         return Collections.unmodifiableList(edges);
     }
 
-    double bde(BDE bde, List<Variable> parents) {
+    double bde(BDEScoringFunction bde, List<Variable> parents) {
         int[] parent_cls = map_obs(parents);
 
         List<Variable> vs = new ArrayList<>(parents);

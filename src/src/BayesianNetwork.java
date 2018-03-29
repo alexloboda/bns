@@ -47,7 +47,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    double bde_score(BDE bde) {
+    double bde_score(BDEScoringFunction bde) {
         double log_score = 0.0;
         for (int i = 0; i < variables.size(); i++) {
             log_score += variables.get(i).bde(bde, parent_set(i));
