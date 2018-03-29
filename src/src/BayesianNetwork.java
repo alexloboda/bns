@@ -24,7 +24,6 @@ public class BayesianNetwork {
         List<Integer> order = g.top_sort();
         for (int v : order) {
             Variable var = variables.get(v);
-            System.err.println(var.getName());
             List<Variable> ps = g.ingoing_edges(v).stream()
                     .map(x -> variables.get(x))
                     .collect(Collectors.toList());

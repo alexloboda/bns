@@ -191,7 +191,7 @@ public class Variable {
             for (int j = 0; j < n - i; j++) {
                 int v = i + j;
                 int sc_cl = spouse_child_mapping[v];
-                int s_cl = spouse_mapping[j];
+                int s_cl = spouse_mapping[v];
 
                 int curr_sc_count = ++sc_count[sc_cl];
                 int curr_s_count = ++s_count[s_cl];
