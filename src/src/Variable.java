@@ -168,6 +168,11 @@ public class Variable {
         }
     }
 
+    private int number_of_classes(int[] obs) {
+        return Arrays.stream(obs)
+                .max().getAsInt() - 1;
+    }
+
     private void one_child_spouse_term(Variable child, List<Variable> ss, double[][] result) {
         int n = result.length;
         int card = child.cardinality() - 1;
@@ -177,10 +182,8 @@ public class Variable {
         int[] spouse_child_mapping = map_obs(spouse_and_child);
         int[] spouse_mapping = map_obs(ss);
 
-        int num_sc_classes = Arrays.stream(spouse_child_mapping)
-                .max().getAsInt() + 1;
-        int num_spouse_classes = Arrays.stream(spouse_mapping)
-                .max().getAsInt() + 1;
+        int num_sc_classes = number_of_classes(spouse_child_mapping);
+        int num_spouse_classes = number_of_classes(spouse_mapping);
 
         int[] sc_count = new int[num_sc_classes];
         int[] s_count = new int[num_spouse_classes];
@@ -277,7 +280,7 @@ public class Variable {
         return data.size();
     }
 
-    private void initial(int num_classes) {
+    void initial(int num_classes) {
         int num_edges = num_classes - 1;
         if (num_classes > uniq.length) {
             throw new IllegalArgumentException("Too many classes");
@@ -290,7 +293,7 @@ public class Variable {
         write_discretization();
     }
 
-    private int cardinality() {
+    int cardinality() {
         return edges.size() + 1;
     }
 
@@ -302,11 +305,22 @@ public class Variable {
         return lf.value(n) - lf.value(k) - lf.value(n - k);
     }
 
-    public boolean equals(Variable v) {
+    boolean equals(Variable v) {
         return v != null && name.equals(v.name);
     }
 
     List<Double> discretization_edges() {
         return Collections.unmodifiableList(edges);
+    }
+
+    double bde(BDE bde, List<Variable> parents) {
+        int[] parent_cls = map_obs(parents);
+
+        List<Variable> vs = new ArrayList<>(parents);
+        vs.add(this);
+
+        int[] all_cls = map_obs(vs);
+
+        return bde.score(parent_cls, all_cls, cardinality());
     }
 }
