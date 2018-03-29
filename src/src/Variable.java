@@ -67,7 +67,9 @@ public class Variable {
 
         int l_card = max_card(parents, children, spouse_sets);
         double[] S = new double[uniq.length];
-        double[] W = initW(l_card).stream().mapToDouble(Double::doubleValue).toArray();
+        double[] W = initW(l_card).stream()
+                .mapToDouble(Double::doubleValue)
+                .toArray();
         List<Set<Double>> lambda = new ArrayList<>();
         double whl_rng = get_u(uniq.length - 1) - get_u(0);
 
@@ -195,8 +197,6 @@ public class Variable {
 
                 int curr_sc_count = ++sc_count[sc_cl];
                 int curr_s_count = ++s_count[s_cl];
-
-                // last term of h(v, u)
 
                 value += log_precomputed[curr_s_count + card] - log_precomputed[curr_sc_count];
 
