@@ -133,7 +133,9 @@ public class Main {
         edges.forEach(x -> x.scale((n_steps * executors)));
         try(PrintWriter pw = new PrintWriter(output)) {
             for (Edge e: edges) {
-                pw.println(genes.get(e.v).getName() + "\t" + genes.get(e.u).getName() + "\t" + e.weight);
+                if (e.v != e.u) {
+                    pw.println(genes.get(e.v).getName() + "\t" + genes.get(e.u).getName() + "\t" + e.weight);
+                }
             }
         }
     }
