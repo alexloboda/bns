@@ -9,14 +9,14 @@ public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
 
-    BayesianNetwork(List<Variable> variables) {
+    public BayesianNetwork(List<Variable> variables) {
         g = new Graph(variables.size());
         this.variables = variables;
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
     }
 
-    void add_edge(int v, int u) {
+    public void add_edge(int v, int u) {
         g.add_edge(v, u);
     }
 
@@ -55,7 +55,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    double bde_score(K2ScoringFunction bde) {
+    public double bde_score(K2ScoringFunction bde) {
         double log_score = 0.0;
         for (int i = 0; i < variables.size(); i++) {
             log_score += variables.get(i).bde(bde, parent_set(i));
@@ -77,7 +77,7 @@ public class BayesianNetwork {
         return steps_ub;
     }
 
-    int discretize(int steps_ub, boolean repair_initial, boolean at_least_one_edge) {
+    public int discretize(int steps_ub, boolean repair_initial, boolean at_least_one_edge) {
         List<Integer> before = variables.stream()
                 .map(Variable::cardinality)
                 .collect(Collectors.toList());
@@ -92,14 +92,5 @@ public class BayesianNetwork {
             }
         }
         return res;
-    }
-
-    void print_discretization() {
-        for (Variable v : variables) {
-            for (double edge : v.discretization_edges()) {
-                System.out.print(edge + "\t");
-            }
-            System.out.println();
-        }
     }
 }

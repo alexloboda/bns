@@ -16,7 +16,7 @@ public class Variable {
     private List<Double> edges;
     private LogFactorial lf;
 
-    Variable(String name, List<Double> data, int disc_classes) {
+    public Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
         this.data = new ArrayList<>(data);
         lf = new LogFactorial();
@@ -275,11 +275,11 @@ public class Variable {
         return result;
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    int obsNum() {
+    public int obsNum() {
         return data.size();
     }
 
@@ -300,7 +300,7 @@ public class Variable {
         return edges.size() + 1;
     }
 
-    int discrete_value(int obs) {
+    public int discrete_value(int obs) {
         return discrete.get(obs);
     }
 

@@ -6,7 +6,7 @@ public class K2ScoringFunction {
     private int iss;
     private LogFactorial lf;
 
-    K2ScoringFunction(int iss){
+    public K2ScoringFunction(int iss){
         this.iss = iss;
         lf = new LogFactorial();
     }
