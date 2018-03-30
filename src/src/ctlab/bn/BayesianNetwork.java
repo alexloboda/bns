@@ -1,3 +1,7 @@
+package ctlab.bn;
+
+import ctlab.graph.Graph;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,7 +55,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    double bde_score(BDEScoringFunction bde) {
+    double bde_score(K2ScoringFunction bde) {
         double log_score = 0.0;
         for (int i = 0; i < variables.size(); i++) {
             log_score += variables.get(i).bde(bde, parent_set(i));

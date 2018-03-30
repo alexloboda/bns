@@ -1,12 +1,12 @@
-import static org.apache.commons.math3.special.Gamma.logGamma;
+package ctlab.bn;
 
 import java.util.*;
 
-public class BDEScoringFunction {
+public class K2ScoringFunction {
     private int iss;
     private LogFactorial lf;
 
-    BDEScoringFunction(int iss){
+    K2ScoringFunction(int iss){
         this.iss = iss;
         lf = new LogFactorial();
     }

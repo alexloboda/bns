@@ -1,3 +1,5 @@
+package ctlab.bn;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -314,7 +316,7 @@ public class Variable {
         return Collections.unmodifiableList(edges);
     }
 
-    double bde(BDEScoringFunction bde, List<Variable> parents) {
+    double bde(K2ScoringFunction bde, List<Variable> parents) {
         int[] parent_cls = map_obs(parents);
 
         List<Variable> vs = new ArrayList<>(parents);

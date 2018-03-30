@@ -1,3 +1,7 @@
+package ctlab.mcmc;
+
+import ctlab.graph.Graph;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;

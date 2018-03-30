@@ -1,3 +1,5 @@
+package ctlab.graph;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -7,7 +9,7 @@ public class Graph {
     private List<List<Edge>> radj;
     private Edge[][] edges;
 
-    Graph(int n) {
+    public Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -75,11 +77,11 @@ public class Graph {
         return time;
     }
 
-    List<Integer> ingoing_edges(int v) {
+    public List<Integer> ingoing_edges(int v) {
        return radj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
     }
 
-    List<Integer> outgoing_edges(int v) {
+    public List<Integer> outgoing_edges(int v) {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 

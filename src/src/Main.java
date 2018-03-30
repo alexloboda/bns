@@ -1,3 +1,6 @@
+import ctlab.mcmc.Model;
+import ctlab.mcmc.Worker;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
