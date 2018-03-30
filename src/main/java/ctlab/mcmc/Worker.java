@@ -1,7 +1,5 @@
 package ctlab.mcmc;
 
-import ctlab.mcmc.Model;
-
 public class Worker extends Thread {
     private Model m;
     private int warmup;

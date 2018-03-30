@@ -1,45 +1,40 @@
 package ctlab.mcmc;
 
-import ctlab.graph.Graph;
+import ctlab.bn.BayesianNetwork;
+import ctlab.bn.K2ScoringFunction;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 import static java.lang.Math.log;
 
-public class Model extends Thread {
+public class Model {
     private static final double LADD = log(0.5);
     private static final double LOTH = log(2.0);
 
     private int n;
-    private int bound;
     private int[][] hits;
     private int[][] time;
-    private double[] loglik;
-    private Graph graph;
-    private ScoringFunction sf;
+    private double loglik;
+    private BayesianNetwork bn;
+    private K2ScoringFunction sf;
+    private int disc_steps;
     private int steps;
     private Random random;
-    private int accepts;
 
-    public Model(int n, int bound, ScoringFunction sf) {
-        super();
-        this.n = n;
-        this.bound = bound;
+    public Model(BayesianNetwork bn, int disc_steps) {
+        n = bn.size();
         hits = new int[n][n];
-        loglik = new double[n];
-        graph = new Graph(n);
-        this.sf = sf;
+        this.bn = bn;
         random = new Random();
         time = new int[n][n];
-        for (int i = 0; i < n; i++) {
-            loglik[i] = sf.score(i, Collections.emptyList());
-        }
+        bn.discretize(disc_steps);
+        sf = new K2ScoringFunction();
+        loglik = bn.score(sf);
+        this.disc_steps = disc_steps;
     }
 
-    public void step(boolean warmingup) {
-        if (!warmingup) {
+    public void step(boolean warming_up) {
+        if (!warming_up) {
             steps++;
         }
         int v = 0;
@@ -48,7 +43,7 @@ public class Model extends Thread {
             v = random.nextInt(n);
             u = random.nextInt(n);
         }
-        if (graph.edge_exists(v, u)) {
+        if (bn.edge_exists(v, u)) {
             if (random.nextBoolean()) {
                 try_remove(v, u);
             } else {
@@ -63,78 +58,67 @@ public class Model extends Thread {
         return hits;
     }
 
-    public int accepts() {
-        return accepts;
-    }
-
-    private double score_after_deletion(int v, int u) {
-        List<Integer> ingoing = graph.ingoing_edges(u);
-        ingoing.remove((Integer)v);
-        return sf.score(u, ingoing);
-    }
-
-    private double score_after_insertion(int v, int u) {
-        List<Integer> ingoing = graph.ingoing_edges(u);
-        ingoing.add(v);
-        return sf.score(u, ingoing);
-    }
-
     private void try_inverse(int v, int u) {
-        graph.remove_edge(v, u);
-        if (graph.path_exists(v, u)) {
-            graph.add_edge(v, u);
+        bn.remove_edge(v, u);
+        if (bn.path_exists(v, u)) {
+            bn.add_edge(v, u);
             return;
         }
-        graph.add_edge(v, u);
-        double sd = score_after_deletion(v, u);
-        double sa = score_after_insertion(u, v);
-        double log_accept = sd + sa - loglik[v] - loglik[u];
+        bn.add_edge(u, v);
+        double score = score();
+        double log_accept = score - loglik;
         if (log(random.nextDouble()) < log_accept) {
-            remove_edge(v, u, sd);
-            add_edge(u, v, sa);
+            time[u][v] = steps;
+            fix_edge_deletion(v, u);
+            loglik = score;
+        } else {
+            bn.remove_edge(u, v);
+            bn.add_edge(v, u);
         }
     }
 
-    private void remove_edge(int v, int u, double score) {
-        graph.remove_edge(v, u);
+    private void fix_edge_deletion(int v, int u) {
         hits[v][u] += steps - time[v][u];
-        loglik[u] = score;
     }
 
-    private void add_edge(int v, int u, double score) {
-        graph.add_edge(v, u);
-        time[v][u] = steps;
-        loglik[u] = score;
+    private double score() {
+        bn.discretize(disc_steps);
+        return bn.score(sf);
     }
 
     private void try_remove(int v, int u) {
-        double score = score_after_deletion(v, u);
-        double log_accept = score - loglik[u] + LOTH;
+        bn.remove_edge(v, u);
+        double score = score();
+        double log_accept = score - loglik + LOTH;
         if (log(random.nextDouble()) < log_accept) {
-            accepts++;
-            remove_edge(v, u, score);
+            fix_edge_deletion(v, u);
+            loglik = score;
+        } else {
+            bn.add_edge(v, u);
         }
     }
 
     private void try_add(int v, int u){
-       if (graph.in_degree(u) > bound) {
+       if (bn.path_exists(u, v)) {
            return;
        }
-       if (graph.path_exists(u, v)) {
-           return;
-       }
-       double score = score_after_insertion(v, u);
-       double log_accept = score - loglik[u] + LADD;
+       bn.add_edge(v, u);
+       double score = score();
+       double log_accept = score - loglik + LADD;
        if (log(random.nextDouble()) < log_accept) {
-           accepts++;
-           add_edge(v, u, score);
+           time[v][u] = steps;
+           loglik = score;
+       } else {
+           bn.remove_edge(v, u);
        }
    }
 
     public void finish() {
         for (int u = 0; u < n; u++) {
-            for (int v : graph.ingoing_edges(u)) {
-                remove_edge(v, u, sf.score(u, Collections.emptyList()));
+            for (int v : bn.ingoing_edges(u)) {
+                bn.remove_edge(v, u);
+                fix_edge_deletion(v, u);
+                loglik = score();
             }
         }
     }

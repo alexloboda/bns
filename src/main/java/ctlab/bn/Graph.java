@@ -1,15 +1,15 @@
-package ctlab.graph;
+package ctlab.bn;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Graph {
+class Graph {
     private List<List<Edge>> adj;
     private List<List<Edge>> radj;
     private Edge[][] edges;
 
-    public Graph(int n) {
+    Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -43,7 +43,7 @@ public class Graph {
         return false;
     }
 
-    public List<Integer> top_sort() {
+    List<Integer> top_sort() {
         List<Boolean> vis = new ArrayList<>(Collections.nCopies(size(), false));
         List<Integer> out = new ArrayList<>(Collections.nCopies(size(), 0));
         int time = 0;
@@ -77,15 +77,15 @@ public class Graph {
         return time;
     }
 
-    public List<Integer> ingoing_edges(int v) {
+    List<Integer> ingoing_edges(int v) {
        return radj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
     }
 
-    public List<Integer> outgoing_edges(int v) {
+    List<Integer> outgoing_edges(int v) {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 
-    public boolean path_exists(int v, int u) {
+    boolean path_exists(int v, int u) {
         // men meet in the middle
         int[] vis = new int[adj.size()];
         boolean[] player = new boolean[adj.size()];
@@ -113,17 +113,17 @@ public class Graph {
         return false;
     }
 
-    public boolean edge_exists(int v, int u) {
+    boolean edge_exists(int v, int u) {
         return edges[v][u] != null;
     }
 
-    public void add_edge(int v, int u) {
+    void add_edge(int v, int u) {
         edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
         adj.get(v).add(edges[v][u]);
         radj.get(u).add(edges[v][u]);
     }
 
-    public void remove_edge(int v, int u) {
+    void remove_edge(int v, int u) {
         Edge e = edges[v][u];
         List<Edge> nei = adj.get(v);
         List<Edge> rnei = radj.get(u);

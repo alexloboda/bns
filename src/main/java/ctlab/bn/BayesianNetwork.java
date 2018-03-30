@@ -1,7 +1,5 @@
 package ctlab.bn;
 
-import ctlab.graph.Graph;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,19 +7,23 @@ import java.util.stream.Collectors;
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
+    private boolean keep_one;
+    private boolean repair_initial;
 
-    public BayesianNetwork(List<Variable> variables) {
+    public BayesianNetwork(List<Variable> variables, boolean keep_one, boolean repair_initial) {
         g = new Graph(variables.size());
         this.variables = variables;
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
+        this.keep_one = keep_one;
+        this.repair_initial = repair_initial;
     }
 
     public void add_edge(int v, int u) {
         g.add_edge(v, u);
     }
 
-    void remove_edge(int v, int u) {
+    public void remove_edge(int v, int u) {
         g.remove_edge(v, u);
     }
 
@@ -31,7 +33,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    private void discretization_step(boolean at_least_one_edge) {
+    private void discretization_step() {
         List<Integer> order = g.top_sort();
         for (int v : order) {
             Variable var = variables.get(v);
@@ -46,7 +48,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss, at_least_one_edge);
+            var.discretize(ps, cs, ss, keep_one);
         }
     }
 
@@ -76,10 +78,10 @@ public class BayesianNetwork {
         return log_score;
     }
 
-    private int discretize_internal(int steps_ub, boolean at_least_one_edge) {
+    private int discretize_internal(int steps_ub) {
         List<List<Double>> disc_policy = discretization_policy();
         for (int i = 0; i < steps_ub; i++) {
-            discretization_step(at_least_one_edge);
+            discretization_step();
             List<List<Double>> new_policy = discretization_policy();
             if (disc_policy.equals(new_policy)) {
                 return i + 1;
@@ -90,12 +92,28 @@ public class BayesianNetwork {
         return steps_ub;
     }
 
-    public int discretize(int steps_ub, boolean repair_initial, boolean at_least_one_edge) {
+    public int size() {
+        return variables.size();
+    }
+
+    public boolean edge_exists(int v, int u) {
+        return g.edge_exists(v, u);
+    }
+
+    public boolean path_exists(int v, int u) {
+        return g.path_exists(v, u);
+    }
+
+    public List<Integer> ingoing_edges(int v) {
+        return g.ingoing_edges(v);
+    }
+
+    public int discretize(int steps_ub) {
         List<Integer> before = variables.stream()
                 .map(Variable::cardinality)
                 .collect(Collectors.toList());
 
-        int res = discretize_internal(steps_ub, at_least_one_edge);
+        int res = discretize_internal(steps_ub);
 
         if (repair_initial) {
             for (int i = 0; i < variables.size(); i++) {
