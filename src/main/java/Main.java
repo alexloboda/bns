@@ -1,5 +1,6 @@
 import ctlab.bn.BayesianNetwork;
 import ctlab.bn.Variable;
+import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -42,7 +43,7 @@ public class Main {
                 "Number of steps before main loop").withRequiredArg().ofType(Integer.class).defaultsTo(0);
         OptionSpec<Integer> exec = optionParser.acceptsAll(asList("r", "runs"),
                 "Number of independent runs").withRequiredArg().ofType(Integer.class).defaultsTo(1);
-        OptionSpec<Integer> default_classes = optionParser.acceptsAll(asList("classes"),
+        OptionSpec<Integer> default_classes = optionParser.acceptsAll(asList("c", "classes"),
                 "Default number of classes").withRequiredArg().ofType(Integer.class).defaultsTo(2);
         OptionSpec<Integer> bound = optionParser.acceptsAll(asList("b", "disc_limit"),
                 "Limit on number of discretization algorithm steps").withRequiredArg().ofType(Integer.class)
@@ -51,7 +52,7 @@ public class Main {
                 "output file").withRequiredArg().ofType(String.class).required();
         OptionSpec<String> log_file = optionParser.acceptsAll(asList("l", "log"),
                 "log directory").withRequiredArg().ofType(String.class);
-        OptionSpec<Integer> cores = optionParser.acceptsAll(asList("c", "cores"),
+        OptionSpec<Integer> cores = optionParser.acceptsAll(asList("m", "cores"),
                 "number of cores").withRequiredArg().ofType(Integer.class).defaultsTo(1);
 
         if (optionSet.has("h")) {
@@ -119,14 +120,22 @@ public class Main {
 
         List<Model> models = new ArrayList<>();
 
-        for (int i = 0; i < executors; i++) {
-            models.add(new Model(new BayesianNetwork(bn), disc_limit));
-        }
+        try {
+            for (int i = 0; i < executors; i++) {
+                Model model = new Model(new BayesianNetwork(bn), disc_limit);
+                if (log != null) {
+                    model.setLogger(new Logger(new File(log, Integer.toString(i + 1))));
+                }
+                models.add(model);
+            }
 
-        ExecutorService es = Executors.newFixedThreadPool(n_cores);
-        models.forEach(x -> es.submit(new Task(x, n_steps, warmup_steps)));
-        es.shutdown();
-        es.awaitTermination(1_000_000, TimeUnit.HOURS);
+            ExecutorService es = Executors.newFixedThreadPool(n_cores);
+            models.forEach(x -> es.submit(new Task(x, n_steps, warmup_steps)));
+            es.shutdown();
+            es.awaitTermination(1_000_000, TimeUnit.HOURS);
+        } finally {
+            models.forEach(Model::closeLogger);
+        }
 
         List<Edge> edges = count_hits(n, models);
 
@@ -138,6 +147,7 @@ public class Main {
                 }
             }
         }
+
     }
 
     private static class Task implements Runnable {

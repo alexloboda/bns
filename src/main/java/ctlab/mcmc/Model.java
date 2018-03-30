@@ -6,6 +6,7 @@ import ctlab.bn.K2ScoringFunction;
 import java.util.Random;
 
 import static java.lang.Math.log;
+import static ctlab.mcmc.Logger.*;
 
 public class Model {
     private static final double LADD = log(0.5);
@@ -15,11 +16,14 @@ public class Model {
     private int[][] hits;
     private int[][] time;
     private double loglik;
+
     private BayesianNetwork bn;
     private K2ScoringFunction sf;
     private int disc_steps;
     private int steps;
     private Random random;
+
+    private Logger logger;
 
     public Model(BayesianNetwork bn, int disc_steps) {
         n = bn.size();
@@ -31,6 +35,11 @@ public class Model {
         sf = new K2ScoringFunction();
         loglik = bn.score(sf);
         this.disc_steps = disc_steps;
+        logger = new Logger();
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
     }
 
     public void step(boolean warming_up) {
@@ -43,15 +52,24 @@ public class Model {
             v = random.nextInt(n);
             u = random.nextInt(n);
         }
+        logger.edge(v, u, loglik);
         if (bn.edge_exists(v, u)) {
             if (random.nextBoolean()) {
+                logger.action(Action.REMOVE);
                 try_remove(v, u);
             } else {
+                logger.action(Action.REVERSE);
                 try_inverse(v, u);
             }
         } else {
+            logger.action(Action.INSERT);
             try_add(v, u);
         }
+        logger.submit();
+    }
+
+    public void closeLogger() {
+        logger.close();
     }
 
     public int[][] hits() {
@@ -61,17 +79,21 @@ public class Model {
     private void try_inverse(int v, int u) {
         bn.remove_edge(v, u);
         if (bn.path_exists(v, u)) {
+            logger.status(Status.CYCLE);
             bn.add_edge(v, u);
             return;
         }
         bn.add_edge(u, v);
         double score = score();
         double log_accept = score - loglik;
+        logger.log_accept(log_accept);
         if (log(random.nextDouble()) < log_accept) {
+            logger.status(Status.ACCEPTED);
             time[u][v] = steps;
             fix_edge_deletion(v, u);
             loglik = score;
         } else {
+            logger.status(Status.REJECTED);
             bn.remove_edge(u, v);
             bn.add_edge(v, u);
         }
@@ -83,32 +105,41 @@ public class Model {
 
     private double score() {
         bn.discretize(disc_steps);
-        return bn.score(sf);
+        double res = bn.score(sf);
+        logger.score(res);
+        return res;
     }
 
     private void try_remove(int v, int u) {
         bn.remove_edge(v, u);
         double score = score();
         double log_accept = score - loglik + LOTH;
+        logger.log_accept(log_accept);
         if (log(random.nextDouble()) < log_accept) {
+            logger.status(Status.ACCEPTED);
             fix_edge_deletion(v, u);
             loglik = score;
         } else {
+            logger.status(Status.REJECTED);
             bn.add_edge(v, u);
         }
     }
 
     private void try_add(int v, int u){
        if (bn.path_exists(u, v)) {
+           logger.status(Status.CYCLE);
            return;
        }
        bn.add_edge(v, u);
        double score = score();
        double log_accept = score - loglik + LADD;
+       logger.log_accept(log_accept);
        if (log(random.nextDouble()) < log_accept) {
+           logger.status(Status.ACCEPTED);
            time[v][u] = steps;
            loglik = score;
        } else {
+           logger.status(Status.REJECTED);
            bn.remove_edge(v, u);
        }
    }
