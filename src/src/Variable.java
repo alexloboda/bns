@@ -58,7 +58,8 @@ public class Variable {
         this.lf = lf;
     }
 
-    void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
+    void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
+                    boolean at_least_one_edge) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -92,7 +93,7 @@ public class Variable {
                         s_tilde += l_card * ((get_u(v) - get_u(u + 1)) / whl_rng);
                         s_tilde += S[u];
                     }
-                    if (s_tilde < s_hat) {
+                    if (s_tilde < s_hat && !(at_least_one_edge && v == u && v == uniq.length - 1)) {
                         s_hat = s_tilde;
                         u_hat = u;
                         if (u + 1 < uniq.length) {
@@ -170,7 +171,7 @@ public class Variable {
 
     private int number_of_classes(int[] obs) {
         return Arrays.stream(obs)
-                .max().getAsInt() - 1;
+                .max().getAsInt() + 1;
     }
 
     private void one_child_spouse_term(Variable child, List<Variable> ss, double[][] result) {

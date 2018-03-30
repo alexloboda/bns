@@ -16,13 +16,17 @@ public class BayesianNetwork {
         g.add_edge(v, u);
     }
 
+    void remove_edge(int v, int u) {
+        g.remove_edge(v, u);
+    }
+
     private List<Variable> parent_set(int v) {
         return g.ingoing_edges(v).stream()
                 .map(x -> variables.get(x))
                 .collect(Collectors.toList());
     }
 
-    private void discretization_step() {
+    private void discretization_step(boolean at_least_one_edge) {
         List<Integer> order = g.top_sort();
         for (int v : order) {
             Variable var = variables.get(v);
@@ -37,7 +41,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss);
+            var.discretize(ps, cs, ss, at_least_one_edge);
         }
     }
 
@@ -55,10 +59,10 @@ public class BayesianNetwork {
         return log_score;
     }
 
-    private int discretize_internal(int steps_ub) {
+    private int discretize_internal(int steps_ub, boolean at_least_one_edge) {
         List<List<Double>> disc_policy = discretization_policy();
         for (int i = 0; i < steps_ub; i++) {
-            discretization_step();
+            discretization_step(at_least_one_edge);
             List<List<Double>> new_policy = discretization_policy();
             if (disc_policy.equals(new_policy)) {
                 return i + 1;
@@ -69,12 +73,12 @@ public class BayesianNetwork {
         return steps_ub;
     }
 
-    int discretize(int steps_ub, boolean repair_initial) {
+    int discretize(int steps_ub, boolean repair_initial, boolean at_least_one_edge) {
         List<Integer> before = variables.stream()
                 .map(Variable::cardinality)
                 .collect(Collectors.toList());
 
-        int res = discretize_internal(steps_ub);
+        int res = discretize_internal(steps_ub, at_least_one_edge);
 
         if (repair_initial) {
             for (int i = 0; i < variables.size(); i++) {
