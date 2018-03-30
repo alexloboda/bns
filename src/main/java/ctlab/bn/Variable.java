@@ -1,5 +1,6 @@
 package ctlab.bn;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -54,6 +55,18 @@ public class Variable {
                 .toArray();
 
         initial(disc_classes);
+    }
+
+    public Variable(Variable v) {
+        data = new ArrayList<>(data);
+        u_x = Arrays.copyOf(v.u_x, v.u_x.length);
+        uniq = Arrays.copyOf(v.uniq, v.uniq.length);
+        ordered_obs = Arrays.copyOf(v.ordered_obs, v.ordered_obs.length);
+        log_precomputed = Arrays.copyOf(v.log_precomputed, v.log_precomputed.length);
+        discrete = new ArrayList<>(discrete);
+        edges = new ArrayList<>(edges);
+        lf = new LogFactorial();
+        this.name = v.name;
     }
 
     void setLF(LogFactorial lf) {

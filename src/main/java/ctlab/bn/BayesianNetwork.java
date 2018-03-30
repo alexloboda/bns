@@ -19,6 +19,16 @@ public class BayesianNetwork {
         this.repair_initial = repair_initial;
     }
 
+    public BayesianNetwork(BayesianNetwork bn) {
+        variables = new ArrayList<>();
+        for (Variable v : bn.variables) {
+            variables.add(new Variable(v));
+        }
+        g = new Graph(bn.g);
+        keep_one = bn.keep_one;
+        repair_initial = bn.repair_initial;
+    }
+
     public void add_edge(int v, int u) {
         g.add_edge(v, u);
     }

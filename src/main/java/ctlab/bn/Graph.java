@@ -19,6 +19,15 @@ class Graph {
         edges = new Edge[n][n];
     }
 
+    public Graph(Graph g) {
+        this(g.size());
+        for (int v = 0; v < g.size(); v++) {
+            for (int u : g.outgoing_edges(v)) {
+                add_edge(v, u);
+            }
+        }
+    }
+
     private boolean step(Queue<Integer> q, int[] vis, boolean[] player, int i) {
         while (!q.isEmpty()) {
             int v = q.peek();
@@ -145,6 +154,13 @@ class Graph {
         private int u;
         private int pos;
         private int rpos;
+
+        Edge(Edge e) {
+            v = e.v;
+            u = e.u;
+            pos = e.pos;
+            rpos = e.rpos;
+        }
 
         Edge(int v, int u, int pos, int rpos) {
             this.v = v;
