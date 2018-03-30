@@ -2,10 +2,13 @@ package ctlab.mcmc;
 
 import javax.xml.ws.WebServiceException;
 import java.io.*;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Logger implements Closeable  {
+    private static DecimalFormat format = new DecimalFormat("#.###");
+
     private PrintWriter pw;
     private Map<String, String> vs;
     private List<String> keys;
@@ -35,8 +38,12 @@ public class Logger implements Closeable  {
         vs.put("status", s.toString());
     }
 
-    private void set_key(String key, Number n) {
+    private void set_key(String key, Integer n) {
         vs.put(key, n.toString());
+    }
+
+    private void set_key(String key, Double n) {
+        vs.put(key, format.format(n));
     }
 
     private void clear_all() {
