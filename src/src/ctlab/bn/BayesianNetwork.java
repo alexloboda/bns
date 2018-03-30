@@ -2,6 +2,7 @@ package ctlab.bn;
 
 import ctlab.graph.Graph;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,10 +56,22 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    public double bde_score(K2ScoringFunction bde) {
+    private double score(K2ScoringFunction sf, Variable v, List<Variable> ps) {
+
+        int[] parent_cls = v.map_obs(ps);
+
+        List<Variable> vs = new ArrayList<>(ps);
+        vs.add(v);
+
+        int[] all_cls = v.map_obs(vs);
+
+        return sf.score(parent_cls, all_cls, v.cardinality());
+    }
+
+    public double score(K2ScoringFunction sf) {
         double log_score = 0.0;
         for (int i = 0; i < variables.size(); i++) {
-            log_score += variables.get(i).bde(bde, parent_set(i));
+            log_score += score(sf, variables.get(i), parent_set(i));
         }
         return log_score;
     }

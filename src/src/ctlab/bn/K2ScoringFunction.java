@@ -3,11 +3,9 @@ package ctlab.bn;
 import java.util.*;
 
 public class K2ScoringFunction {
-    private int iss;
     private LogFactorial lf;
 
-    public K2ScoringFunction(int iss){
-        this.iss = iss;
+    public K2ScoringFunction(){
         lf = new LogFactorial();
     }
 

@@ -211,7 +211,7 @@ public class Variable {
         }
     }
 
-    private int[] map_obs(List<Variable> ps) {
+    int[] map_obs(List<Variable> ps) {
         Map<List<Integer>, Integer> map = new HashMap<>();
         int m = obsNum();
         int[] result = new int[m];
@@ -316,14 +316,4 @@ public class Variable {
         return Collections.unmodifiableList(edges);
     }
 
-    double bde(K2ScoringFunction bde, List<Variable> parents) {
-        int[] parent_cls = map_obs(parents);
-
-        List<Variable> vs = new ArrayList<>(parents);
-        vs.add(this);
-
-        int[] all_cls = map_obs(vs);
-
-        return bde.score(parent_cls, all_cls, cardinality());
-    }
 }
