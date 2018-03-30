@@ -58,13 +58,13 @@ public class Variable {
     }
 
     public Variable(Variable v) {
-        data = new ArrayList<>(data);
+        data = new ArrayList<>(v.data);
         u_x = Arrays.copyOf(v.u_x, v.u_x.length);
         uniq = Arrays.copyOf(v.uniq, v.uniq.length);
         ordered_obs = Arrays.copyOf(v.ordered_obs, v.ordered_obs.length);
         log_precomputed = Arrays.copyOf(v.log_precomputed, v.log_precomputed.length);
-        discrete = new ArrayList<>(discrete);
-        edges = new ArrayList<>(edges);
+        discrete = new ArrayList<>(v.discrete);
+        edges = new ArrayList<>(v.edges);
         lf = new LogFactorial();
         this.name = v.name;
     }
