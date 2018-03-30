@@ -26,6 +26,7 @@ public class Main {
     private static int executors;
     private static int disc_limit;
     private static int n_cores;
+    private static int default_cls;
 
     private static boolean parse_args(String[] args) {
         OptionParser optionParser = new OptionParser();
@@ -41,11 +42,13 @@ public class Main {
                 "Number of steps before main loop").withRequiredArg().ofType(Integer.class).defaultsTo(0);
         OptionSpec<Integer> exec = optionParser.acceptsAll(asList("r", "runs"),
                 "Number of independent runs").withRequiredArg().ofType(Integer.class).defaultsTo(1);
+        OptionSpec<Integer> default_classes = optionParser.acceptsAll(asList("classes"),
+                "Default number of classes").withRequiredArg().ofType(Integer.class).defaultsTo(2);
         OptionSpec<Integer> bound = optionParser.acceptsAll(asList("b", "disc_limit"),
                 "Limit on number of discretization algorithm steps").withRequiredArg().ofType(Integer.class)
                 .defaultsTo(5);
         OptionSpec<String> outfile = optionParser.acceptsAll(asList("o", "out"),
-                "output file").withRequiredArg().ofType(String.class);
+                "output file").withRequiredArg().ofType(String.class).required();
         OptionSpec<String> log_file = optionParser.acceptsAll(asList("l", "log"),
                 "log directory").withRequiredArg().ofType(String.class);
         OptionSpec<Integer> cores = optionParser.acceptsAll(asList("c", "cores"),
@@ -64,10 +67,14 @@ public class Main {
         warmup_steps = optionSet.valueOf(warmup);
         executors = optionSet.valueOf(exec);
         disc_limit = optionSet.valueOf(bound);
+        n_cores = optionSet.valueOf(cores);
+        default_cls = optionSet.valueOf(default_classes);
 
         ge_file = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
-        log = new File(optionSet.valueOf(log_file));
+        if (optionSet.has(log_file)) {
+            log = new File(optionSet.valueOf(log_file));
+        }
 
         return true;
     }
@@ -95,7 +102,7 @@ public class Main {
             }
 
             for (int i = 0; i < n; i++) {
-                res.add(new Variable(names.get(i), data.get(i), disc_limit));
+                res.add(new Variable(names.get(i), data.get(i), default_cls));
             }
         }
         return res;
