@@ -1,4 +1,5 @@
 import ctlab.bn.BayesianNetwork;
+import ctlab.bn.K2ScoringFunction;
 import ctlab.bn.Variable;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
@@ -44,7 +45,7 @@ public class Main {
         OptionSpec<Integer> exec = optionParser.acceptsAll(asList("r", "runs"),
                 "Number of independent runs").withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<Integer> default_classes = optionParser.acceptsAll(asList("c", "classes"),
-                "Default number of classes").withRequiredArg().ofType(Integer.class).defaultsTo(2);
+                "Default number of classes").withRequiredArg().ofType(Integer.class).defaultsTo(3);
         OptionSpec<Integer> bound = optionParser.acceptsAll(asList("b", "disc_limit"),
                 "Limit on number of discretization algorithm steps").withRequiredArg().ofType(Integer.class)
                 .defaultsTo(5);

@@ -29,6 +29,14 @@ public class BayesianNetwork {
         repair_initial = bn.repair_initial;
     }
 
+    public void backup() {
+        variables.forEach(Variable::backup);
+    }
+
+    public void restore() {
+        variables.forEach(Variable::restore);
+    }
+
     public void add_edge(int v, int u) {
         g.add_edge(v, u);
     }

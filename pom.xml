@@ -50,6 +50,13 @@
     </build>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.2</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/net.sf.jopt-simple/jopt-simple -->
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>

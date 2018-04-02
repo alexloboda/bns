@@ -1,6 +1,5 @@
 package ctlab.bn;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -16,6 +15,9 @@ public class Variable {
     private List<Integer> discrete;
     private List<Double> edges;
     private LogFactorial lf;
+
+    private List<Integer> backup_disc;
+    private List<Double> backup_edges;
 
     public Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
@@ -55,6 +57,16 @@ public class Variable {
                 .toArray();
 
         initial(disc_classes);
+    }
+
+    public void backup() {
+        backup_edges = new ArrayList<>(edges);
+        backup_disc = new ArrayList<>(discrete);
+    }
+
+    public void restore() {
+        edges = new ArrayList<>(backup_edges);
+        discrete = new ArrayList<>(backup_disc);
     }
 
     public Variable(Variable v) {
