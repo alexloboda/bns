@@ -27,6 +27,10 @@ public class Logger implements Closeable  {
         set_key("loglik", ll);
     }
 
+    void disc_steps(int n) {
+        set_key("disc", n);
+    }
+
     void action(Action a) {
         vs.put("action", a.toString());
     }
@@ -40,7 +44,7 @@ public class Logger implements Closeable  {
     }
 
     private void clear_all() {
-        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status");
+        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc");
         vs.put("ll_after", "-inf");
         vs.put("p_accept", "0");
 

@@ -86,14 +86,13 @@ public class Variable {
     }
 
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
-                    boolean at_least_one_edge) {
+                    boolean at_least_one_edge, int l_card) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
 
         double[][] h = compute_hs(parents, children, spouse_sets);
 
-        int l_card = max_card(parents, children, spouse_sets);
         double[] S = new double[uniq.length];
         double[] W = initW(l_card).stream()
                 .mapToDouble(Double::doubleValue)

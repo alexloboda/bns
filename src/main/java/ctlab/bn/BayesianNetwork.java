@@ -53,6 +53,10 @@ public class BayesianNetwork {
 
     private void discretization_step() {
         List<Integer> order = g.top_sort();
+        int max_card = 0;
+        for (Variable v : variables) {
+            max_card = Math.max(max_card, v.cardinality());
+        }
         for (int v : order) {
             Variable var = variables.get(v);
             List<Variable> ps = parent_set(v);
@@ -66,7 +70,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss, keep_one);
+            var.discretize(ps, cs, ss, keep_one, max_card);
         }
     }
 

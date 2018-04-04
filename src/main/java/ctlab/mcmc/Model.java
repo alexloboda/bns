@@ -109,7 +109,7 @@ public class Model {
     }
 
     private double score() {
-        bn.discretize(disc_steps);
+        logger.disc_steps(bn.discretize(disc_steps));
         double res = bn.score(sf, pd);
         logger.score(res);
         return res;
