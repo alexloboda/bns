@@ -71,7 +71,7 @@ class Graph {
         return result;
     }
 
-    private int size() {
+    public int size() {
         return adj.size();
     }
 
@@ -92,6 +92,10 @@ class Graph {
 
     List<Integer> outgoing_edges(int v) {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
+    }
+
+    int out_degree(int v) {
+        return adj.get(v).size();
     }
 
     boolean path_exists(int v, int u) {

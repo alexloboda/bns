@@ -88,8 +88,8 @@ public class BayesianNetwork {
         return sf.score(parent_cls, all_cls, v.cardinality());
     }
 
-    public double score(K2ScoringFunction sf) {
-        double log_score = 0.0;
+    public double score(K2ScoringFunction sf, PriorDistribution pd) {
+        double log_score = pd.value(g);
         for (int i = 0; i < variables.size(); i++) {
             log_score += score(sf, variables.get(i), parent_set(i));
         }
