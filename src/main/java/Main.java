@@ -118,6 +118,7 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
 
+        long before = System.currentTimeMillis();
         List<Model> models = new ArrayList<>();
 
         try {
@@ -139,6 +140,7 @@ public class Main {
 
         List<Edge> edges = count_hits(n, models);
 
+        System.err.println(System.currentTimeMillis() - before);
         edges.forEach(x -> x.scale((n_steps * executors)));
         try(PrintWriter pw = new PrintWriter(output)) {
             for (Edge e: edges) {

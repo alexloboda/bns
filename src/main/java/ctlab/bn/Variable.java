@@ -100,14 +100,15 @@ public class Variable {
         double[] W = initW(l_card).stream()
                 .mapToDouble(Double::doubleValue)
                 .toArray();
-        List<Set<Double>> lambda = new ArrayList<>();
+        List<List<Double>> lambda = new ArrayList<>();
         double whl_rng = get_u(uniq.length - 1) - get_u(0);
 
         for (int v = 0; v < uniq.length; v++) {
-            lambda.add(new TreeSet<>());
+            lambda.add(new ArrayList<>());
+            List<Double> lambda_v = lambda.get(v);
             if (v == 0) {
                 S[0] =  h[v][uniq[v] - v] + W[v];
-                lambda.get(v).add((get_u(v) + get_u(v + 1)) / 2.0);
+                lambda_v.add((get_u(v) + get_u(v + 1)) / 2.0);
             } else {
                 double s_hat = Double.POSITIVE_INFINITY;
                 int u_hat = 0;
@@ -133,9 +134,11 @@ public class Variable {
                     }
                 }
                 S[v] = s_hat;
-                lambda.get(v).addAll(lambda.get(u_hat));
+                lambda_v.addAll(lambda.get(u_hat));
                 if (disc_edge < Double.POSITIVE_INFINITY) {
-                    lambda.get(v).add(disc_edge);
+                    if (lambda_v.isEmpty() || lambda_v.get(lambda_v.size() - 1) != disc_edge) {
+                        lambda_v.add(disc_edge);
+                    }
                 }
             }
         }
@@ -226,22 +229,18 @@ public class Variable {
     }
 
     int[] map_obs(List<Variable> ps) {
-        Map<List<Integer>, Integer> map = new HashMap<>();
         int m = obsNum();
         int[] result = new int[m];
         Variable[] vs = ps.toArray(new Variable[0]);
+        Trie t = new Trie(ps.stream().map(Variable::cardinality).collect(Collectors.toList()));
 
         for (int i = 0; i < m; i++) {
-            List<Integer> disc_ps = new ArrayList<>();
+            Trie.Selector selector = t.selector();
             for (Variable p: vs) {
-                disc_ps.add(p.discrete_value(ordered_obs[i]));
+                selector.choose(p.discrete_value(ordered_obs[i]) - 1);
             }
 
-            if (!map.containsKey(disc_ps)) {
-                map.put(disc_ps, map.size());
-            }
-
-            result[i] = map.get(disc_ps);
+            result[i] = selector.get();
         }
         return result;
     }
@@ -264,7 +263,7 @@ public class Variable {
             for (int j = 0; j < n - i; j++) {
                 int v = i + j;
                 int cl = mapped_obs[v];
-                value -= Math.log(++hits[cl]);
+                value -= log_precomputed[++hits[cl]];
                 result[i][j] += value + local_lf[j];
             }
         }
