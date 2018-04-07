@@ -15,6 +15,7 @@ public class Variable {
     private List<Integer> discrete;
     private List<Double> edges;
     private LogFactorial lf;
+    private int default_disc_classes;
 
     private List<Integer> backup_disc;
     private List<Double> backup_edges;
@@ -57,6 +58,7 @@ public class Variable {
                 .toArray();
 
         initial(disc_classes);
+        this.default_disc_classes = disc_classes;
     }
 
     public void backup() {
@@ -79,6 +81,7 @@ public class Variable {
         edges = new ArrayList<>(v.edges);
         lf = new LogFactorial();
         this.name = v.name;
+        default_disc_classes = v.default_disc_classes;
     }
 
     void setLF(LogFactorial lf) {
@@ -86,7 +89,7 @@ public class Variable {
     }
 
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
-                    boolean at_least_one_edge, int l_card) {
+                    boolean at_least_one_edge, int l_card, boolean repair_initial) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -138,7 +141,12 @@ public class Variable {
         }
 
         edges = new ArrayList<>(lambda.get(uniq.length - 1));
-        write_discretization();
+
+        if (edges.isEmpty() && repair_initial) {
+            initial(default_disc_classes);
+        } else {
+            write_discretization();
+        }
     }
 
     private void write_discretization() {
@@ -162,24 +170,6 @@ public class Variable {
 
     private double get_u(int i) {
         return u_x[i];
-    }
-
-    private int max_card(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
-        int max_card = 0;
-        for (Variable v: parents) {
-            max_card = Math.max(max_card, v.cardinality());
-        }
-
-        for (Variable v: children) {
-            max_card = Math.max(max_card, v.cardinality());
-        }
-
-        for (List<Variable> set: spouse_sets) {
-            for (Variable v: set) {
-                max_card = Math.max(max_card, v.cardinality());
-            }
-        }
-        return max_card;
     }
 
     private double[][] compute_hs(List<Variable> ps, List<Variable> cs, List<List<Variable>> ss) {

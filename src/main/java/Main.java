@@ -1,5 +1,4 @@
 import ctlab.bn.BayesianNetwork;
-import ctlab.bn.K2ScoringFunction;
 import ctlab.bn.Variable;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
@@ -125,7 +124,7 @@ public class Main {
             for (int i = 0; i < executors; i++) {
                 Model model = new Model(new BayesianNetwork(bn), disc_limit);
                 if (log != null) {
-                    model.setLogger(new Logger(new File(log, Integer.toString(i + 1))));
+                    model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
                 }
                 models.add(model);
             }

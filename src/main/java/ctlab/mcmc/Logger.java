@@ -1,5 +1,7 @@
 package ctlab.mcmc;
 
+import joptsimple.internal.Strings;
+
 import javax.xml.ws.WebServiceException;
 import java.io.*;
 import java.util.*;
@@ -9,14 +11,16 @@ public class Logger implements Closeable  {
     private PrintWriter pw;
     private Map<String, String> vs;
     private List<String> keys;
+    private int limit;
 
-    public Logger(File logFile) throws IOException {
+    public Logger(File logFile, int card_limit) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
         vs = new HashMap<>();
         keys = new ArrayList<>();
         clear_all();
         pw = new PrintWriter(writer);
         pw.println(String.join("\t", keys));
+        limit = card_limit;
     }
 
     Logger() {}
@@ -29,6 +33,14 @@ public class Logger implements Closeable  {
 
     void disc_steps(int n) {
         set_key("disc", n);
+    }
+
+    void card(int[] card) {
+        vs.put("card", Strings.join(Arrays.stream(card)
+                        .mapToObj(Integer::toString)
+                        .skip(1)
+                        .limit(limit)
+                        .collect(Collectors.toList()), ","));
     }
 
     void action(Action a) {
@@ -44,7 +56,7 @@ public class Logger implements Closeable  {
     }
 
     private void clear_all() {
-        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc");
+        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc", "card");
         vs.put("ll_after", "-inf");
         vs.put("p_accept", "0");
 

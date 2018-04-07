@@ -49,6 +49,7 @@ public class Model {
         if (!warming_up) {
             steps++;
         }
+        bn.backup();
         int v = 0;
         int u = 0;
         while (v == u) {
@@ -69,6 +70,7 @@ public class Model {
             try_add(v, u);
         }
         logger.submit();
+        bn.restore();
     }
 
     public void closeLogger() {
@@ -87,7 +89,6 @@ public class Model {
             return;
         }
         bn.add_edge(u, v);
-        bn.backup();
         double score = score();
         double log_accept = score - loglik;
         logger.log_accept(log_accept);
@@ -100,7 +101,6 @@ public class Model {
             logger.status(Status.REJECTED);
             bn.remove_edge(u, v);
             bn.add_edge(v, u);
-            bn.restore();
         }
     }
 
@@ -110,13 +110,21 @@ public class Model {
 
     private double score() {
         logger.disc_steps(bn.discretize(disc_steps));
+        logger.card(count_cardinals(bn));
         double res = bn.score(sf, pd);
         logger.score(res);
         return res;
     }
 
+    private int[] count_cardinals(BayesianNetwork bn) {
+        int[] cs = new int[bn.observations()];
+        for (int i = 0; i < bn.size(); i++) {
+            cs[bn.cardinality(i)]++;
+        }
+        return cs;
+    }
+
     private void try_remove(int v, int u) {
-        bn.backup();
         bn.remove_edge(v, u);
         double score = score();
         double log_accept = score - loglik + LOTH;
@@ -128,7 +136,6 @@ public class Model {
         } else {
             logger.status(Status.REJECTED);
             bn.add_edge(v, u);
-            bn.restore();
         }
     }
 
@@ -138,7 +145,6 @@ public class Model {
            return;
        }
        bn.add_edge(v, u);
-       bn.backup();
        double score = score();
        double log_accept = score - loglik + LADD;
        logger.log_accept(log_accept);
@@ -149,7 +155,6 @@ public class Model {
        } else {
            logger.status(Status.REJECTED);
            bn.remove_edge(v, u);
-           bn.restore();
        }
    }
 

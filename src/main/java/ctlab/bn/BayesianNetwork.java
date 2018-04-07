@@ -70,7 +70,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss, keep_one, max_card);
+            var.discretize(ps, cs, ss, keep_one, max_card, repair_initial);
         }
     }
 
@@ -78,6 +78,14 @@ public class BayesianNetwork {
         return variables.stream()
                 .map(Variable::discretization_edges)
                 .collect(Collectors.toList());
+    }
+
+    public int cardinality(int v) {
+        return variables.get(v).cardinality();
+    }
+
+    public int observations() {
+        return variables.stream().findAny().get().obsNum();
     }
 
     private double score(K2ScoringFunction sf, Variable v, List<Variable> ps) {
@@ -100,20 +108,6 @@ public class BayesianNetwork {
         return log_score;
     }
 
-    private int discretize_internal(int steps_ub) {
-        List<List<Double>> disc_policy = discretization_policy();
-        for (int i = 0; i < steps_ub; i++) {
-            discretization_step();
-            List<List<Double>> new_policy = discretization_policy();
-            if (disc_policy.equals(new_policy)) {
-                return i + 1;
-            } else {
-                disc_policy = new_policy;
-            }
-        }
-        return steps_ub;
-    }
-
     public int size() {
         return variables.size();
     }
@@ -131,19 +125,16 @@ public class BayesianNetwork {
     }
 
     public int discretize(int steps_ub) {
-        List<Integer> before = variables.stream()
-                .map(Variable::cardinality)
-                .collect(Collectors.toList());
-
-        int res = discretize_internal(steps_ub);
-
-        if (repair_initial) {
-            for (int i = 0; i < variables.size(); i++) {
-                if (variables.get(i).discretization_edges().isEmpty()) {
-                    variables.get(i).initial(before.get(i));
-                }
+        List<List<Double>> disc_policy = discretization_policy();
+        for (int i = 0; i < steps_ub; i++) {
+            discretization_step();
+            List<List<Double>> new_policy = discretization_policy();
+            if (disc_policy.equals(new_policy)) {
+                return i + 1;
+            } else {
+                disc_policy = new_policy;
             }
         }
-        return res;
+        return steps_ub;
     }
 }
