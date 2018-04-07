@@ -49,5 +49,9 @@ public class Trie {
             }
             ptr = ptr.ss[x];
         }
+
+        public void reuse() {
+            ptr = root;
+        }
     }
 }

@@ -10,9 +10,6 @@ import static java.lang.Math.log;
 import static ctlab.mcmc.Logger.*;
 
 public class Model {
-    private static final double LADD = log(0.5);
-    private static final double LOTH = log(2.0);
-
     private int n;
     private int[][] hits;
     private int[][] time;
@@ -49,7 +46,8 @@ public class Model {
         if (!warming_up) {
             steps++;
         }
-        bn.backup();
+        bn.discretize(1);
+        loglik = bn.score(sf, pd);
         int v = 0;
         int u = 0;
         while (v == u) {
@@ -58,19 +56,13 @@ public class Model {
         }
         logger.edge(v, u, loglik);
         if (bn.edge_exists(v, u)) {
-            if (random.nextBoolean()) {
-                logger.action(Action.REMOVE);
-                try_remove(v, u);
-            } else {
-                logger.action(Action.REVERSE);
-                try_inverse(v, u);
-            }
+            logger.action(Action.REMOVE);
+            try_remove(v, u);
         } else {
             logger.action(Action.INSERT);
             try_add(v, u);
         }
         logger.submit();
-        bn.restore();
     }
 
     public void closeLogger() {
@@ -79,29 +71,6 @@ public class Model {
 
     public int[][] hits() {
         return hits;
-    }
-
-    private void try_inverse(int v, int u) {
-        bn.remove_edge(v, u);
-        if (bn.path_exists(v, u)) {
-            logger.status(Status.CYCLE);
-            bn.add_edge(v, u);
-            return;
-        }
-        bn.add_edge(u, v);
-        double score = score();
-        double log_accept = score - loglik;
-        logger.log_accept(log_accept);
-        if (log(random.nextDouble()) < log_accept) {
-            logger.status(Status.ACCEPTED);
-            time[u][v] = steps;
-            fix_edge_deletion(v, u);
-            loglik = score;
-        } else {
-            logger.status(Status.REJECTED);
-            bn.remove_edge(u, v);
-            bn.add_edge(v, u);
-        }
     }
 
     private void fix_edge_deletion(int v, int u) {
@@ -124,37 +93,45 @@ public class Model {
         return cs;
     }
 
-    private void try_remove(int v, int u) {
+    private boolean try_remove(int v, int u) {
         bn.remove_edge(v, u);
+        bn.backup();
         double score = score();
-        double log_accept = score - loglik + LOTH;
+        double log_accept = score - loglik;
         logger.log_accept(log_accept);
         if (log(random.nextDouble()) < log_accept) {
             logger.status(Status.ACCEPTED);
             fix_edge_deletion(v, u);
             loglik = score;
+            return true;
         } else {
             logger.status(Status.REJECTED);
             bn.add_edge(v, u);
+            bn.restore();
+            return false;
         }
     }
 
-    private void try_add(int v, int u){
+    private boolean try_add(int v, int u){
        if (bn.path_exists(u, v)) {
            logger.status(Status.CYCLE);
-           return;
+           return false;
        }
        bn.add_edge(v, u);
+       bn.backup();
        double score = score();
-       double log_accept = score - loglik + LADD;
+       double log_accept = score - loglik;
        logger.log_accept(log_accept);
        if (log(random.nextDouble()) < log_accept) {
            logger.status(Status.ACCEPTED);
            time[v][u] = steps;
            loglik = score;
+           return true;
        } else {
            logger.status(Status.REJECTED);
            bn.remove_edge(v, u);
+           bn.restore();
+           return false;
        }
    }
 

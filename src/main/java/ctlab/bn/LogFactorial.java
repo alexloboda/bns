@@ -12,6 +12,10 @@ public class LogFactorial {
     }
 
     double value(int n) {
+        if (n > 10000) {
+            System.err.println(n);
+            Thread.dumpStack();
+        }
         if (n >= values.size()) {
             for (int i = values.size(); i <= n; i++) {
                 values.add(values.get(i - 1) + Math.log(i));

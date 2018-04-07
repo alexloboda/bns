@@ -14,12 +14,16 @@ public class Logger implements Closeable  {
     private int limit;
 
     public Logger(File logFile, int card_limit) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
+        if (logFile != null) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
+            pw = new PrintWriter(writer);
+        }
         vs = new HashMap<>();
         keys = new ArrayList<>();
         clear_all();
-        pw = new PrintWriter(writer);
-        pw.println(String.join("\t", keys));
+        if (pw != null) {
+            pw.println(String.join("\t", keys));
+        }
         limit = card_limit;
     }
 

@@ -11,9 +11,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -109,7 +108,7 @@ public class Main {
         return res;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         if (!parse_args(args)) {
             System.exit(0);
         }
@@ -118,7 +117,6 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
 
-        long before = System.currentTimeMillis();
         List<Model> models = new ArrayList<>();
 
         try {
@@ -126,30 +124,41 @@ public class Main {
                 Model model = new Model(new BayesianNetwork(bn), disc_limit);
                 if (log != null) {
                     model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
+                } else {
+                    model.setLogger(new Logger(null, 4));
                 }
                 models.add(model);
             }
 
             ExecutorService es = Executors.newFixedThreadPool(n_cores);
-            models.forEach(x -> es.submit(new Task(x, n_steps, warmup_steps)));
+            List<Future<?>> fs = models.stream()
+                    .map(x -> es.submit(new Task(x, n_steps, warmup_steps)))
+                    .collect(Collectors.toList());
             es.shutdown();
             es.awaitTermination(1_000_000, TimeUnit.HOURS);
+            try {
+                for (Future f: fs) {
+                    f.get();
+                }
+            } catch (InterruptedException|ExecutionException e) {
+                e.printStackTrace();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
             models.forEach(Model::closeLogger);
         }
 
         List<Edge> edges = count_hits(n, models);
 
-        System.err.println(System.currentTimeMillis() - before);
         edges.forEach(x -> x.scale((n_steps * executors)));
-        try(PrintWriter pw = new PrintWriter(output)) {
-            for (Edge e: edges) {
+        try (PrintWriter pw = new PrintWriter(output)) {
+            for (Edge e : edges) {
                 if (e.v != e.u) {
                     pw.println(genes.get(e.v).getName() + "\t" + genes.get(e.u).getName() + "\t" + e.weight);
                 }
             }
         }
-
     }
 
     private static class Task implements Runnable {

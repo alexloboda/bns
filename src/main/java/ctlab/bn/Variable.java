@@ -234,8 +234,9 @@ public class Variable {
         Variable[] vs = ps.toArray(new Variable[0]);
         Trie t = new Trie(ps.stream().map(Variable::cardinality).collect(Collectors.toList()));
 
+        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            Trie.Selector selector = t.selector();
+            selector.reuse();
             for (Variable p: vs) {
                 selector.choose(p.discrete_value(ordered_obs[i]) - 1);
             }
