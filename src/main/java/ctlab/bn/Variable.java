@@ -279,8 +279,10 @@ public class Variable {
         }
 
         double[] combinations = new double[n];
-        for (int i = 0; i < n; i++) {
-            combinations[i] = log_combinations(i + 1 + parent_classes - 1, parent_classes - 1);
+        int k = parent_classes - 1;
+        combinations[0] = Math.log(k + 1);
+        for (int i = 1; i < n; i++) {
+            combinations[i] = combinations[i - 1] + Math.log(k + i + 1) - log_precomputed[i + 1];
         }
 
         for (int u = 0; u < n; u++) {
@@ -316,10 +318,6 @@ public class Variable {
 
     public int discrete_value(int obs) {
         return discrete.get(obs);
-    }
-
-    private double log_combinations(int n, int k) {
-        return lf.value(n) - lf.value(k) - lf.value(n - k);
     }
 
     boolean equals(Variable v) {
