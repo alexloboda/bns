@@ -1,7 +1,6 @@
 import ctlab.bn.*;
 import ctlab.bn.sf.BDE;
-import ctlab.bn.sf.BIC;
-import ctlab.bn.sf.ScoringFunction;
+import ctlab.bn.sf.InformationSF;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
@@ -137,7 +136,7 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
 
-        Solver solver = new Solver(new BDE());
+        Solver solver = new Solver(new InformationSF(1));
         solver.solve(bn, parseGraph(bn.size()), 10);
 
         try(PrintWriter pw = new PrintWriter("result")) {

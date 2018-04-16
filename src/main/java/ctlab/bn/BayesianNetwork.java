@@ -150,7 +150,7 @@ public class BayesianNetwork {
         System.err.println();
         for (Variable v: variables) {
             if (v.cardinality() == 1 && repair_initial) {
-                v.initial(2);
+                v.initial();
             }
         }
         return ret != -1 ? ret : steps_ub;

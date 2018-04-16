@@ -308,6 +308,10 @@ public class Variable {
         write_discretization();
     }
 
+    void initial() {
+        initial(default_disc_classes);
+    }
+
     public int cardinality() {
         return edges.size() + 1;
     }
@@ -323,5 +327,4 @@ public class Variable {
     List<Double> discretization_edges() {
         return Collections.unmodifiableList(edges);
     }
-
 }

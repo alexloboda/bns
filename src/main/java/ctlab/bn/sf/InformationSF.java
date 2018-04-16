@@ -2,7 +2,17 @@ package ctlab.bn.sf;
 
 import java.util.*;
 
-public class BIC extends ScoringFunction {
+public class InformationSF extends ScoringFunction {
+    private double beta;
+
+    public InformationSF(double beta) {
+        this.beta = beta;
+    }
+
+    public InformationSF() {
+        this.beta = 0.0;
+    }
+
     @Override
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
         int num_cls = Arrays.stream(parent_cls).max().getAsInt() + 1;
@@ -32,7 +42,7 @@ public class BIC extends ScoringFunction {
 
         }
 
-        value -= 0.5 * Math.log(100) * (cardinality - 1) * num_cls;
+        value -= beta * (cardinality - 1) * num_cls;
         return value;
     }
 }
