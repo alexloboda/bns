@@ -89,7 +89,7 @@ public class Variable {
     }
 
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
-                    boolean at_least_one_edge, int l_card, boolean repair_initial) {
+                    boolean at_least_one_edge, int l_card) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -145,11 +145,7 @@ public class Variable {
 
         edges = new ArrayList<>(lambda.get(uniq.length - 1));
 
-        if (edges.isEmpty() && repair_initial) {
-            initial(default_disc_classes);
-        } else {
-            write_discretization();
-        }
+        write_discretization();
     }
 
     private void write_discretization() {
@@ -228,7 +224,7 @@ public class Variable {
         }
     }
 
-    int[] map_obs(List<Variable> ps) {
+    public int[] map_obs(List<Variable> ps) {
         int m = obsNum();
         int[] result = new int[m];
         Variable[] vs = ps.toArray(new Variable[0]);
@@ -312,7 +308,7 @@ public class Variable {
         write_discretization();
     }
 
-    int cardinality() {
+    public int cardinality() {
         return edges.size() + 1;
     }
 

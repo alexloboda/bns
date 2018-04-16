@@ -1,20 +1,9 @@
-package ctlab.bn;
+package ctlab.bn.sf;
 
 import java.util.*;
 
-import static org.apache.commons.math3.special.Gamma.logGamma;
-
-public class K2ScoringFunction {
-    private double iss;
-
-    public K2ScoringFunction(int iss){
-        this.iss = iss;
-    }
-
-    public K2ScoringFunction() {
-        iss = 1;
-    }
-
+public class BIC extends ScoringFunction {
+    @Override
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
         int num_cls = Arrays.stream(parent_cls).max().getAsInt() + 1;
         int num_all_cls = Arrays.stream(all_cls).max().getAsInt() + 1;
@@ -36,19 +25,14 @@ public class K2ScoringFunction {
 
         double value = 0.0;
 
-        double iss1 = iss / num_cls;
-        double iss2 = iss / (num_cls * cardinality);
-
         for (int i = 0; i < num_cls; i++) {
-            for (int cl : corr.get(i)) {
-                value += logGamma(occ_all_cls[cl] + iss2);
-                value -= logGamma(iss2);
+            for (int cl: corr.get(i)) {
+                value += occ_all_cls[cl] * Math.log((double)occ_all_cls[cl] / occ_parent_cls[i]);
             }
 
-            value += logGamma(iss1);
-            value -= logGamma(occ_parent_cls[i] + iss1);
         }
 
+        value -= 0.5 * Math.log(100) * (cardinality - 1) * num_cls;
         return value;
     }
 }

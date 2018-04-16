@@ -1,7 +1,8 @@
 package ctlab.mcmc;
 
 import ctlab.bn.BayesianNetwork;
-import ctlab.bn.K2ScoringFunction;
+import ctlab.bn.sf.BDE;
+import ctlab.bn.sf.ScoringFunction;
 import ctlab.bn.PriorDistribution;
 
 import java.util.Random;
@@ -16,7 +17,7 @@ public class Model {
     private double loglik;
 
     private BayesianNetwork bn;
-    private K2ScoringFunction sf;
+    private ScoringFunction sf;
     private PriorDistribution pd;
     private int disc_steps;
     private int steps;
@@ -31,7 +32,7 @@ public class Model {
         random = new Random();
         time = new int[n][n];
         bn.discretize(disc_steps);
-        sf = new K2ScoringFunction();
+        sf = new BDE();
         pd = new PriorDistribution(bn.size(), 2);
         loglik = bn.score(sf, pd);
         this.disc_steps = disc_steps;

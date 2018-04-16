@@ -4,12 +4,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-class Graph {
+public class Graph {
     private List<List<Edge>> adj;
     private List<List<Edge>> radj;
     private Edge[][] edges;
 
-    Graph(int n) {
+    public Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -130,7 +130,7 @@ class Graph {
         return edges[v][u] != null;
     }
 
-    void add_edge(int v, int u) {
+    public void add_edge(int v, int u) {
         edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
         adj.get(v).add(edges[v][u]);
         radj.get(u).add(edges[v][u]);

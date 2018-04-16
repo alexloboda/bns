@@ -1,5 +1,7 @@
 package ctlab.bn;
 
+import ctlab.bn.sf.ScoringFunction;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -70,7 +72,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss, keep_one, max_card, repair_initial);
+            var.discretize(ps, cs, ss, keep_one, max_card);
         }
     }
 
@@ -88,24 +90,24 @@ public class BayesianNetwork {
         return variables.stream().findAny().get().obsNum();
     }
 
-    private double score(K2ScoringFunction sf, Variable v, List<Variable> ps) {
-
-        int[] parent_cls = v.map_obs(ps);
-
-        List<Variable> vs = new ArrayList<>(ps);
-        vs.add(v);
-
-        int[] all_cls = v.map_obs(vs);
-
-        return sf.score(parent_cls, all_cls, v.cardinality());
+    public Variable var(int v) {
+        return variables.get(v);
     }
 
-    public double score(K2ScoringFunction sf, PriorDistribution pd) {
+    public double score(ScoringFunction sf, PriorDistribution pd) {
         double log_score = pd.value(g);
         for (int i = 0; i < variables.size(); i++) {
-            log_score += score(sf, variables.get(i), parent_set(i));
+            log_score += sf.score(variables.get(i), parent_set(i));
         }
         return log_score;
+    }
+
+    public void clear_edges() {
+        for (int u = 0; u < size(); u++) {
+            for (int v: new ArrayList<>(ingoing_edges(u))) {
+                remove_edge(v, u);
+            }
+        }
     }
 
     public int size() {
@@ -126,15 +128,31 @@ public class BayesianNetwork {
 
     public int discretize(int steps_ub) {
         List<List<Double>> disc_policy = discretization_policy();
+        int ret = -1;
         for (int i = 0; i < steps_ub; i++) {
             discretization_step();
             List<List<Double>> new_policy = discretization_policy();
             if (disc_policy.equals(new_policy)) {
-                return i + 1;
+                ret = i + 1;
+                break;
             } else {
                 disc_policy = new_policy;
             }
         }
-        return steps_ub;
+        int[] cs = new int[observations()];
+        for (Variable v: variables) {
+            cs[v.cardinality()]++;
+        }
+        System.err.print("Discretized: ");
+        for (int i = 1; i < 10; i++) {
+            System.err.print(cs[i] + " ");
+        }
+        System.err.println();
+        for (Variable v: variables) {
+            if (v.cardinality() == 1 && repair_initial) {
+                v.initial(2);
+            }
+        }
+        return ret != -1 ? ret : steps_ub;
     }
 }

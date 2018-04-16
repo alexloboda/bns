@@ -1,5 +1,7 @@
-import ctlab.bn.BayesianNetwork;
-import ctlab.bn.Variable;
+import ctlab.bn.*;
+import ctlab.bn.sf.BDE;
+import ctlab.bn.sf.BIC;
+import ctlab.bn.sf.ScoringFunction;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
@@ -20,6 +22,7 @@ public class Main {
     private static File ge_file;
     private static File output;
     private static File log;
+    private static File bound_graph;
 
     private static int n_steps;
     private static int warmup_steps;
@@ -53,6 +56,8 @@ public class Main {
                 "log directory").withRequiredArg().ofType(String.class);
         OptionSpec<Integer> cores = optionParser.acceptsAll(asList("m", "cores"),
                 "number of cores").withRequiredArg().ofType(Integer.class).defaultsTo(1);
+        OptionSpec<String> bound_file = optionParser.accepts("bound",
+                "bound graph for score").withRequiredArg().ofType(String.class);
 
         if (optionSet.has("h")) {
             try {
@@ -72,6 +77,7 @@ public class Main {
 
         ge_file = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
+        bound_graph = new File(optionSet.valueOf(bound_file));
         if (optionSet.has(log_file)) {
             log = new File(optionSet.valueOf(log_file));
         }
@@ -108,6 +114,20 @@ public class Main {
         return res;
     }
 
+    static Graph parseGraph(int n) throws FileNotFoundException {
+        Graph g = new Graph(n);
+        try(Scanner sc = new Scanner(bound_graph)) {
+            while(sc.hasNext()) {
+                String from = sc.next().substring(1);
+                String to = sc.next().substring(1);
+                int v = Integer.parseInt(from) - 1;
+                int u = Integer.parseInt(to) - 1;
+                g.add_edge(v, u);
+            }
+        }
+        return g;
+    }
+
     public static void main(String[] args) throws IOException {
         if (!parse_args(args)) {
             System.exit(0);
@@ -116,6 +136,19 @@ public class Main {
         List<Variable> genes = parse_ge_table(ge_file);
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
+
+        Solver solver = new Solver(new BDE());
+        solver.solve(bn, parseGraph(bn.size()), 10);
+
+        try(PrintWriter pw = new PrintWriter("result")) {
+            for (int u = 0; u < bn.size(); u++) {
+                for (int v : bn.ingoing_edges(u)) {
+                    pw.println(v + "\t" + u);
+                }
+            }
+        }
+
+        System.exit(1);
 
         List<Model> models = new ArrayList<>();
 
