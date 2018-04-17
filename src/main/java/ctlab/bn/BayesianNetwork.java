@@ -11,6 +11,7 @@ public class BayesianNetwork {
     private Graph g;
     private boolean keep_one;
     private boolean repair_initial;
+    private PriorDistribution pd;
 
     public BayesianNetwork(List<Variable> variables, boolean keep_one, boolean repair_initial) {
         g = new Graph(variables.size());
@@ -19,6 +20,7 @@ public class BayesianNetwork {
         variables.forEach(v -> v.setLF(lf));
         this.keep_one = keep_one;
         this.repair_initial = repair_initial;
+        pd = new PriorDistribution(variables.size(), 2);
     }
 
     public BayesianNetwork(BayesianNetwork bn) {
@@ -29,6 +31,7 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         keep_one = bn.keep_one;
         repair_initial = bn.repair_initial;
+        pd = new PriorDistribution(bn.pd);
     }
 
     public void backup() {
@@ -40,10 +43,12 @@ public class BayesianNetwork {
     }
 
     public void add_edge(int v, int u) {
+        pd.add(g.out_degree(v));
         g.add_edge(v, u);
     }
 
     public void remove_edge(int v, int u) {
+        pd.remove(g.out_degree(v));
         g.remove_edge(v, u);
     }
 
@@ -94,12 +99,12 @@ public class BayesianNetwork {
         return variables.get(v);
     }
 
-    public double score(ScoringFunction sf, PriorDistribution pd) {
-        double log_score = pd.value(g);
-        for (int i = 0; i < variables.size(); i++) {
-            log_score += sf.score(variables.get(i), parent_set(i));
-        }
-        return log_score;
+    public double logPrior() {
+        return pd.value();
+    }
+
+    public double score(int v, ScoringFunction sf) {
+        return sf.score(variables.get(v), parent_set(v));
     }
 
     public void clear_edges() {

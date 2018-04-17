@@ -1,9 +1,7 @@
 package ctlab.mcmc;
 
 import ctlab.bn.BayesianNetwork;
-import ctlab.bn.sf.BDE;
 import ctlab.bn.sf.ScoringFunction;
-import ctlab.bn.PriorDistribution;
 
 import java.util.Random;
 
@@ -14,29 +12,38 @@ public class Model {
     private int n;
     private int[][] hits;
     private int[][] time;
+    private double[] ll;
     private double loglik;
+    private boolean eachStepDisc;
 
     private BayesianNetwork bn;
     private ScoringFunction sf;
-    private PriorDistribution pd;
     private int disc_steps;
     private int steps;
     private Random random;
 
     private Logger logger;
 
-    public Model(BayesianNetwork bn, int disc_steps) {
+    public Model(BayesianNetwork bn, ScoringFunction sf, int disc_steps, boolean eachStepDisc) {
+        this.sf = sf;
         n = bn.size();
         hits = new int[n][n];
         this.bn = bn;
         random = new Random();
         time = new int[n][n];
-        bn.discretize(disc_steps);
-        sf = new BDE();
-        pd = new PriorDistribution(bn.size(), 2);
-        loglik = bn.score(sf, pd);
+        ll = new double[n];
+        calculateLikelihood();
         this.disc_steps = disc_steps;
         logger = new Logger();
+        this.eachStepDisc = eachStepDisc;
+    }
+
+    private void calculateLikelihood() {
+        loglik = bn.logPrior();
+        for (int i = 0; i < n; i++) {
+            ll[i] = bn.score(i, sf);
+            loglik += ll[i];
+        }
     }
 
     public void setLogger(Logger logger) {
@@ -46,9 +53,12 @@ public class Model {
     public void step(boolean warming_up) {
         if (!warming_up) {
             steps++;
+            calculateLikelihood();
         }
-        bn.discretize(1);
-        loglik = bn.score(sf, pd);
+        if (eachStepDisc) {
+            bn.discretize(1);
+            calculateLikelihood();
+        }
         int v = 0;
         int u = 0;
         while (v == u) {
@@ -78,14 +88,6 @@ public class Model {
         hits[v][u] += steps - time[v][u];
     }
 
-    private double score() {
-        logger.disc_steps(bn.discretize(disc_steps));
-        logger.card(count_cardinals(bn));
-        double res = bn.score(sf, pd);
-        logger.score(res);
-        return res;
-    }
-
     private int[] count_cardinals(BayesianNetwork bn) {
         int[] cs = new int[bn.observations()];
         for (int i = 0; i < bn.size(); i++) {
@@ -94,44 +96,82 @@ public class Model {
         return cs;
     }
 
-    private boolean try_remove(int v, int u) {
+    private void add_edge(int v, int u) {
+        loglik -= bn.logPrior();
+        bn.add_edge(v, u);
+        loglik += bn.logPrior();
+        loglik -= ll[u];
+        ll[u] = bn.score(u, sf);
+        loglik += ll[u];
+    }
+
+    private void remove_edge(int v, int u) {
+        loglik -= bn.logPrior();
         bn.remove_edge(v, u);
-        bn.backup();
-        double score = score();
-        double log_accept = score - loglik;
+        loglik += bn.logPrior();
+        loglik -= ll[u];
+        ll[u] = bn.score(u, sf);
+        loglik += ll[u];
+    }
+
+    private boolean try_remove(int v, int u) {
+        double prevll = loglik;
+        remove_edge(v, u);
+
+        if (eachStepDisc) {
+            bn.backup();
+            logger.disc_steps(bn.discretize(disc_steps));
+            calculateLikelihood();
+        }
+        logger.card(count_cardinals(bn));
+        logger.score(loglik);
+
+        double log_accept = loglik - prevll;
         logger.log_accept(log_accept);
+        logger.prior(bn.logPrior());
         if (log(random.nextDouble()) < log_accept) {
             logger.status(Status.ACCEPTED);
             fix_edge_deletion(v, u);
-            loglik = score;
             return true;
         } else {
             logger.status(Status.REJECTED);
-            bn.add_edge(v, u);
-            bn.restore();
+            add_edge(v, u);
+            if (eachStepDisc) {
+                bn.restore();
+            }
             return false;
         }
     }
 
     private boolean try_add(int v, int u){
+        double prevll = loglik;
        if (bn.path_exists(u, v)) {
            logger.status(Status.CYCLE);
            return false;
        }
-       bn.add_edge(v, u);
-       bn.backup();
-       double score = score();
-       double log_accept = score - loglik;
+
+       add_edge(v, u);
+
+       if (eachStepDisc) {
+           bn.backup();
+           logger.disc_steps(bn.discretize(disc_steps));
+           calculateLikelihood();
+       }
+
+       logger.score(loglik);
+       double log_accept = loglik - prevll;
        logger.log_accept(log_accept);
+       logger.prior(bn.logPrior());
        if (log(random.nextDouble()) < log_accept) {
            logger.status(Status.ACCEPTED);
            time[v][u] = steps;
-           loglik = score;
            return true;
        } else {
            logger.status(Status.REJECTED);
-           bn.remove_edge(v, u);
-           bn.restore();
+           remove_edge(v, u);
+           if (eachStepDisc) {
+               bn.restore();
+           }
            return false;
        }
    }
@@ -139,9 +179,8 @@ public class Model {
     public void finish() {
         for (int u = 0; u < n; u++) {
             for (int v : bn.ingoing_edges(u)) {
-                bn.remove_edge(v, u);
+                remove_edge(v, u);
                 fix_edge_deletion(v, u);
-                loglik = score();
             }
         }
     }

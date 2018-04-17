@@ -51,6 +51,10 @@ public class Logger implements Closeable  {
         vs.put("action", a.toString());
     }
 
+    void prior(double v) {
+        set_key("prior", v);
+    }
+
     void status(Status s) {
         vs.put("status", s.toString());
     }
@@ -60,7 +64,7 @@ public class Logger implements Closeable  {
     }
 
     private void clear_all() {
-        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc", "card");
+        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc", "card", "prior");
         vs.put("ll_after", "-inf");
         vs.put("p_accept", "0");
 

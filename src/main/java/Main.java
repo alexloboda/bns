@@ -136,8 +136,8 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
 
-        Solver solver = new Solver(new InformationSF(1));
-        solver.solve(bn, parseGraph(bn.size()), 10);
+        Solver solver = new Solver(new BDE(4));
+        solver.solve(bn, parseGraph(bn.size()), 0);
 
         try(PrintWriter pw = new PrintWriter("result")) {
             for (int u = 0; u < bn.size(); u++) {
@@ -147,13 +147,12 @@ public class Main {
             }
         }
 
-        System.exit(1);
-
         List<Model> models = new ArrayList<>();
 
+        long timeBeforeExecution = System.currentTimeMillis();
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(new BayesianNetwork(bn), disc_limit);
+                Model model = new Model(new BayesianNetwork(bn), new BDE(4), disc_limit, false);
                 if (log != null) {
                     model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
                 } else {
@@ -180,6 +179,7 @@ public class Main {
         } finally {
             models.forEach(Model::closeLogger);
         }
+        System.err.println("Computing took " + ((System.currentTimeMillis() - timeBeforeExecution) / 1000.0) + " seconds");
 
         List<Edge> edges = count_hits(n, models);
 
