@@ -18,8 +18,13 @@ public class Variable {
     private int default_disc_classes;
     private double[] priors;
 
-    private List<Integer> backup_disc;
-    private List<Double> backup_edges;
+    private int lb;
+    private int ub;
+
+    public void set_disc_limits(int lb, int ub) {
+        this.lb = lb;
+        this.ub = ub;
+    }
 
     public Variable(String name, List<Double> data, int disc_classes) {
         this.name = name;
@@ -61,6 +66,8 @@ public class Variable {
         initPriors(data.size(), disc_classes);
         initial(disc_classes);
         this.default_disc_classes = disc_classes;
+        lb = 1;
+        ub = obsNum();
     }
 
     private void initPriors(int n, int disc_classes) {
@@ -71,16 +78,6 @@ public class Variable {
             priors[k] += k * Math.log(p) + (n - k) * Math.log(1 - p);
             priors[k] = -priors[k];
         }
-    }
-
-    public void backup() {
-        backup_edges = new ArrayList<>(edges);
-        backup_disc = new ArrayList<>(discrete);
-    }
-
-    public void restore() {
-        edges = new ArrayList<>(backup_edges);
-        discrete = new ArrayList<>(backup_disc);
     }
 
     public Variable(Variable v) {
@@ -95,6 +92,8 @@ public class Variable {
         this.name = v.name;
         default_disc_classes = v.default_disc_classes;
         priors = v.priors.clone();
+        this.lb = v.lb;
+        this.ub = v.ub;
     }
 
     void setLF(LogFactorial lf) {
@@ -112,9 +111,7 @@ public class Variable {
     }
 
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
-                    boolean at_least_one_edge, int l_card) {
-        int lb = 1;
-        int ub = obsNum();
+                    int l_card) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -202,8 +199,7 @@ public class Variable {
     }
 
     private double[][] compute_hs(List<Variable> ps, List<Variable> cs, List<List<Variable>> ss) {
-        double[][] result = get_first_term(ps);
-        parents_term(ps, result);
+        double[][] result = parents_term(ps);
         child_spouse_term(cs, ss, result);
         return result;
     }
@@ -272,13 +268,26 @@ public class Variable {
         return result;
     }
 
-    private void parents_term(List<Variable> ps, double[][] result) {
+    private double[][] parents_term(List<Variable> ps) {
+        int n = obsNum();
+        double[][] result = new double[n][n];
+        double[] combinations = new double[n];
+
         int[] mapped_obs = map_obs(ps);
         int num_classes = Arrays.stream(mapped_obs)
                 .max()
                 .getAsInt() + 1;
 
-        int n = result.length;
+        int k = num_classes - 1;
+        combinations[0] = Math.log(k + 1);
+        for (int i = 1; i < n; i++) {
+            combinations[i] = combinations[i - 1] + Math.log(k + i + 1) - log_precomputed[i + 1];
+        }
+
+        for (int u = 0; u < n; u++) {
+            System.arraycopy(combinations, 0, result[u], 0, n - u);
+        }
+
         int[] hits = new int[num_classes];
         double[] local_lf = new double[n];
         for (int i = 0; i < n; i++) {
@@ -294,26 +303,7 @@ public class Variable {
                 result[i][j] += value + local_lf[j];
             }
         }
-    }
 
-    private double[][] get_first_term(List<Variable> ps) {
-        int n = obsNum();
-        double[][] result = new double[n][n];
-        int parent_classes = 1;
-        for (Variable p : ps) {
-            parent_classes *= p.cardinality();
-        }
-
-        double[] combinations = new double[n];
-        int k = parent_classes - 1;
-        combinations[0] = Math.log(k + 1);
-        for (int i = 1; i < n; i++) {
-            combinations[i] = combinations[i - 1] + Math.log(k + i + 1) - log_precomputed[i + 1];
-        }
-
-        for (int u = 0; u < n; u++) {
-            System.arraycopy(combinations, 0, result[u], 0, n - u);
-        }
         return result;
     }
 

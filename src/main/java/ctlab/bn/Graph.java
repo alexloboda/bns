@@ -94,7 +94,7 @@ public class Graph {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 
-    int out_degree(int v) {
+    public int out_degree(int v) {
         return adj.get(v).size();
     }
 
@@ -136,7 +136,7 @@ public class Graph {
         radj.get(u).add(edges[v][u]);
     }
 
-    void remove_edge(int v, int u) {
+    public void remove_edge(int v, int u) {
         Edge e = edges[v][u];
         List<Edge> nei = adj.get(v);
         List<Edge> rnei = radj.get(u);

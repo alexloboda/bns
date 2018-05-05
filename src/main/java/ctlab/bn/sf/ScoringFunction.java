@@ -18,4 +18,18 @@ public abstract class ScoringFunction {
     }
 
     abstract double score(int[] parent_cls, int[] all_cls, int cardinality);
+
+    public static ScoringFunction parse(String s) {
+        String[] parts = s.split("\\s");
+
+        switch (parts[0]){
+            case "BDE":
+                return new BDE(Double.parseDouble(parts[1]));
+            case "IC":
+                return new InformationSF(Double.parseDouble(parts[1]));
+            default:
+                throw new IllegalArgumentException("Unknown scoring function: " + parts[0]);
+        }
+
+    }
 }

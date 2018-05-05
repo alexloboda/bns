@@ -1,5 +1,5 @@
 import ctlab.bn.*;
-import ctlab.bn.sf.BDE;
+import ctlab.bn.sf.ScoringFunction;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
@@ -21,16 +21,22 @@ public class Main {
     private static File ge_file;
     private static File output;
     private static File log;
-    private static File bound_graph;
+    private static File preranking;
 
     private static int n_steps;
     private static int warmup_steps;
     private static int executors;
-    private static int disc_limit;
     private static int n_cores;
     private static int default_cls;
+    private static int n_optimizer;
+    private static int preranking_limit;
+    private static Integer disc_lb;
+    private static Integer disc_ub;
 
-    private static boolean parse_args(String[] args) {
+    private static ScoringFunction main_sf;
+    private static ScoringFunction disc_sf;
+
+    private static boolean parse_args(String[] args) throws FileNotFoundException {
         OptionParser optionParser = new OptionParser();
         optionParser.allowsUnrecognizedOptions();
         optionParser.acceptsAll(asList("h", "help"), "Print a short help message");
@@ -46,17 +52,27 @@ public class Main {
                 "Number of independent runs").withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<Integer> default_classes = optionParser.acceptsAll(asList("c", "classes"),
                 "Default number of classes").withRequiredArg().ofType(Integer.class).defaultsTo(3);
-        OptionSpec<Integer> bound = optionParser.acceptsAll(asList("b", "disc_limit"),
-                "Limit on number of discretization algorithm steps").withRequiredArg().ofType(Integer.class)
-                .defaultsTo(5);
         OptionSpec<String> outfile = optionParser.acceptsAll(asList("o", "out"),
                 "output file").withRequiredArg().ofType(String.class).required();
         OptionSpec<String> log_file = optionParser.acceptsAll(asList("l", "log"),
                 "log directory").withRequiredArg().ofType(String.class);
         OptionSpec<Integer> cores = optionParser.acceptsAll(asList("m", "cores"),
                 "number of cores").withRequiredArg().ofType(Integer.class).defaultsTo(1);
-        OptionSpec<String> bound_file = optionParser.accepts("bound",
-                "bound graph for score").withRequiredArg().ofType(String.class);
+        OptionSpec<String> main_sf_opt = optionParser.accepts("main-sf",
+                "scoring function used in main algorithm").withRequiredArg().ofType(String.class).defaultsTo("BDE 1");
+        OptionSpec<String> disc_sf_opt = optionParser.accepts("disc-sf",
+                "SF used in discretization").withRequiredArg().ofType(String.class).defaultsTo("BDE 1");
+        OptionSpec<Integer> n_optimizer_opt = optionParser.accepts("n-optimizer",
+                "Number of optimizer steps").withRequiredArg().ofType(Integer.class).defaultsTo(0);
+        OptionSpec<String> preranking_opt = optionParser.accepts("preranking",
+                "Preranking for preprocessing").withRequiredArg().ofType(String.class);
+        OptionSpec<Integer> disc_lb_opt = optionParser.accepts("disc-lb",
+                "discretization minimum class size").withRequiredArg().ofType(Integer.class);
+        OptionSpec<Integer> disc_ub_opt = optionParser.accepts("disc-ub",
+                "discretization maximum class size").withRequiredArg().ofType(Integer.class);
+        OptionSpec<Integer> prerank_limit_opt = optionParser.accepts("preranking-limit",
+                "preranking limit on preprocessing").withRequiredArg().ofType(Integer.class).defaultsTo(7);
+
 
         if (optionSet.has("h")) {
             try {
@@ -70,15 +86,29 @@ public class Main {
         n_steps = optionSet.valueOf(steps);
         warmup_steps = optionSet.valueOf(warmup);
         executors = optionSet.valueOf(exec);
-        disc_limit = optionSet.valueOf(bound);
         n_cores = optionSet.valueOf(cores);
         default_cls = optionSet.valueOf(default_classes);
 
         ge_file = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
-        bound_graph = new File(optionSet.valueOf(bound_file));
         if (optionSet.has(log_file)) {
             log = new File(optionSet.valueOf(log_file));
+        }
+        if (optionSet.has(disc_lb_opt)) {
+            disc_lb = optionSet.valueOf(disc_lb_opt);
+        }
+        if (optionSet.has(disc_ub_opt)) {
+            disc_ub = optionSet.valueOf(disc_ub_opt);
+        }
+        main_sf = ScoringFunction.parse(optionSet.valueOf(main_sf_opt));
+        disc_sf = ScoringFunction.parse(optionSet.valueOf(disc_sf_opt));
+        n_optimizer = optionSet.valueOf(n_optimizer_opt);
+        preranking_limit = optionSet.valueOf(prerank_limit_opt);
+        if (optionSet.has(preranking_opt)) {
+            preranking = new File(optionSet.valueOf(preranking_opt));
+            if (!preranking.exists()) {
+                throw new FileNotFoundException("Preranking does not exist");
+            }
         }
 
         return true;
@@ -110,18 +140,20 @@ public class Main {
                 res.add(new Variable(names.get(i), data.get(i), default_cls));
             }
         }
+
         return res;
     }
 
-    static Graph parseGraph(int n) throws FileNotFoundException {
-        Graph g = new Graph(n);
-        try(Scanner sc = new Scanner(bound_graph)) {
-            while(sc.hasNext()) {
-                String from = sc.next().substring(1);
-                String to = sc.next().substring(1);
-                int v = Integer.parseInt(from) - 1;
-                int u = Integer.parseInt(to) - 1;
-                g.add_edge(v, u);
+    private static Graph parse_bound(BayesianNetwork bn) throws FileNotFoundException {
+        Graph g = new Graph(bn.size());
+        try (Scanner scanner = new Scanner(preranking)) {
+            while(scanner.hasNext()) {
+                int v = bn.getID(scanner.next());
+                int u = bn.getID(scanner.next());
+                scanner.next();
+                if (g.in_degree(u) < preranking_limit) {
+                    g.add_edge(v, u);
+                }
             }
         }
         return g;
@@ -133,31 +165,27 @@ public class Main {
         }
 
         List<Variable> genes = parse_ge_table(ge_file);
+
+        for (Variable v : genes) {
+            int lb = 1;
+            int ub = v.obsNum();
+            if (disc_lb != null) {
+                lb = disc_lb;
+            }
+            if (disc_ub != null) {
+                ub = disc_ub;
+            }
+            v.set_disc_limits(lb, ub);
+        }
+
         int n = genes.size();
-        BayesianNetwork bn = new BayesianNetwork(genes, false, true);
+        BayesianNetwork bn = new BayesianNetwork(genes);
 
-        Solver solver = new Solver(new BDE(1));
-        solver.solve(bn, parseGraph(bn.size()), 10);
-        //try (Scanner scanner = new Scanner(new File("gs_w_cycles"))) {
-        //    while(scanner.hasNext()){
-        //        int v = scanner.nextInt() - 1;
-        //        int u = scanner.nextInt() - 1;
-        //        bn.add_edge(v, u);
-        //    }
-        //}
+        if (n_optimizer > 0) {
+            Solver solver = new Solver(disc_sf);
+            solver.solve(bn, parse_bound(bn), n_optimizer);
+        }
 
-        //try (Scanner scanner = new Scanner(new File("rgbm1.tsv"))) {
-        //    while(scanner.hasNext()) {
-        //        int v = Integer.parseInt(scanner.next().substring(1)) - 1;
-        //        int u = Integer.parseInt(scanner.next().substring(1)) - 1;
-        //        scanner.nextDouble();
-        //        if (!bn.path_exists(u, v) && bn.ingoing_edges(u).size() < 5) {
-        //            bn.add_edge(v, u);
-        //        }
-        //    }
-        //}
-
-        //bn.discretize(100);
         for (int j = 0; j < bn.size(); j++) {
             System.err.print(bn.var(j).getName() + ": ");
             System.err.println(String.join(" ", bn.var(j).cardinalities().stream()
@@ -169,10 +197,9 @@ public class Main {
 
         List<Model> models = new ArrayList<>();
 
-        long timeBeforeExecution = System.currentTimeMillis();
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(bn, new BDE(1), disc_limit, false);
+                Model model = new Model(bn, main_sf);
                 if (log != null) {
                     model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
                 } else {
@@ -200,9 +227,6 @@ public class Main {
         } finally {
             models.forEach(Model::closeLogger);
         }
-
-        System.err.println();
-        System.err.println("Computing took " + ((System.currentTimeMillis() - timeBeforeExecution) / 1000.0) + " seconds");
 
         List<Edge> edges = count_hits(n, models);
 

@@ -17,17 +17,15 @@ public class Model {
     private long[][] time;
     private double[] ll;
     private double loglik;
-    private boolean eachStepDisc;
 
     private BayesianNetwork bn;
     private ScoringFunction sf;
-    private int disc_steps;
     private long steps;
     private Random random;
 
     private Logger logger;
 
-    public Model(BayesianNetwork bn, ScoringFunction sf, int disc_steps, boolean eachStepDisc) {
+    public Model(BayesianNetwork bn, ScoringFunction sf) {
         this.sf = sf;
         n = bn.size();
         hits = new long[n][n];
@@ -36,9 +34,7 @@ public class Model {
         time = new long[n][n];
         ll = new double[n];
         calculateLikelihood();
-        this.disc_steps = disc_steps;
         logger = new Logger();
-        this.eachStepDisc = eachStepDisc;
     }
 
     private void calculateLikelihood() {
@@ -60,10 +56,6 @@ public class Model {
     public void step(boolean warming_up) {
         if (!warming_up) {
             steps++;
-        }
-        if (eachStepDisc) {
-            bn.discretize(1);
-            calculateLikelihood();
         }
         int v = 0;
         int u = 0;
@@ -129,11 +121,6 @@ public class Model {
         double prevll = loglik;
         remove_edge(v, u);
 
-        if (eachStepDisc) {
-            bn.backup();
-            logger.disc_steps(bn.discretize(disc_steps));
-            calculateLikelihood();
-        }
         logger.card(count_cardinals(bn));
         logger.score(loglik);
 
@@ -147,9 +134,6 @@ public class Model {
         } else {
             logger.status(Status.REJECTED);
             add_edge(v, u);
-            if (eachStepDisc) {
-                bn.restore();
-            }
             return false;
         }
     }
@@ -191,12 +175,6 @@ public class Model {
 
        add_edge(v, u);
 
-       if (eachStepDisc) {
-           bn.backup();
-           logger.disc_steps(bn.discretize(disc_steps));
-           calculateLikelihood();
-       }
-
        logger.score(loglik);
        double log_accept = loglik - prevll + LADD;
        logger.log_accept(log_accept);
@@ -208,9 +186,6 @@ public class Model {
        } else {
            logger.status(Status.REJECTED);
            remove_edge(v, u);
-           if (eachStepDisc) {
-               bn.restore();
-           }
            return false;
        }
    }

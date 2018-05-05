@@ -1,5 +1,7 @@
 package ctlab.bn;
 
+import ctlab.bn.prior.PriorDistribution;
+import ctlab.bn.prior.ScaleFreePrior;
 import ctlab.bn.sf.ScoringFunction;
 
 import java.util.*;
@@ -9,20 +11,25 @@ import java.util.stream.IntStream;
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
-    private boolean keep_one;
-    private boolean repair_initial;
     private PriorDistribution pd;
     private List<Cache> caches;
+    private Map<String, Integer> names;
 
-    public BayesianNetwork(List<Variable> variables, boolean keep_one, boolean repair_initial) {
+    public BayesianNetwork(List<Variable> variables) {
         g = new Graph(variables.size());
         this.variables = variables;
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
-        this.keep_one = keep_one;
-        this.repair_initial = repair_initial;
-        pd = new PriorDistribution(variables.size(), 2);
+        pd = new ScaleFreePrior(variables.size(), 2);
         caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
+        names = new HashMap<>();
+        for (int i = 0; i < variables.size(); i++) {
+            names.put(variables.get(i).getName(), i);
+        }
+    }
+
+    public int getID(String name) {
+        return names.get(name);
     }
 
     public BayesianNetwork(BayesianNetwork bn) {
@@ -31,27 +38,18 @@ public class BayesianNetwork {
             variables.add(new Variable(v));
         }
         g = new Graph(bn.g);
-        keep_one = bn.keep_one;
-        repair_initial = bn.repair_initial;
-        pd = new PriorDistribution(bn.pd);
+        pd = bn.pd.clone();
         caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
-    }
-
-    public void backup() {
-        variables.forEach(Variable::backup);
-    }
-
-    public void restore() {
-        variables.forEach(Variable::restore);
+        names = new HashMap<>(bn.names);
     }
 
     public void add_edge(int v, int u) {
-        pd.add(g.out_degree(v));
+        pd.insert(v, u);
         g.add_edge(v, u);
     }
 
     public void remove_edge(int v, int u) {
-        pd.remove(g.out_degree(v));
+        pd.remove(v, u);
         g.remove_edge(v, u);
     }
 
@@ -80,7 +78,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss, keep_one, max_card);
+            var.discretize(ps, cs, ss, max_card);
         }
     }
 
@@ -158,21 +156,11 @@ public class BayesianNetwork {
         for (Variable v: variables) {
             cs[v.cardinality()]++;
         }
-        System.err.print("Discretized: ");
-        for (int i = 1; i < 10; i++) {
-            System.err.print(cs[i] + " ");
-        }
-        System.err.println();
-        for (Variable v: variables) {
-            if (v.cardinality() == 1 && repair_initial) {
-                v.initial();
-            }
-        }
         return ret != -1 ? ret : steps_ub;
     }
 
     private static class Cache {
-        private static final int CACHE_SIZE = 10_000;
+        private static final int CACHE_SIZE = 1000;
 
         private Queue<List<Integer>> queue;
         private Map<List<Integer>, Double> map;

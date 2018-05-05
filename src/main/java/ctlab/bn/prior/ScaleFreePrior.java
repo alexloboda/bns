@@ -1,14 +1,17 @@
-package ctlab.bn;
+package ctlab.bn.prior;
+
+import ctlab.bn.Graph;
 
 import java.util.Arrays;
 
-public class PriorDistribution {
+public class ScaleFreePrior implements PriorDistribution {
+    private Graph graph;
     private double[] ps;
-    private LogFactorial lf;
     private int[] occ;
     private double loglik;
 
-    public PriorDistribution(int n, double gamma) {
+    public ScaleFreePrior(int n, double gamma) {
+        graph = new Graph(n);
         ps = new double[n];
         double sum = 0;
         for (int i = 0; i < n; i++) {
@@ -17,14 +20,12 @@ public class PriorDistribution {
         }
         double finalSum = sum;
         ps = Arrays.stream(ps).map(x -> Math.log(x / finalSum)).toArray();
-        lf = new LogFactorial();
         occ = new int[n];
         occ[0] = n;
         loglik = n * ps[0];
     }
 
-    public PriorDistribution(PriorDistribution pd) {
-        lf = new LogFactorial();
+    public ScaleFreePrior(ScaleFreePrior pd) {
         loglik = pd.loglik;
         ps = pd.ps.clone();
         occ = pd.occ.clone();
@@ -40,17 +41,26 @@ public class PriorDistribution {
          loglik += change * ps[k];
     }
 
-    public void remove(int k) {
+    public void remove(int v, int u) {
+        int k = graph.out_degree(v);
+        graph.remove_edge(v, u);
         change(k, -1);
         change(k - 1, 1);
     }
 
-    public void add(int k) {
+    public void insert(int v, int u) {
+        int k = graph.out_degree(v);
+        graph.add_edge(v, u);
         change(k, -1);
         change(k + 1, 1);
     }
 
     public double value() {
         return loglik;
+    }
+
+    @Override
+    public PriorDistribution clone() {
+        return new ScaleFreePrior(this);
     }
 }
