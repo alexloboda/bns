@@ -1,6 +1,5 @@
 import ctlab.bn.*;
 import ctlab.bn.sf.BDE;
-import ctlab.bn.sf.InformationSF;
 import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -136,23 +136,43 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes, false, true);
 
-        Solver solver = new Solver(new BDE(4));
-        solver.solve(bn, parseGraph(bn.size()), 0);
+        Solver solver = new Solver(new BDE(1));
+        solver.solve(bn, parseGraph(bn.size()), 10);
+        //try (Scanner scanner = new Scanner(new File("gs_w_cycles"))) {
+        //    while(scanner.hasNext()){
+        //        int v = scanner.nextInt() - 1;
+        //        int u = scanner.nextInt() - 1;
+        //        bn.add_edge(v, u);
+        //    }
+        //}
 
-        try(PrintWriter pw = new PrintWriter("result")) {
-            for (int u = 0; u < bn.size(); u++) {
-                for (int v : bn.ingoing_edges(u)) {
-                    pw.println(v + "\t" + u);
-                }
-            }
+        //try (Scanner scanner = new Scanner(new File("rgbm1.tsv"))) {
+        //    while(scanner.hasNext()) {
+        //        int v = Integer.parseInt(scanner.next().substring(1)) - 1;
+        //        int u = Integer.parseInt(scanner.next().substring(1)) - 1;
+        //        scanner.nextDouble();
+        //        if (!bn.path_exists(u, v) && bn.ingoing_edges(u).size() < 5) {
+        //            bn.add_edge(v, u);
+        //        }
+        //    }
+        //}
+
+        //bn.discretize(100);
+        for (int j = 0; j < bn.size(); j++) {
+            System.err.print(bn.var(j).getName() + ": ");
+            System.err.println(String.join(" ", bn.var(j).cardinalities().stream()
+                    .map(x -> Integer.toString(x))
+                    .collect(Collectors.toList())));
         }
+
+        bn.clear_edges();
 
         List<Model> models = new ArrayList<>();
 
         long timeBeforeExecution = System.currentTimeMillis();
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(new BayesianNetwork(bn), new BDE(4), disc_limit, false);
+                Model model = new Model(bn, new BDE(1), disc_limit, false);
                 if (log != null) {
                     model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
                 } else {
@@ -161,9 +181,10 @@ public class Main {
                 models.add(model);
             }
 
+            AtomicInteger counter = new AtomicInteger();
             ExecutorService es = Executors.newFixedThreadPool(n_cores);
             List<Future<?>> fs = models.stream()
-                    .map(x -> es.submit(new Task(x, n_steps, warmup_steps)))
+                    .map(x -> es.submit(new Task(x, n_steps, warmup_steps, counter)))
                     .collect(Collectors.toList());
             es.shutdown();
             es.awaitTermination(1_000_000, TimeUnit.HOURS);
@@ -179,6 +200,8 @@ public class Main {
         } finally {
             models.forEach(Model::closeLogger);
         }
+
+        System.err.println();
         System.err.println("Computing took " + ((System.currentTimeMillis() - timeBeforeExecution) / 1000.0) + " seconds");
 
         List<Edge> edges = count_hits(n, models);
@@ -197,15 +220,18 @@ public class Main {
         private int steps;
         private Model m;
         private int warmup;
+        private AtomicInteger counter;
 
-        Task(Model m, int steps, int warmup) {
+        Task(Model m, int steps, int warmup, AtomicInteger counter) {
             this.m = m;
             this.steps = steps;
             this.warmup = warmup;
+            this.counter = counter;
         }
 
         @Override
         public void run() {
+            m.run();
             for (int i = 0; i < warmup; i++) {
                 m.step(true);
             }
@@ -213,13 +239,18 @@ public class Main {
                 m.step(false);
             }
             m.finish();
+            synchronized (System.err) {
+                int c = counter.incrementAndGet();
+                System.err.print("\r" + c);
+                System.err.flush();
+            }
         }
     }
 
     private static List<Edge> count_hits(int n, List<Model> models) {
-        int[][] hits = new int[n][n];
+        long[][] hits = new long[n][n];
         for (Model m : models) {
-            int[][] hs = m.hits();
+            long[][] hs = m.hits();
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     hits[i][j] += hs[i][j];

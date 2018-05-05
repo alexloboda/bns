@@ -28,6 +28,7 @@ public class Solver {
             System.err.println("step");
             solver_step();
             bayesianNetwork.discretize(100);
+
         }
     }
 

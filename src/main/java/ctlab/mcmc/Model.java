@@ -9,9 +9,12 @@ import static java.lang.Math.log;
 import static ctlab.mcmc.Logger.*;
 
 public class Model {
+    private static double LADD = Math.log(0.5);
+    private static double LDEL = Math.log(2.0);
+
     private int n;
-    private int[][] hits;
-    private int[][] time;
+    private long[][] hits;
+    private long[][] time;
     private double[] ll;
     private double loglik;
     private boolean eachStepDisc;
@@ -19,7 +22,7 @@ public class Model {
     private BayesianNetwork bn;
     private ScoringFunction sf;
     private int disc_steps;
-    private int steps;
+    private long steps;
     private Random random;
 
     private Logger logger;
@@ -27,10 +30,10 @@ public class Model {
     public Model(BayesianNetwork bn, ScoringFunction sf, int disc_steps, boolean eachStepDisc) {
         this.sf = sf;
         n = bn.size();
-        hits = new int[n][n];
+        hits = new long[n][n];
         this.bn = bn;
         random = new Random();
-        time = new int[n][n];
+        time = new long[n][n];
         ll = new double[n];
         calculateLikelihood();
         this.disc_steps = disc_steps;
@@ -46,6 +49,10 @@ public class Model {
         }
     }
 
+    public void run() {
+        this.bn = new BayesianNetwork(this.bn);
+    }
+
     public void setLogger(Logger logger) {
         this.logger = logger;
     }
@@ -53,7 +60,6 @@ public class Model {
     public void step(boolean warming_up) {
         if (!warming_up) {
             steps++;
-            calculateLikelihood();
         }
         if (eachStepDisc) {
             bn.discretize(1);
@@ -67,8 +73,13 @@ public class Model {
         }
         logger.edge(v, u, loglik);
         if (bn.edge_exists(v, u)) {
-            logger.action(Action.REMOVE);
-            try_remove(v, u);
+            if (random.nextBoolean()) {
+                logger.action(Action.REMOVE);
+                try_remove(v, u);
+            } else {
+                logger.action(Action.REVERSE);
+                try_reverse(v, u);
+            }
         } else {
             logger.action(Action.INSERT);
             try_add(v, u);
@@ -80,7 +91,7 @@ public class Model {
         logger.close();
     }
 
-    public int[][] hits() {
+    public long[][] hits() {
         return hits;
     }
 
@@ -126,7 +137,7 @@ public class Model {
         logger.card(count_cardinals(bn));
         logger.score(loglik);
 
-        double log_accept = loglik - prevll;
+        double log_accept = loglik - prevll + LDEL;
         logger.log_accept(log_accept);
         logger.prior(bn.logPrior());
         if (log(random.nextDouble()) < log_accept) {
@@ -143,8 +154,36 @@ public class Model {
         }
     }
 
-    private boolean try_add(int v, int u){
+    private boolean try_reverse(int v, int u) {
         double prevll = loglik;
+        if (bn.path_exists(u, v)) {
+            logger.status(Status.CYCLE);
+            return false;
+        }
+
+        add_edge(u, v);
+        remove_edge(v, u);
+
+        logger.score(loglik);
+        double log_accept = loglik - prevll;
+        logger.log_accept(log_accept);
+
+        logger.prior(bn.logPrior());
+        if (log(random.nextDouble()) < log_accept) {
+            logger.status(Status.ACCEPTED);
+            time[u][v] = steps;
+            fix_edge_deletion(v, u);
+            return true;
+        } else {
+            logger.status(Status.REJECTED);
+            remove_edge(u, v);
+            add_edge(v, u);
+            return false;
+        }
+    }
+
+    private boolean try_add(int v, int u){
+       double prevll = loglik;
        if (bn.path_exists(u, v)) {
            logger.status(Status.CYCLE);
            return false;
@@ -159,7 +198,7 @@ public class Model {
        }
 
        logger.score(loglik);
-       double log_accept = loglik - prevll;
+       double log_accept = loglik - prevll + LADD;
        logger.log_accept(log_accept);
        logger.prior(bn.logPrior());
        if (log(random.nextDouble()) < log_accept) {
@@ -183,5 +222,8 @@ public class Model {
                 fix_edge_deletion(v, u);
             }
         }
+        bn = null;
+        time = null;
+        ll = null;
     }
 }

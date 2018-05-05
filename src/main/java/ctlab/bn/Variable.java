@@ -16,6 +16,7 @@ public class Variable {
     private List<Double> edges;
     private LogFactorial lf;
     private int default_disc_classes;
+    private double[] priors;
 
     private List<Integer> backup_disc;
     private List<Double> backup_edges;
@@ -57,8 +58,19 @@ public class Variable {
                 .mapToDouble(Math::log)
                 .toArray();
 
+        initPriors(data.size(), disc_classes);
         initial(disc_classes);
         this.default_disc_classes = disc_classes;
+    }
+
+    private void initPriors(int n, int disc_classes) {
+        double p = 1.0 / disc_classes;
+        priors = new double[n + 1];
+        for (int k = 0; k < n + 1; k++) {
+            priors[k] = lf.value(n) - lf.value(k) - lf.value(n - k);
+            priors[k] += k * Math.log(p) + (n - k) * Math.log(1 - p);
+            priors[k] = -priors[k];
+        }
     }
 
     public void backup() {
@@ -82,14 +94,27 @@ public class Variable {
         lf = new LogFactorial();
         this.name = v.name;
         default_disc_classes = v.default_disc_classes;
+        priors = v.priors.clone();
     }
 
     void setLF(LogFactorial lf) {
         this.lf = lf;
     }
 
+    private double get_disc_edge(int u) {
+        double disc_edge;
+        if (u + 1 < uniq.length) {
+            disc_edge = (get_u(u) + get_u(u + 1)) / 2.0;
+        } else {
+            disc_edge = Double.POSITIVE_INFINITY;
+        }
+        return disc_edge;
+    }
+
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
                     boolean at_least_one_edge, int l_card) {
+        int lb = 1;
+        int ub = obsNum();
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -97,48 +122,44 @@ public class Variable {
         double[][] h = compute_hs(parents, children, spouse_sets);
 
         double[] S = new double[uniq.length];
+        List<List<Double>> lambda = new ArrayList<>();
+
+        for (int i = 0; i < uniq.length; i++) {
+            lambda.add(new ArrayList<>());
+        }
         double[] W = initW(l_card).stream()
                 .mapToDouble(Double::doubleValue)
                 .toArray();
-        List<List<Double>> lambda = new ArrayList<>();
         double whl_rng = get_u(uniq.length - 1) - get_u(0);
 
-        for (int v = 0; v < uniq.length; v++) {
-            lambda.add(new ArrayList<>());
+        for (int v = lb - 1; v < uniq.length; v++) {
             List<Double> lambda_v = lambda.get(v);
-            if (v == 0) {
-                S[0] =  h[v][uniq[v] - v] + W[v];
-                lambda_v.add((get_u(v) + get_u(v + 1)) / 2.0);
-            } else {
-                double s_hat = Double.POSITIVE_INFINITY;
-                int u_hat = 0;
-                double disc_edge = Double.POSITIVE_INFINITY;
-                for (int u = 0; u <= v; u++) {
-                    double s_tilde = W[v];
-                    if (u == v) {
-                        s_tilde += h[0][uniq[v]];
-                        s_tilde += l_card * ((get_u(v) - get_u(0)) / whl_rng);
-                    } else {
-                        s_tilde += h[uniq[u] + 1][uniq[v] - uniq[u] - 1];
-                        s_tilde += l_card * ((get_u(v) - get_u(u + 1)) / whl_rng);
-                        s_tilde += S[u];
-                    }
-                    if (s_tilde < s_hat && !(at_least_one_edge && v == u && v == uniq.length - 1)) {
-                        s_hat = s_tilde;
-                        u_hat = u;
-                        if (u + 1 < uniq.length) {
-                            disc_edge = (get_u(u) + get_u(u + 1)) / 2.0;
-                        } else {
-                            disc_edge = Double.POSITIVE_INFINITY;
-                        }
-                    }
+            double s_hat = Double.POSITIVE_INFINITY;
+            int u_hat = 0;
+            double disc_edge = Double.POSITIVE_INFINITY;
+            if (v < ub) {
+                s_hat = priors[v + 1]; // W[v];
+                s_hat += h[0][uniq[v]];
+                //s_hat += l_card * ((get_u(v) - get_u(0)) / whl_rng);
+                u_hat = v;
+                disc_edge = get_disc_edge(v);
+            }
+            for (int u = Math.max(v - ub, lb - 1); u <= v - lb; u++) {
+                double s_tilde = priors[v - u];// W[v];
+                s_tilde += h[uniq[u] + 1][uniq[v] - uniq[u] - 1];
+                //s_tilde += l_card * ((get_u(v) - get_u(u + 1)) / whl_rng);
+                s_tilde += S[u];
+                if (s_tilde < s_hat) {
+                    s_hat = s_tilde;
+                    u_hat = u;
+                    disc_edge = get_disc_edge(u);
                 }
-                S[v] = s_hat;
-                lambda_v.addAll(lambda.get(u_hat));
-                if (disc_edge < Double.POSITIVE_INFINITY) {
-                    if (lambda_v.isEmpty() || lambda_v.get(lambda_v.size() - 1) != disc_edge) {
-                        lambda_v.add(disc_edge);
-                    }
+            }
+            S[v] = s_hat;
+            lambda_v.addAll(lambda.get(u_hat));
+            if (disc_edge < Double.POSITIVE_INFINITY) {
+                if (lambda_v.isEmpty() || lambda_v.get(lambda_v.size() - 1) != disc_edge) {
+                    lambda_v.add(disc_edge);
                 }
             }
         }
@@ -150,6 +171,15 @@ public class Variable {
 
     private void write_discretization() {
         discrete = data.stream().map(x -> -Collections.binarySearch(edges, x)).collect(Collectors.toList());
+    }
+
+    public Collection<Integer> cardinalities() {
+        Map<Integer, Integer> cs = new TreeMap<>();
+        for (int d: discrete) {
+            cs.putIfAbsent(d, 0);
+            cs.put(d, cs.get(d) + 1);
+        }
+        return cs.values();
     }
 
     private List<Double> initW(int max_card) {

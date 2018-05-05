@@ -2,9 +2,9 @@ package ctlab.bn;
 
 import ctlab.bn.sf.ScoringFunction;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BayesianNetwork {
     private List<Variable> variables;
@@ -12,6 +12,7 @@ public class BayesianNetwork {
     private boolean keep_one;
     private boolean repair_initial;
     private PriorDistribution pd;
+    private List<Cache> caches;
 
     public BayesianNetwork(List<Variable> variables, boolean keep_one, boolean repair_initial) {
         g = new Graph(variables.size());
@@ -21,6 +22,7 @@ public class BayesianNetwork {
         this.keep_one = keep_one;
         this.repair_initial = repair_initial;
         pd = new PriorDistribution(variables.size(), 2);
+        caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
     }
 
     public BayesianNetwork(BayesianNetwork bn) {
@@ -32,6 +34,7 @@ public class BayesianNetwork {
         keep_one = bn.keep_one;
         repair_initial = bn.repair_initial;
         pd = new PriorDistribution(bn.pd);
+        caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
     }
 
     public void backup() {
@@ -81,7 +84,7 @@ public class BayesianNetwork {
         }
     }
 
-    private List<List<Double>> discretization_policy() {
+    public List<List<Double>> discretization_policy() {
         return variables.stream()
                 .map(Variable::discretization_edges)
                 .collect(Collectors.toList());
@@ -104,7 +107,14 @@ public class BayesianNetwork {
     }
 
     public double score(int v, ScoringFunction sf) {
-        return sf.score(variables.get(v), parent_set(v));
+        Cache cache = caches.get(v);
+        List<Integer> ps = g.ingoing_edges(v);
+        Double value = cache.get(ps);
+        if (value == null) {
+            value = sf.score(variables.get(v), parent_set(v));
+            cache.add(ps, value);
+        }
+        return value;
     }
 
     public void clear_edges() {
@@ -144,7 +154,7 @@ public class BayesianNetwork {
                 disc_policy = new_policy;
             }
         }
-        int[] cs = new int[observations()];
+        int[] cs = new int[observations() + 1];
         for (Variable v: variables) {
             cs[v.cardinality()]++;
         }
@@ -159,5 +169,30 @@ public class BayesianNetwork {
             }
         }
         return ret != -1 ? ret : steps_ub;
+    }
+
+    private static class Cache {
+        private static final int CACHE_SIZE = 10_000;
+
+        private Queue<List<Integer>> queue;
+        private Map<List<Integer>, Double> map;
+
+        Cache() {
+            queue = new ArrayDeque<>();
+            map = new HashMap<>();
+        }
+
+        Double get(List<Integer> ps) {
+            return map.getOrDefault(ps, null);
+        }
+
+        void add(List<Integer> ps, double score) {
+            if (queue.size() == CACHE_SIZE) {
+                List<Integer> key = queue.poll();
+                map.remove(key);
+            }
+            map.put(ps, score);
+            queue.add(ps);
+        }
     }
 }
