@@ -1,6 +1,7 @@
 package ctlab.bn;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,7 +17,7 @@ public class Variable {
     private List<Double> edges;
     private LogFactorial lf;
     private int default_disc_classes;
-    private double[] priors;
+    private double[][] priors;
 
     private int lb;
     private int ub;
@@ -26,7 +27,7 @@ public class Variable {
         this.ub = ub;
     }
 
-    public Variable(String name, List<Double> data, int disc_classes) {
+    public Variable(String name, List<Double> data, int disc_classes, DiscretizationPrior prior) {
         this.name = name;
         this.data = new ArrayList<>(data);
         lf = new LogFactorial();
@@ -63,20 +64,44 @@ public class Variable {
                 .mapToDouble(Math::log)
                 .toArray();
 
-        initPriors(data.size(), disc_classes);
-        initial(disc_classes);
         this.default_disc_classes = disc_classes;
+        initPriors(prior);
+        initial(disc_classes);
         lb = 1;
         ub = obsNum();
     }
 
-    private void initPriors(int n, int disc_classes) {
-        double p = 1.0 / disc_classes;
-        priors = new double[n + 1];
-        for (int k = 0; k < n + 1; k++) {
-            priors[k] = lf.value(n) - lf.value(k) - lf.value(n - k);
-            priors[k] += k * Math.log(p) + (n - k) * Math.log(1 - p);
-            priors[k] = -priors[k];
+    private void initPriors(DiscretizationPrior prior) {
+        int n = uniq.length;
+        priors = new double[n][n];
+        BiFunction<Integer, Integer, Double> func = (u, v) -> 0.0;
+        switch (prior) {
+            case MULTINOMIAL:
+                double p = 1.0 / default_disc_classes;
+                double[] values = new double[n];
+                for (int k = 1; k < n + 1; k++) {
+                    values[k - 1] = lf.value(k) + lf.value(n - k) -lf.value(n);
+                    values[k - 1] -= k * Math.log(p) + (n - k) * Math.log(1 - p);
+                }
+                func = (u, v) -> values[v - u + 1];
+                break;
+            case EXP:
+                List<Double> W = new ArrayList<>();
+                double rng = get_u(uniq.length - 1) - get_u(0);
+                for (int i = 0; i < uniq.length - 1; i++) {
+                    double val = 1 - Math.exp(-default_disc_classes * ((get_u(i + 1) - get_u(i)) / rng));
+                    W.add(-Math.log(val));
+                }
+                W.add(0.0);
+                func = (u, v) -> W.get(v) + default_disc_classes * ((get_u(v) - get_u(u)) / rng);
+                break;
+            case UNIFORM:
+                func = (u, v) -> 0.0;
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j <= i; j++) {
+                priors[i][j] = func.apply(i, j);
+            }
         }
     }
 
@@ -85,7 +110,7 @@ public class Variable {
         u_x = Arrays.copyOf(v.u_x, v.u_x.length);
         uniq = Arrays.copyOf(v.uniq, v.uniq.length);
         ordered_obs = Arrays.copyOf(v.ordered_obs, v.ordered_obs.length);
-        log_precomputed = Arrays.copyOf(v.log_precomputed, v.log_precomputed.length);
+        log_precomputed = v.log_precomputed;
         discrete = new ArrayList<>(v.discrete);
         edges = new ArrayList<>(v.edges);
         lf = new LogFactorial();
@@ -94,6 +119,7 @@ public class Variable {
         priors = v.priors.clone();
         this.lb = v.lb;
         this.ub = v.ub;
+        this.priors = v.priors;
     }
 
     void setLF(LogFactorial lf) {
@@ -110,8 +136,7 @@ public class Variable {
         return disc_edge;
     }
 
-    void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets,
-                    int l_card) {
+    void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
         for (int i = 0; i < data.size(); i++) {
             discrete.set(i, 0);
         }
@@ -124,10 +149,6 @@ public class Variable {
         for (int i = 0; i < uniq.length; i++) {
             lambda.add(new ArrayList<>());
         }
-        double[] W = initW(l_card).stream()
-                .mapToDouble(Double::doubleValue)
-                .toArray();
-        double whl_rng = get_u(uniq.length - 1) - get_u(0);
 
         for (int v = lb - 1; v < uniq.length; v++) {
             List<Double> lambda_v = lambda.get(v);
@@ -135,17 +156,14 @@ public class Variable {
             int u_hat = 0;
             double disc_edge = Double.POSITIVE_INFINITY;
             if (v < ub) {
-                s_hat = priors[v + 1]; // W[v];
+                s_hat = priors[0][v];
                 s_hat += h[0][uniq[v]];
-                //s_hat += l_card * ((get_u(v) - get_u(0)) / whl_rng);
                 u_hat = v;
                 disc_edge = get_disc_edge(v);
             }
             for (int u = Math.max(v - ub, lb - 1); u <= v - lb; u++) {
-                double s_tilde = priors[v - u];// W[v];
+                double s_tilde = S[u] + priors[u + 1][v];
                 s_tilde += h[uniq[u] + 1][uniq[v] - uniq[u] - 1];
-                //s_tilde += l_card * ((get_u(v) - get_u(u + 1)) / whl_rng);
-                s_tilde += S[u];
                 if (s_tilde < s_hat) {
                     s_hat = s_tilde;
                     u_hat = u;
@@ -177,17 +195,6 @@ public class Variable {
             cs.put(d, cs.get(d) + 1);
         }
         return cs.values();
-    }
-
-    private List<Double> initW(int max_card) {
-        List<Double> W = new ArrayList<>();
-        double rng = get_u(uniq.length - 1) - get_u(0);
-        for (int i = 0; i < uniq.length - 1; i++) {
-            double val = 1 - Math.exp(-max_card * ((get_u(i + 1) - get_u(i)) / rng));
-            W.add(-Math.log(val));
-        }
-        W.add(0.0);
-        return W;
     }
 
     private int get_uniq(int i) {
@@ -346,5 +353,9 @@ public class Variable {
 
     List<Double> discretization_edges() {
         return Collections.unmodifiableList(edges);
+    }
+
+    public enum DiscretizationPrior {
+        UNIFORM, EXP, MULTINOMIAL
     }
 }

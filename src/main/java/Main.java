@@ -35,6 +35,7 @@ public class Main {
 
     private static ScoringFunction main_sf;
     private static ScoringFunction disc_sf;
+    private static Variable.DiscretizationPrior disc_prior;
 
     private static boolean parse_args(String[] args) throws FileNotFoundException {
         OptionParser optionParser = new OptionParser();
@@ -72,6 +73,9 @@ public class Main {
                 "discretization maximum class size").withRequiredArg().ofType(Integer.class);
         OptionSpec<Integer> prerank_limit_opt = optionParser.accepts("preranking-limit",
                 "preranking limit on preprocessing").withRequiredArg().ofType(Integer.class).defaultsTo(7);
+        OptionSpec<String> disc_prior_opt = optionParser.accepts("disc-prior",
+                "discretization priors(UNIFORM, EXP, MULTINOMIAL)").withRequiredArg().ofType(String.class)
+                .defaultsTo("EXP");
 
 
         if (optionSet.has("h")) {
@@ -102,6 +106,7 @@ public class Main {
         }
         main_sf = ScoringFunction.parse(optionSet.valueOf(main_sf_opt));
         disc_sf = ScoringFunction.parse(optionSet.valueOf(disc_sf_opt));
+        disc_prior = Variable.DiscretizationPrior.valueOf(optionSet.valueOf(disc_prior_opt).toUpperCase());
         n_optimizer = optionSet.valueOf(n_optimizer_opt);
         preranking_limit = optionSet.valueOf(prerank_limit_opt);
         if (optionSet.has(preranking_opt)) {
@@ -137,7 +142,7 @@ public class Main {
             }
 
             for (int i = 0; i < n; i++) {
-                res.add(new Variable(names.get(i), data.get(i), default_cls));
+                res.add(new Variable(names.get(i), data.get(i), default_cls, disc_prior));
             }
         }
 

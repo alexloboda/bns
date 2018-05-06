@@ -29,6 +29,7 @@ public class ScaleFreePrior implements PriorDistribution {
         loglik = pd.loglik;
         ps = pd.ps.clone();
         occ = pd.occ.clone();
+        graph = new Graph(pd.graph);
     }
 
     private void change(int k, int change) {
