@@ -4,6 +4,7 @@ import ctlab.bn.BayesianNetwork;
 import ctlab.bn.sf.ScoringFunction;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.lang.Math.log;
 import static ctlab.mcmc.Logger.*;
@@ -30,7 +31,7 @@ public class Model {
         n = bn.size();
         hits = new long[n][n];
         this.bn = bn;
-        random = new Random();
+        random = ThreadLocalRandom.current();
         time = new long[n][n];
         ll = new double[n];
         calculateLikelihood();

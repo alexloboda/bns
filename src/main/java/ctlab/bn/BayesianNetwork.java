@@ -88,6 +88,11 @@ public class BayesianNetwork {
         return variables.get(v).cardinality();
     }
 
+    public void random_policy() {
+        caches.forEach(Cache::clear);
+        variables.forEach(Variable::random_policy);
+    }
+
     public int observations() {
         return variables.stream().findAny().get().obsNum();
     }
@@ -177,6 +182,11 @@ public class BayesianNetwork {
             }
             map.put(ps, score);
             queue.add(ps);
+        }
+
+        void clear() {
+            map.clear();
+            queue.clear();
         }
     }
 }

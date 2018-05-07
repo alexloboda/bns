@@ -1,6 +1,7 @@
 package ctlab.bn;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -18,6 +19,7 @@ public class Variable {
     private LogFactorial lf;
     private int default_disc_classes;
     private double[][] priors;
+    private Random random;
 
     private int lb;
     private int ub;
@@ -28,6 +30,7 @@ public class Variable {
     }
 
     public Variable(String name, List<Double> data, int disc_classes, DiscretizationPrior prior) {
+        random = ThreadLocalRandom.current();
         this.name = name;
         this.data = new ArrayList<>(data);
         lf = new LogFactorial();
@@ -120,6 +123,7 @@ public class Variable {
         this.lb = v.lb;
         this.ub = v.ub;
         this.priors = v.priors;
+        random = ThreadLocalRandom.current();
     }
 
     void setLF(LogFactorial lf) {
@@ -351,8 +355,19 @@ public class Variable {
         return v != null && name.equals(v.name);
     }
 
-    List<Double> discretization_edges() {
+    public List<Double> discretization_edges() {
         return Collections.unmodifiableList(edges);
+    }
+
+    public void random_policy() {
+        double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::get_disc_edge).toArray();
+        int k = default_disc_classes - 1;
+        List<Integer> idx = IntStream.range(0, edges.length).boxed().collect(Collectors.toList());
+        Collections.shuffle(idx, random);
+        idx = idx.subList(0, k);
+        Collections.sort(idx);
+        this.edges = idx.stream().map(x -> edges[x]).collect(Collectors.toList());
+        write_discretization();
     }
 
     public enum DiscretizationPrior {
