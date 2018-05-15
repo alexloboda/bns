@@ -1,6 +1,6 @@
 import ctlab.bn.*;
+import ctlab.bn.prior.ExplicitPrior;
 import ctlab.bn.sf.ScoringFunction;
-import ctlab.mcmc.Logger;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -22,6 +22,7 @@ public class Main {
     private static File output;
     private static File log;
     private static File preranking;
+    private static File priors_file;
 
     private static int n_steps;
     private static int warmup_steps;
@@ -32,6 +33,7 @@ public class Main {
     private static int preranking_limit;
     private static Integer disc_lb;
     private static Integer disc_ub;
+    private static boolean random_policy;
 
     private static ScoringFunction main_sf;
     private static ScoringFunction disc_sf;
@@ -76,6 +78,9 @@ public class Main {
         OptionSpec<String> disc_prior_opt = optionParser.accepts("disc-prior",
                 "discretization priors(UNIFORM, EXP, MULTINOMIAL)").withRequiredArg().ofType(String.class)
                 .defaultsTo("EXP");
+        OptionSpec<String> priors_opt = optionParser.accepts("prior",
+                "prior distribution over edges").withRequiredArg().ofType(String.class);
+        optionParser.accepts("random-policy", "random  discretization each step");
 
 
         if (optionSet.has("h")) {
@@ -92,11 +97,15 @@ public class Main {
         executors = optionSet.valueOf(exec);
         n_cores = optionSet.valueOf(cores);
         default_cls = optionSet.valueOf(default_classes);
+        random_policy = optionSet.has("random-policy");
 
         ge_file = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
         if (optionSet.has(log_file)) {
             log = new File(optionSet.valueOf(log_file));
+        }
+        if (optionSet.has("priors")) {
+            priors_file = new File(optionSet.valueOf(priors_opt));
         }
         if (optionSet.has(disc_lb_opt)) {
             disc_lb = optionSet.valueOf(disc_lb_opt);
@@ -117,6 +126,18 @@ public class Main {
         }
 
         return true;
+    }
+
+    private static void parse_priors(BayesianNetwork bn) throws FileNotFoundException {
+        int n = bn.size();
+        double[][] priors = new double[n][n];
+        try(Scanner scanner = new Scanner(priors_file)) {
+            int v = bn.getID(scanner.next());
+            int u = bn.getID(scanner.next());
+            double logprior = scanner.nextDouble();
+            priors[v][u] = logprior;
+        }
+        bn.set_prior_distribution(new ExplicitPrior(priors));
     }
 
     private static List<Variable> parse_ge_table(File file) throws FileNotFoundException {
@@ -186,16 +207,13 @@ public class Main {
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes);
 
+        if (priors_file != null) {
+            parse_priors(bn);
+        }
+
         if (n_optimizer > 0) {
             Solver solver = new Solver(disc_sf);
             solver.solve(bn, parse_bound(bn), n_optimizer);
-        }
-
-        for (int j = 0; j < bn.size(); j++) {
-            System.err.print(bn.var(j).getName() + ": ");
-            System.err.println(String.join(" ", bn.var(j).cardinalities().stream()
-                    .map(x -> Integer.toString(x))
-                    .collect(Collectors.toList())));
         }
 
         bn.clear_edges();
@@ -204,12 +222,7 @@ public class Main {
 
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(bn, main_sf);
-                if (log != null) {
-                    model.setLogger(new Logger(new File(log, Integer.toString(i + 1)), 4));
-                } else {
-                    model.setLogger(new Logger(null, 4));
-                }
+                Model model = new Model(bn, main_sf, random_policy);
                 models.add(model);
             }
 
@@ -229,8 +242,6 @@ public class Main {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            models.forEach(Model::closeLogger);
         }
 
         List<Edge> edges = count_hits(n, models);

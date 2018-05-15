@@ -1,16 +1,12 @@
 package ctlab.bn;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Trie {
     private int n;
     private Node root;
-    private List<Integer> choices;
+    private int[] choices;
 
-    public Trie(List<Integer> choices) {
-        this.choices = new ArrayList<>(choices);
-        this.choices.add(1);
+    public Trie(int[] choices) {
+        this.choices = choices;
         root = new Node(0);
     }
 
@@ -24,7 +20,7 @@ public class Trie {
         Node[] ss;
 
         Node(int lvl) {
-            ss = new Node[choices.get(lvl)];
+            ss = new Node[choices[lvl]];
             this.lvl = lvl;
         }
     }

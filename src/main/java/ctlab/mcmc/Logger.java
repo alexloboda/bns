@@ -30,33 +30,45 @@ public class Logger implements Closeable  {
     Logger() {}
 
     void edge(int v, int u, double ll) {
-        set_key("v", v);
-        set_key("u", u);
-        set_key("loglik", ll);
+        if (pw != null) {
+            set_key("v", v);
+            set_key("u", u);
+            set_key("loglik", ll);
+        }
     }
 
     void disc_steps(int n) {
-        set_key("disc", n);
+        if (pw != null) {
+            set_key("disc", n);
+        }
     }
 
     void card(int[] card) {
-        vs.put("card", Strings.join(Arrays.stream(card)
-                        .mapToObj(Integer::toString)
-                        .skip(1)
-                        .limit(limit)
-                        .collect(Collectors.toList()), ","));
+        if (pw != null) {
+            vs.put("card", Strings.join(Arrays.stream(card)
+                    .mapToObj(Integer::toString)
+                    .skip(1)
+                    .limit(limit)
+                    .collect(Collectors.toList()), ","));
+        }
     }
 
     void action(Action a) {
-        vs.put("action", a.toString());
+        if (pw != null) {
+            vs.put("action", a.toString());
+        }
     }
 
     void prior(double v) {
-        set_key("prior", v);
+        if (pw != null) {
+            set_key("prior", v);
+        }
     }
 
     void status(Status s) {
-        vs.put("status", s.toString());
+        if (pw != null) {
+            vs.put("status", s.toString());
+        }
     }
 
     private void set_key(String key, Number n) {
@@ -64,15 +76,17 @@ public class Logger implements Closeable  {
     }
 
     private void clear_all() {
-        List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc", "card", "prior");
-        vs.put("ll_after", "-inf");
-        vs.put("p_accept", "0");
+        if (pw != null) {
+            List<String> keys_na = Arrays.asList("loglik", "v", "u", "action", "status", "disc", "card", "prior");
+            vs.put("ll_after", "-inf");
+            vs.put("p_accept", "0");
 
-        if (keys.isEmpty()) {
-            keys.addAll(keys_na);
-            keys.addAll(Arrays.asList("ll_after", "p_accept"));
+            if (keys.isEmpty()) {
+                keys.addAll(keys_na);
+                keys.addAll(Arrays.asList("ll_after", "p_accept"));
+            }
+            keys_na.forEach(x -> vs.put(x, "n/a"));
         }
-        keys_na.forEach(x -> vs.put(x, "n/a"));
     }
 
     void submit() {
@@ -91,7 +105,9 @@ public class Logger implements Closeable  {
     }
 
     void log_accept(double log_accept) {
-        set_key("p_accept", Math.exp(log_accept));
+        if (pw != null) {
+            set_key("p_accept", Math.exp(log_accept));
+        }
     }
 
     void score(double score) {

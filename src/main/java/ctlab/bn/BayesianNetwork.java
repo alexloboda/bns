@@ -43,6 +43,10 @@ public class BayesianNetwork {
         names = new HashMap<>(bn.names);
     }
 
+    public void set_prior_distribution(PriorDistribution pd) {
+        this.pd = pd;
+    }
+
     public void add_edge(int v, int u) {
         pd.insert(v, u);
         g.add_edge(v, u);
@@ -161,7 +165,7 @@ public class BayesianNetwork {
     }
 
     private static class Cache {
-        private static final int CACHE_SIZE = 1000;
+        private static final int CACHE_SIZE = 20_000;
 
         private Queue<List<Integer>> queue;
         private Map<List<Integer>, Double> map;

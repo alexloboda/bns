@@ -27,6 +27,8 @@ public abstract class ScoringFunction {
                 return new BDE(Double.parseDouble(parts[1]));
             case "IC":
                 return new InformationSF(Double.parseDouble(parts[1]));
+            case "K2":
+                return new K2();
             default:
                 throw new IllegalArgumentException("Unknown scoring function: " + parts[0]);
         }

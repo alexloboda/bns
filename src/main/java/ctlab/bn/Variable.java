@@ -1,5 +1,6 @@
 package ctlab.bn;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
@@ -14,7 +15,7 @@ public class Variable {
     private int[] uniq;
     private int[] ordered_obs;
     private double[] log_precomputed;
-    private List<Integer> discrete;
+    private int[] discrete;
     private List<Double> edges;
     private LogFactorial lf;
     private int default_disc_classes;
@@ -114,7 +115,7 @@ public class Variable {
         uniq = Arrays.copyOf(v.uniq, v.uniq.length);
         ordered_obs = Arrays.copyOf(v.ordered_obs, v.ordered_obs.length);
         log_precomputed = v.log_precomputed;
-        discrete = new ArrayList<>(v.discrete);
+        discrete = Arrays.copyOf(v.discrete, v.discrete.length);
         edges = new ArrayList<>(v.edges);
         lf = new LogFactorial();
         this.name = v.name;
@@ -142,7 +143,7 @@ public class Variable {
 
     void discretize(List<Variable> parents, List<Variable> children, List<List<Variable>> spouse_sets) {
         for (int i = 0; i < data.size(); i++) {
-            discrete.set(i, 0);
+            discrete[i] = 0;
         }
 
         double[][] h = compute_hs(parents, children, spouse_sets);
@@ -189,7 +190,7 @@ public class Variable {
     }
 
     private void write_discretization() {
-        discrete = data.stream().map(x -> -Collections.binarySearch(edges, x)).collect(Collectors.toList());
+        discrete = data.stream().mapToInt(x -> -Collections.binarySearch(edges, x)).toArray();
     }
 
     public Collection<Integer> cardinalities() {
@@ -265,7 +266,14 @@ public class Variable {
         int m = obsNum();
         int[] result = new int[m];
         Variable[] vs = ps.toArray(new Variable[0]);
-        Trie t = new Trie(ps.stream().map(Variable::cardinality).collect(Collectors.toList()));
+        int ps_size = ps.size();
+        int[] cds = new int[ps_size + 1];
+        for (int i = 0; i < ps_size; i++) {
+            cds[i] = ps.get(i).cardinality();
+        }
+        cds[ps_size] = 1;
+
+        Trie t = new Trie(cds);
 
         Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
@@ -348,7 +356,7 @@ public class Variable {
     }
 
     public int discrete_value(int obs) {
-        return discrete.get(obs);
+        return discrete[obs];
     }
 
     boolean equals(Variable v) {
@@ -361,7 +369,7 @@ public class Variable {
 
     public void random_policy() {
         double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::get_disc_edge).toArray();
-        int k = default_disc_classes - 1;
+        int k = random.nextInt(ub - lb + 1) + lb - 1;
         List<Integer> idx = IntStream.range(0, edges.length).boxed().collect(Collectors.toList());
         Collections.shuffle(idx, random);
         idx = idx.subList(0, k);

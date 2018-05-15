@@ -87,7 +87,11 @@ public class Graph {
     }
 
     List<Integer> ingoing_edges(int v) {
-       return radj.get(v).stream().map(e -> e.v).collect(Collectors.toList());
+        List<Integer> ingoing = new ArrayList<>(radj.get(v).size());
+        for (Edge e: radj.get(v)) {
+            ingoing.add(e.v);
+        }
+       return ingoing;
     }
 
     List<Integer> outgoing_edges(int v) {

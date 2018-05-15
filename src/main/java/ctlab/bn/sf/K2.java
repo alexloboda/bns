@@ -1,20 +1,17 @@
 package ctlab.bn.sf;
 
-import static org.apache.commons.math3.special.Gamma.logGamma;
+import ctlab.bn.LogFactorial;
 
+public class K2 extends ScoringFunction {
+    private LogFactorial lf;
 
-public class BDE extends ScoringFunction {
-    private double iss;
-
-    public BDE(double iss) {
-        this.iss = iss;
+    public K2() {
+        lf = new LogFactorial();
     }
 
-    public BDE() {
-        this.iss = 1;
-    }
-
+    @Override
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
+
         int num_cls = 0;
         int num_all_cls = 0;
         for (int v: parent_cls) {
@@ -38,20 +35,14 @@ public class BDE extends ScoringFunction {
 
         double value = 0.0;
 
-        double iss1 = iss / num_cls;
-        double iss2 = iss / (num_cls * cardinality);
-
-        double log_gamma_iss1 = logGamma(iss1);
-        double log_gamma_iss2 = logGamma(iss2);
-
         for (int i = 0; i < num_all_cls; i++) {
-            value += logGamma(occ_all_cls[i] + iss2);
-            value -= log_gamma_iss2;
+            value += lf.value(occ_all_cls[i]);
         }
 
+        double nom = lf.value(cardinality - 1);
         for (int i = 0; i < num_cls; i++) {
-            value += log_gamma_iss1;
-            value -= logGamma(occ_parent_cls[i] + iss1);
+            value += nom;
+            value -= lf.value(occ_parent_cls[i] + cardinality - 1);
         }
 
         return value;
