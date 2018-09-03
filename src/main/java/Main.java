@@ -34,6 +34,7 @@ public class Main {
     private static Integer disc_lb;
     private static Integer disc_ub;
     private static boolean random_policy;
+    private static boolean random_dag;
 
     private static ScoringFunction main_sf;
     private static ScoringFunction disc_sf;
@@ -81,6 +82,7 @@ public class Main {
         OptionSpec<String> priors_opt = optionParser.accepts("prior",
                 "prior distribution over edges").withRequiredArg().ofType(String.class);
         optionParser.accepts("random-policy", "random  discretization each step");
+        optionParser.accepts("random-dag", "DAG");
 
 
         if (optionSet.has("h")) {
@@ -98,6 +100,7 @@ public class Main {
         n_cores = optionSet.valueOf(cores);
         default_cls = optionSet.valueOf(default_classes);
         random_policy = optionSet.has("random-policy");
+        random_dag = optionSet.has("random-dag");
 
         ge_file = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
@@ -222,7 +225,7 @@ public class Main {
 
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(bn, main_sf, random_policy);
+                Model model = new Model(bn, main_sf, random_policy, random_dag);
                 models.add(model);
             }
 

@@ -1,6 +1,5 @@
 package ctlab.bn;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;

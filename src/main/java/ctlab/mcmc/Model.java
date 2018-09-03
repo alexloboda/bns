@@ -3,6 +3,9 @@ package ctlab.mcmc;
 import ctlab.bn.BayesianNetwork;
 import ctlab.bn.sf.ScoringFunction;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -18,14 +21,16 @@ public class Model {
     private double[] ll;
     private double loglik;
     private boolean random_policy;
+    private boolean random_dag;
 
     private BayesianNetwork bn;
     private ScoringFunction sf;
     private long steps;
     private Random random;
 
-    public Model(BayesianNetwork bn, ScoringFunction sf, boolean random_policy) {
+    public Model(BayesianNetwork bn, ScoringFunction sf, boolean random_policy, boolean random_dag) {
         this.random_policy = random_policy;
+        this.random_dag = random_dag;
         this.sf = sf;
         n = bn.size();
         hits = new long[n][n];
@@ -48,6 +53,29 @@ public class Model {
         this.bn = new BayesianNetwork(this.bn);
         if (random_policy) {
             bn.random_policy();
+        }
+        if (random_dag) {
+            sample_dag();
+        }
+    }
+
+    private void sample_dag() {
+        int n = bn.size();
+        List<Integer> order = new ArrayList<>();
+
+        for (int i = 0; i < n; i++) {
+            order.add(i);
+        }
+
+        Random rd = ThreadLocalRandom.current();
+        Collections.shuffle(order, rd);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (rd.nextBoolean()) {
+                    add_edge(order.get(i), order.get(j));
+                }
+            }
         }
     }
 
