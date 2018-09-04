@@ -6,13 +6,11 @@ import ctlab.bn.sf.ScoringFunction;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
     private PriorDistribution pd;
-    private List<Cache> caches;
     private Map<String, Integer> names;
 
     public BayesianNetwork(List<Variable> variables) {
@@ -21,7 +19,6 @@ public class BayesianNetwork {
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
         pd = new ScaleFreePrior(variables.size(), 2);
-        caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
         names = new HashMap<>();
         for (int i = 0; i < variables.size(); i++) {
             names.put(variables.get(i).getName(), i);
@@ -39,7 +36,6 @@ public class BayesianNetwork {
         }
         g = new Graph(bn.g);
         pd = bn.pd.clone();
-        caches = IntStream.range(0, variables.size()).mapToObj(x -> new Cache()).collect(Collectors.toList());
         names = new HashMap<>(bn.names);
     }
 
@@ -88,12 +84,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    public int cardinality(int v) {
-        return variables.get(v).cardinality();
-    }
-
     public void random_policy() {
-        caches.forEach(Cache::clear);
         variables.forEach(Variable::random_policy);
     }
 
@@ -110,14 +101,7 @@ public class BayesianNetwork {
     }
 
     public double score(int v, ScoringFunction sf) {
-        Cache cache = caches.get(v);
-        List<Integer> ps = g.ingoing_edges(v);
-        Double value = cache.get(ps);
-        if (value == null) {
-            value = sf.score(variables.get(v), parent_set(v));
-            cache.add(ps, value);
-        }
-        return value;
+        return sf.score(variables.get(v), parent_set(v));
     }
 
     public void clear_edges() {
@@ -162,35 +146,5 @@ public class BayesianNetwork {
             cs[v.cardinality()]++;
         }
         return ret != -1 ? ret : steps_ub;
-    }
-
-    private static class Cache {
-        private static final int CACHE_SIZE = 20_000;
-
-        private Queue<List<Integer>> queue;
-        private Map<List<Integer>, Double> map;
-
-        Cache() {
-            queue = new ArrayDeque<>();
-            map = new HashMap<>();
-        }
-
-        Double get(List<Integer> ps) {
-            return map.getOrDefault(ps, null);
-        }
-
-        void add(List<Integer> ps, double score) {
-            if (queue.size() == CACHE_SIZE) {
-                List<Integer> key = queue.poll();
-                map.remove(key);
-            }
-            map.put(ps, score);
-            queue.add(ps);
-        }
-
-        void clear() {
-            map.clear();
-            queue.clear();
-        }
     }
 }
