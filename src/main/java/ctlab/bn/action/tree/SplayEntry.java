@@ -24,6 +24,7 @@ class SplayEntry {
             return left.randomEntry(re);
         }
         if (random_value <= p.right()) {
+            splay();
             return this;
         }
         return right.randomEntry(re);

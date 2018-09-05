@@ -38,7 +38,8 @@ public class ActionTree {
     }
 
     public Action randomAction(SplittableRandom re) {
-        return root.randomEntry(re).action();
+        root = root.randomEntry(re);
+        return root.action();
     }
 
     public void removeAction(int id) {
