@@ -2,7 +2,6 @@ package ctlab.bn.action.tree;
 
 import ctlab.bn.action.Action;
 
-import javax.xml.soap.Node;
 import java.util.SplittableRandom;
 
 class SplayEntry {
@@ -30,6 +29,10 @@ class SplayEntry {
 
     public Action action() {
         return action;
+    }
+
+    double loglik() {
+        return ll;
     }
 
     private void recalc() {

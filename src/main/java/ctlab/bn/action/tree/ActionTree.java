@@ -15,7 +15,11 @@ public class ActionTree {
         freeIDs = new ArrayDeque<>();
     }
 
-    public int addAction(Action action) {
+    public double likelihood() {
+        return Math.exp(root.loglik());
+    }
+
+    public int add(Action action) {
         SplayEntry entry = new SplayEntry(action);
         if (root == null) {
             root = entry;
