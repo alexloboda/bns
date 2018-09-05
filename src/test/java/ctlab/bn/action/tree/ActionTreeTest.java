@@ -27,7 +27,7 @@ public class ActionTreeTest {
         actions.add(new Action(ActionType.ADD, 10, 2, -2000));
         int[] bins = new int[10];
         for (int i = 0; i < 10000; i++) {
-            bins[actions.randomAction(re).v()]++;
+            bins[actions.randomAction(re).v() - 1]++;
         }
         actions.removeAction(1);
         actions.removeAction(3);
@@ -39,7 +39,8 @@ public class ActionTreeTest {
         }
         for (int i = 0; i < 10; i++) {
             assertTrue(bins[i] > 1500);
-            assertTrue(bins[i] > 2500);
+            assertTrue(bins[i] < 2500);
         }
+        assertEquals(13.59, actions.likelihood(), 0.1);
     }
 }

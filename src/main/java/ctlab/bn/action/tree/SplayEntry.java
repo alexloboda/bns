@@ -14,6 +14,8 @@ class SplayEntry {
 
     public SplayEntry(Action action) {
         this.action = action;
+        p = new NodeDistribution(0.0, 1.0);
+        ll = action.loglik();
     }
 
     public SplayEntry randomEntry(SplittableRandom re) {
@@ -86,6 +88,8 @@ class SplayEntry {
                     parent.rotate(isLeft);
                     grandpa.rotate(pIsLeft);
                 }
+            } else {
+                parent.rotate(isLeft);
             }
         }
     }
