@@ -2,10 +2,7 @@ package ctlab.bn.action.tree;
 
 import ctlab.bn.action.Action;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 public class ActionTree {
     private SplayEntry root;
@@ -34,6 +31,10 @@ public class ActionTree {
             map.set(id, entry);
         }
         return id;
+    }
+
+    public Action randomAction(SplittableRandom re) {
+        return root.randomEntry(re).action();
     }
 
     public void removeAction(int id) {

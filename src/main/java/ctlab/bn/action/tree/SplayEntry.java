@@ -2,6 +2,9 @@ package ctlab.bn.action.tree;
 
 import ctlab.bn.action.Action;
 
+import javax.xml.soap.Node;
+import java.util.SplittableRandom;
+
 class SplayEntry {
     private SplayEntry parent;
     private SplayEntry left;
@@ -12,6 +15,21 @@ class SplayEntry {
 
     public SplayEntry(Action action) {
         this.action = action;
+    }
+
+    public SplayEntry randomEntry(SplittableRandom re) {
+        double random_value = re.nextDouble();
+        if (random_value < p.left()) {
+            return left.randomEntry(re);
+        }
+        if (random_value <= p.right()) {
+            return this;
+        }
+        return right.randomEntry(re);
+    }
+
+    public Action action() {
+        return action;
     }
 
     private void recalc() {
@@ -35,22 +53,22 @@ class SplayEntry {
         ll = maxLL + Math.log(sum);
     }
 
-     static SplayEntry merge(SplayEntry l, SplayEntry r) {
-         if (l == null) {
-             return r;
-         }
-         if (r == null) {
-             return l;
-         }
-         r = r.findRoot();
-         l = l.findRoot().rightmost();
+    static SplayEntry merge(SplayEntry l, SplayEntry r) {
+        if (l == null) {
+            return r;
+        }
+        if (r == null) {
+            return l;
+        }
+        r = r.findRoot();
+        l = l.findRoot().rightmost();
 
-         l.splay();
-         l.right = r;
-         r.parent = l;
-         l.recalc();
-         return l;
-     }
+        l.splay();
+        l.right = r;
+        r.parent = l;
+        l.recalc();
+        return l;
+    }
 
     private void splay() {
         while (parent != null) {
