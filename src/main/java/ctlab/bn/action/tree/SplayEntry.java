@@ -3,8 +3,6 @@ package ctlab.bn.action.tree;
 import ctlab.bn.action.Action;
 
 class SplayEntry {
-    public static double EPS = Math.log(1e-10);
-
     private SplayEntry parent;
     private SplayEntry left;
     private SplayEntry right;
