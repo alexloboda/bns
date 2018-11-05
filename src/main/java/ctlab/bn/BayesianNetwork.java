@@ -12,6 +12,7 @@ public class BayesianNetwork {
     private Graph g;
     private PriorDistribution pd;
     private Map<String, Integer> names;
+    private int cacheSize = 20;
 
     public BayesianNetwork(List<Variable> variables) {
         g = new Graph(variables.size());
