@@ -51,6 +51,10 @@ public class SegmentTree {
         }
     }
 
+    public double get(int k) {
+        return lls[k];
+    }
+
     public double likelihood() {
         return sum[0];
     }

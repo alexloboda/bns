@@ -2,9 +2,6 @@ package ctlab;
 
 import static org.junit.Assert.*;
 
-import ctlab.bn.action.Action;
-import ctlab.bn.action.ActionSet;
-import ctlab.bn.action.ActionType;
 import org.junit.Test;
 
 import java.util.SplittableRandom;
