@@ -15,16 +15,8 @@ public class Multinomial {
 
     private SegmentTree actions;
 
-   /* private int batch(int k) {
+    private int batch(int k) {
         return k / batchSize;
-    }
-
-    private int uniformBatchNode(int batch) {
-        return mainCacheSize + batch;
-    }
-
-    private int unlikelyBatchNode(int batch) {
-        return mainCacheSize + batchesNum + batch;
     }
 
     private double likelihoodsSum(double ll1, double ll2) {
@@ -34,31 +26,14 @@ public class Multinomial {
         return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
     }
 
-    */
     public Multinomial(int maxSize, int batchesNum, int mainCacheSize, Function<Integer, Double> computeLL,
                        double initialLL) {
-        /*
         n = maxSize;
         this.mainCacheSize = mainCacheSize;
         this.batchesNum = batchesNum;
         this.batchSize = (int)Math.round(Math.ceil((double)n / batchesNum));
-        unLikelyActions = new BitSet(n);
-        likelyActions = new BitSet(n);
-        actions = new SegmentTree(mainCacheSize + 2 * batchesNum);
+        //actions = new SegmentTree(mainCacheSize + 2 * batchesNum);
         this.computeLL = computeLL;
-        unlikelyThreshold = initialLL - Math.log(batchSize);
-
-        nodesQueue = new PriorityQueue<>(mainCacheSize, Comparator.comparingDouble(i -> actions.get(i)));
-        for (int i = 0; i < mainCacheSize; i++) {
-            nodesQueue.add(0);
-        }
-
-        likelyNodes = new int[mainCacheSize];
-        for (int i = 0; i < batchesNum; i++) {
-            int size = Math.min(n - i * batchSize + 1, batchSize);
-            actions.set(uniformBatchNode(i), Math.log(size) + initialLL);
-        }
-        */
     }
 
     /*
