@@ -1,24 +1,23 @@
 package ctlab;
 
-import java.util.Collections;
 import java.util.SplittableRandom;
 
 public class SegmentTree {
-    private double[] lls;
-    private double[] sum;
+    private float[] lls;
+    private float[] sum;
     private int n;
 
     public SegmentTree(int size) {
         n = size;
         int sumSize = (size + 1) / 2;
-        sum = Collections.nCopies(sumSize, Double.NEGATIVE_INFINITY)
-                .stream()
-                .mapToDouble(x -> x)
-                .toArray();
-        lls = Collections.nCopies(n, Double.NEGATIVE_INFINITY)
-                .stream()
-                .mapToDouble(x -> x)
-                .toArray();
+        sum = new float[sumSize];
+        lls = new float[n];
+        for (int i = 0; i < n; i++) {
+            lls[i] = Float.NEGATIVE_INFINITY;
+        }
+        for (int i = 0; i < sumSize; i++) {
+            sum[i] = Float.NEGATIVE_INFINITY;
+        }
     }
 
     private int child(int k) {
@@ -29,21 +28,21 @@ public class SegmentTree {
         return (k - 1) / 2;
     }
 
-    private double get_sum(int k) {
+    private float get_sum(int k) {
         if (k >= n) {
-            return Double.NEGATIVE_INFINITY;
+            return Float.NEGATIVE_INFINITY;
         }
         return k >= sum.length ? lls[k] : sum[k];
     }
 
-    public void set(int k, double ll) {
+    public void set(int k, float ll) {
         lls[k] = ll;
         if (k >= sum.length) {
             k = parent(k);
         }
         while(true) {
             Distribution d = new Distribution(k);
-            sum[k] = d.maxLL + Math.log(d.sum);
+            sum[k] = d.maxLL + (float)Math.log(d.sum);
             if (k == 0) {
                 break;
             }
@@ -51,11 +50,11 @@ public class SegmentTree {
         }
     }
 
-    public double get(int k) {
+    public float get(int k) {
         return lls[k];
     }
 
-    public double likelihood() {
+    public float likelihood() {
         return sum[0];
     }
 
@@ -66,9 +65,9 @@ public class SegmentTree {
                 return parent(k);
             }
             Distribution d = new Distribution(k);
-            double rv = re.nextDouble();
-            double leftThreshold = d.left;
-            double rightThreshold = d.left + d.right;
+            float rv = (float)re.nextDouble();
+            float leftThreshold = d.left;
+            float rightThreshold = d.left + d.right;
             if (rv < leftThreshold) {
                 k = child(k);
             } else if (rv < rightThreshold) {
@@ -80,15 +79,15 @@ public class SegmentTree {
     }
 
     private class Distribution {
-        public double left, right, current, maxLL, sum;
+        public float left, right, current, maxLL, sum;
 
         public Distribution(int k) {
-            double left_sum = get_sum(child(k));
-            double right_sum = get_sum(child(k) + 1);
+            float left_sum = get_sum(child(k));
+            float right_sum = get_sum(child(k) + 1);
             maxLL = Math.max(lls[k], Math.max(left_sum, right_sum));
-            left = Math.exp(left_sum - maxLL);
-            right = Math.exp(right_sum - maxLL);
-            current = Math.exp(lls[k] - maxLL);
+            left = (float)Math.exp(left_sum - maxLL);
+            right = (float)Math.exp(right_sum - maxLL);
+            current = (float)Math.exp(lls[k] - maxLL);
             sum = left + right + current;
             left /= sum;
             right /= sum;

@@ -11,18 +11,11 @@ public class Multinomial {
     private int batchesNum;
     private int mainCacheSize;
 
-    private BitSet unLikelyActions;
-    private BitSet likelyActions;
-    private double unlikelyThreshold;
-
     private Function<Integer, Double> computeLL;
 
     private SegmentTree actions;
-    // TODO: get red of it(?)
-    private int[] likelyNodes;
-    private PriorityQueue<Integer> nodesQueue;
 
-    private int batch(int k) {
+   /* private int batch(int k) {
         return k / batchSize;
     }
 
@@ -41,12 +34,14 @@ public class Multinomial {
         return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
     }
 
+    */
     public Multinomial(int maxSize, int batchesNum, int mainCacheSize, Function<Integer, Double> computeLL,
                        double initialLL) {
+        /*
         n = maxSize;
         this.mainCacheSize = mainCacheSize;
         this.batchesNum = batchesNum;
-        this.batchSize = (int)Math.round(Math.ceil(n / batchesNum));
+        this.batchSize = (int)Math.round(Math.ceil((double)n / batchesNum));
         unLikelyActions = new BitSet(n);
         likelyActions = new BitSet(n);
         actions = new SegmentTree(mainCacheSize + 2 * batchesNum);
@@ -60,12 +55,14 @@ public class Multinomial {
 
         likelyNodes = new int[mainCacheSize];
         for (int i = 0; i < batchesNum; i++) {
-            int size = Math.max(n - i * batchSize + 1, batchSize);
-            actions.set(uniformBatchNode(i), size * initialLL);
+            int size = Math.min(n - i * batchSize + 1, batchSize);
+            actions.set(uniformBatchNode(i), Math.log(size) + initialLL);
         }
+        */
     }
 
-    public double calculateLLAndMoveToBin(int i) {
+    /*
+    private double calculateLLAndMoveToBin(int i) {
         double ll = computeLL.apply(i);
         if (ll > unlikelyThreshold && mainCacheSize > 0) {
             int pos = nodesQueue.peek();
@@ -89,24 +86,32 @@ public class Multinomial {
         return ll;
     }
 
+    public boolean isLikely(int i) {
+        return likelyActions.get(i);
+    }
+
+    public boolean isUnlikely(int i) {
+        return unLikelyActions.get(i);
+    }
+
+    public double unlikelyThreshold() {
+        return unlikelyThreshold;
+    }
+    */
+
     public int randomAction(SplittableRandom re) {
+        /*
         int action = actions.randomChoice(re);
         if (action < mainCacheSize) {
             return likelyNodes[action];
-        } else {
-            // uniform & rare
-            boolean uniform = action < mainCacheSize + batchesNum;
-            int batch = action - mainCacheSize;
-            if (!uniform) {
-                batch -= batchesNum;
-            }
+        } else if (action < mainCacheSize + batchesNum) {
+            int batch = action - mainCacheSize - batchesNum;
             List<Integer> variants = new ArrayList<>();
             for (int i = batch * batchSize; i < (batch + 1) * batchSize; i++) {
                 if (i == n) {
                     break;
                 }
-                if ((uniform && !likelyActions.get(i) && !unLikelyActions.get(i)) ||
-                        (!uniform && unLikelyActions.get(i))) {
+                if (unLikelyActions.get(i)) {
                     variants.add(i);
                 }
             }
@@ -115,7 +120,11 @@ public class Multinomial {
             for (int i = 0; i < variants.size(); i++) {
                 batchTree.set(i, calculateLLAndMoveToBin(variants.get(i)));
             }
+            return variants.get(batchTree.randomChoice(re));
+        } else {
 
         }
+        */
+        return 0;
     }
 }

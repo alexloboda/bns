@@ -28,11 +28,11 @@ public class SegmentTreeTest {
         for (int i = 0; i < 10000; i++) {
             bins[tree.randomChoice(re)]++;
         }
-        tree.set(0, Double.NEGATIVE_INFINITY);
-        tree.set(2, Double.NEGATIVE_INFINITY);
-        tree.set(4, Double.NEGATIVE_INFINITY);
-        tree.set(6, Double.NEGATIVE_INFINITY);
-        tree.set(8, Double.NEGATIVE_INFINITY);
+        tree.set(0, Float.NEGATIVE_INFINITY);
+        tree.set(2, Float.NEGATIVE_INFINITY);
+        tree.set(4, Float.NEGATIVE_INFINITY);
+        tree.set(6, Float.NEGATIVE_INFINITY);
+        tree.set(8, Float.NEGATIVE_INFINITY);
         for (int i = 0; i < 10000; i++) {
             bins[tree.randomChoice(re)]++;
         }
