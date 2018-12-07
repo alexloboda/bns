@@ -10,13 +10,32 @@ public class Multinomial {
     private int batchSize;
     private int batchesNum;
     private int mainCacheSize;
+    private int hits;
+    private double initialLL;
+    private boolean initialized;
 
     private Function<Integer, Double> computeLL;
 
     private SegmentTree actions;
+    private HashTable mostLikely;
+    private short[] batchHits;
+    private float[] batchMCFactor;
+    private BitSet batchResolved;
 
     private int batch(int k) {
         return k / batchSize;
+    }
+
+    private int batchSize(int batch) {
+        if (batch < batchesNum - 1) {
+            return batchSize;
+        } else {
+            return n - ((batchesNum - 1) * batchSize);
+        }
+    }
+
+    private int batchNode(int k) {
+        return mainCacheSize + k;
     }
 
     private double likelihoodsSum(double ll1, double ll2) {
@@ -32,8 +51,28 @@ public class Multinomial {
         this.mainCacheSize = mainCacheSize;
         this.batchesNum = batchesNum;
         this.batchSize = (int)Math.round(Math.ceil((double)n / batchesNum));
-        //actions = new SegmentTree(mainCacheSize + 2 * batchesNum);
         this.computeLL = computeLL;
+        this.initialLL = initialLL;
+    }
+
+    public double logLikelihood() {
+        if (!initialized) {
+            return Math.log(n) + initialLL;
+        } else {
+            return actions.likelihood();
+        }
+    }
+
+
+    private void init() {
+        actions = new SegmentTree(batchesNum + mainCacheSize);
+        batchResolved = new BitSet(batchesNum);
+        mostLikely = new HashTable(mainCacheSize);
+        batchHits = new short[batchesNum];
+        for (int i = 0; i < batchesNum; i++) {
+            actions.set(batchNode(i), (float)(initialLL + Math.log(batchSize(i))));
+        }
+        initialized = true;
     }
 
     /*
@@ -75,6 +114,10 @@ public class Multinomial {
     */
 
     public int randomAction(SplittableRandom re) {
+        hits++;
+        if (!initialized && hits > (batchSize + mainCacheSize) / 2) {
+            init();
+        }
         /*
         int action = actions.randomChoice(re);
         if (action < mainCacheSize) {

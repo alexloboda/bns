@@ -1,5 +1,6 @@
 package ctlab;
 
+import java.util.Arrays;
 import java.util.SplittableRandom;
 
 public class SegmentTree {
@@ -12,12 +13,8 @@ public class SegmentTree {
         int sumSize = (size + 1) / 2;
         sum = new float[sumSize];
         lls = new float[n];
-        for (int i = 0; i < n; i++) {
-            lls[i] = Float.NEGATIVE_INFINITY;
-        }
-        for (int i = 0; i < sumSize; i++) {
-            sum[i] = Float.NEGATIVE_INFINITY;
-        }
+        Arrays.fill(lls, Float.NEGATIVE_INFINITY);
+        Arrays.fill(sum, Float.NEGATIVE_INFINITY);
     }
 
     private int child(int k) {

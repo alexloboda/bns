@@ -6,7 +6,6 @@ import java.util.SplittableRandom;
 import java.util.stream.IntStream;
 
 public class HashTable {
-    private final static short INITIAL_CAPACITY = 4;
     private final static int p = 9871;
     public static final int STEP = 3;
 
@@ -16,12 +15,6 @@ public class HashTable {
 
     private short a, b;
 
-    private void init() {
-        for (int i = 0; i < capacity; i++) {
-            table[i] = -1;
-        }
-    }
-
     private void rehash() {
         int[] content = IntStream.range(0, table.length)
             .map(x -> table[x])
@@ -29,18 +22,18 @@ public class HashTable {
             .toArray();
         assert content.length == size;
         table = new short[capacity];
-        init();
+        Arrays.fill(table, (short)-1);
         size = 0;
         Arrays.stream(content).forEach(x -> add((short)x));
     }
 
-    public HashTable() {
+    public HashTable(int initialCapacity) {
         SplittableRandom random = new SplittableRandom();
         a = (short)random.nextInt(p);
         b = (short)random.nextInt(-p + 1, p);
-        capacity = INITIAL_CAPACITY;
+        capacity = initialCapacity * 2;
         table = new short[capacity];
-        init();
+        Arrays.fill(table, (short)-1);
     }
 
     private int hash(short k) {
@@ -77,6 +70,10 @@ public class HashTable {
 
     public boolean contains(short k) {
         return locate(k) != -1;
+    }
+
+    public int capacity() {
+        return capacity;
     }
 
     public void remove(short k) {
