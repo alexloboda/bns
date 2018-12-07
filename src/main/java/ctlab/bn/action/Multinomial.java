@@ -9,23 +9,20 @@ public class Multinomial {
     private int n;
     private int batchSize;
     private int batchesNum;
-    private int mainCacheSize;
+    private short mainCacheSize;
     private int hits;
     private double initialLL;
     private boolean initialized;
 
     private Function<Integer, Double> computeLL;
+    private SplittableRandom re;
 
     private SegmentTree actions;
-    private HashTable mostLikely;
+    private Cache cache;
+
     private short[] batchHits;
     private float[] batchMCFactor;
     private BitSet batchResolved;
-    private Heap topActions;
-
-    private int batch(int k) {
-        return k / batchSize;
-    }
 
     private int batchSize(int batch) {
         if (batch < batchesNum - 1) {
@@ -46,14 +43,15 @@ public class Multinomial {
         return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
     }
 
-    public Multinomial(int maxSize, int batchesNum, int mainCacheSize, Function<Integer, Double> computeLL,
-                       double initialLL) {
+    public Multinomial(int maxSize, int batchesNum, short mainCacheSize, Function<Integer, Double> computeLL,
+                       double initialLL, SplittableRandom re) {
         n = maxSize;
         this.mainCacheSize = mainCacheSize;
         this.batchesNum = batchesNum;
         this.batchSize = (int)Math.round(Math.ceil((double)n / batchesNum));
         this.computeLL = computeLL;
         this.initialLL = initialLL;
+        this.re = re;
     }
 
     public double logLikelihood() {
@@ -67,7 +65,7 @@ public class Multinomial {
     private void init() {
         actions = new SegmentTree(batchesNum + mainCacheSize);
         batchResolved = new BitSet(batchesNum);
-        mostLikely = new HashTable(mainCacheSize);
+        cache = new HashTableCache(x -> actions.get(x), mainCacheSize);
         batchHits = new short[batchesNum];
         for (int i = 0; i < batchesNum; i++) {
             actions.set(batchNode(i), (float)(initialLL + Math.log(batchSize(i))));
@@ -76,74 +74,44 @@ public class Multinomial {
         batchMCFactor = new float[batchesNum];
     }
 
-    /*
-    private double calculateLLAndMoveToBin(int i) {
-        double ll = computeLL.apply(i);
-        if (ll > unlikelyThreshold && mainCacheSize > 0) {
-            int pos = nodesQueue.peek();
-            double necessaryLL = actions.get(likelyNodes[pos]);
-            if (ll > necessaryLL) {
-                likelyActions.set(likelyNodes[pos], false);
-                nodesQueue.poll();
-                likelyNodes[pos] = i;
-                actions.set(pos, ll);
-                nodesQueue.add(pos);
-                likelyActions.set(i, true);
-            }
-        }
-        if (ll < unlikelyThreshold) {
-            unLikelyActions.set(i, true);
-            int b = batch(i);
-            int node = unlikelyBatchNode(b);
-            double batchLL = actions.get(node);
-            actions.set(node, likelihoodsSum(ll, batchLL));
-        }
-        return ll;
-    }
-
-    public boolean isLikely(int i) {
-        return likelyActions.get(i);
-    }
-
-    public boolean isUnlikely(int i) {
-        return unLikelyActions.get(i);
-    }
-
-    public double unlikelyThreshold() {
-        return unlikelyThreshold;
-    }
-    */
-
-    public int randomAction(SplittableRandom re) {
-        hits++;
-        if (!initialized && hits > (batchSize + mainCacheSize) / 2) {
-            init();
-        }
-        /*
-        int action = actions.randomChoice(re);
-        if (action < mainCacheSize) {
-            return likelyNodes[action];
-        } else if (action < mainCacheSize + batchesNum) {
-            int batch = action - mainCacheSize - batchesNum;
-            List<Integer> variants = new ArrayList<>();
-            for (int i = batch * batchSize; i < (batch + 1) * batchSize; i++) {
-                if (i == n) {
-                    break;
-                }
-                if (unLikelyActions.get(i)) {
-                    variants.add(i);
-                }
-            }
-            assert variants.size() != 0;
-            SegmentTree batchTree = new SegmentTree(variants.size());
-            for (int i = 0; i < variants.size(); i++) {
-                batchTree.set(i, calculateLLAndMoveToBin(variants.get(i)));
-            }
-            return variants.get(batchTree.randomChoice(re));
+    public Short tryAction(int pos) {
+        double ll = computeLL.apply(pos);
+        if (Math.log(re.nextDouble()) < ll) {
+            return (short)pos;
         } else {
-
+            return null;
         }
-        */
-        return 0;
+    }
+
+    public Short randomAction() {
+        hits++;
+        Short result = null;
+        if (!initialized) {
+            int pos = re.nextInt(n);
+            result = tryAction(pos);
+            if (hits > (batchSize + mainCacheSize) / 2) {
+                init();
+            }
+            return result;
+        }
+        int node = actions.randomChoice(re);
+        if (node < mainCacheSize) {
+            return cache.getActionByNode((short)node);
+        }
+        int b = node - mainCacheSize;
+        if (batchResolved.get(b)) {
+            // Monte-Carlo
+        } else {
+            batchHits[b]++;
+            int pos = re.nextInt(batchSize(b));
+            result = tryAction(batchSize * (b - 1) + pos);
+            if (batchHits[b] > batchSize(b) / 2) {
+                resolveBatch(b);
+            }
+        }
+        return result;
+    }
+
+    private void resolveBatch(int b) {
     }
 }
