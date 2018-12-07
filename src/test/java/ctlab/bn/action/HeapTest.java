@@ -30,4 +30,12 @@ public class HeapTest {
             Assert.assertEquals(weights[positions[queue.poll()]], weights[positions[heap.extractMin()]], 1e-6);
         }
     }
+
+    @Test(expected = NoSuchElementException.class)
+    public void emptyHeapTest() {
+        Heap heap = new Heap(16, Comparator.comparingInt(x -> x));
+        heap.add((short)5);
+        heap.extractMin();
+        heap.extractMin();
+    }
 }
