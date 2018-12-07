@@ -4,6 +4,8 @@ import ctlab.SegmentTree;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Multinomial {
     private int n;
@@ -62,10 +64,14 @@ public class Multinomial {
         }
     }
 
+    private void refreshCacheNode() {
+        actions.set(batchesNum, cache.loglikelihood());
+    }
+
     private void init() {
-        actions = new SegmentTree(batchesNum + mainCacheSize);
+        actions = new SegmentTree(batchesNum + 1);
         batchResolved = new BitSet(batchesNum);
-        cache = new HashTableCache(x -> actions.get(x), mainCacheSize);
+        cache = new HashTableCache(mainCacheSize);
         batchHits = new short[batchesNum];
         for (int i = 0; i < batchesNum; i++) {
             actions.set(batchNode(i), (float)(initialLL + Math.log(batchSize(i))));
@@ -95,12 +101,20 @@ public class Multinomial {
             return result;
         }
         int node = actions.randomChoice(re);
-        if (node < mainCacheSize) {
-            return cache.getActionByNode((short)node);
+        if (node == batchesNum) {
+            return cache.randomAction();
         }
         int b = node - mainCacheSize;
         if (batchResolved.get(b)) {
-            // Monte-Carlo
+            int bs = batchSize(b);
+            double c = -Math.log(batchMCFactor[b]) - Math.log(bs);
+            while (true) {
+                int curr = re.nextInt(bs) + (b - 1) * batchSize;
+                double ll = computeLL.apply(curr);
+                if (Math.log(re.nextDouble()) < ll + c) {
+                    return (short)curr;
+                }
+            }
         } else {
             batchHits[b]++;
             int pos = re.nextInt(batchSize(b));
@@ -112,6 +126,47 @@ public class Multinomial {
         return result;
     }
 
+    private int batch(int action) {
+        return action / batchSize;
+    }
+
+    private void insertBack(Short action) {
+        if (action == null) {
+            return;
+        }
+        double ll = computeLL.apply((int)action);
+        int b = batch(action);
+        batchMCFactor[b] = Math.max(batchMCFactor[b], (float)Math.exp(ll + Math.log(batchSize(b))));
+        double newLL = likelihoodsSum(actions.get(b), ll);
+        actions.set(b, (float)newLL);
+    }
+
     private void resolveBatch(int b) {
+        double overallLL = -Double.NEGATIVE_INFINITY;
+        Queue<Integer> processingQ = IntStream.range(0, batchSize(b))
+                .mapToObj(x -> x + batchSize * (b - 1))
+                .collect(Collectors.toCollection(ArrayDeque::new));
+        double maxLL = -Double.NEGATIVE_INFINITY;
+        while(!processingQ.isEmpty()) {
+            int action = processingQ.poll();
+            double ll = computeLL.apply(action);
+            if (ll > cache.min()) {
+                Short other = cache.add((short)action);
+                if (other != null) {
+                    if (batch(other) == b) {
+                        processingQ.add((int)other);
+                    } else {
+                        insertBack(other);
+                    }
+                }
+                return;
+            }
+            overallLL = likelihoodsSum(overallLL, ll);
+            maxLL = Math.max(ll, maxLL);
+        }
+        actions.set(b, (float)(overallLL + initialLL));
+        batchMCFactor[b] = (float)Math.exp(maxLL + Math.log(batchSize(b)));
+        batchResolved.set(b, true);
+        refreshCacheNode();
     }
 }
