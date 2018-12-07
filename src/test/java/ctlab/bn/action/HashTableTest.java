@@ -3,7 +3,7 @@ package ctlab.bn.action;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Random;
 
 public class HashTableTest {
@@ -12,19 +12,23 @@ public class HashTableTest {
     @Test
     public void test() {
         HashTable table = new HashTable(4);
-        HashSet<Short> reference = new HashSet<>();
+        HashMap<Short, Short> reference = new HashMap<>();
         Random random = new Random(40);
         for (int i = 0; i < 10000; i++) {
             short key = (short)random.nextInt(MAX_VALUE);
-            if (reference.contains(key)) {
+            if (reference.containsKey(key)) {
                 reference.remove(key);
                 table.remove(key);
             } else {
-                reference.add(key);
-                table.add(key);
+                short value = (short)(random.nextInt() % MAX_VALUE);
+                reference.put(key, value);
+                table.put(key, value);
             }
             for (short j = 0; j < MAX_VALUE; j++) {
-                Assert.assertEquals(reference.contains(j), table.contains(j));
+                Assert.assertEquals(reference.containsKey(j), table.contains(j));
+                if (reference.containsKey(j)) {
+                    Assert.assertEquals((short)reference.get(j), table.get(j));
+                }
             }
         }
     }

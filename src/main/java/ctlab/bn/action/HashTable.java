@@ -12,6 +12,7 @@ public class HashTable {
     private int capacity;
     private short size;
     private short[] table;
+    private short[] values;
 
     private short a, b;
 
@@ -20,11 +21,18 @@ public class HashTable {
             .map(x -> table[x])
             .filter(x -> x != -1)
             .toArray();
+        int[] vals = IntStream.range(0, table.length)
+             .filter(x -> table[x] != -1)
+             .map(x -> values[x])
+             .toArray();
         assert content.length == size;
         table = new short[capacity];
+        values = new short[capacity];
         Arrays.fill(table, (short)-1);
         size = 0;
-        Arrays.stream(content).forEach(x -> add((short)x));
+        for (int i = 0; i < content.length; i++) {
+            put((short)content[i], (short)vals[i]);
+        }
     }
 
     public HashTable(int initialCapacity) {
@@ -33,6 +41,7 @@ public class HashTable {
         b = (short)random.nextInt(-p + 1, p);
         capacity = initialCapacity * 2;
         table = new short[capacity];
+        values = new short[capacity];
         Arrays.fill(table, (short)-1);
     }
 
@@ -40,13 +49,14 @@ public class HashTable {
         return Math.floorMod((a * k + b) % p, capacity);
     }
 
-    public void add(short k) {
+    public void put(short k, short val) {
         ensureCapacity(size + 1);
         int pos = hash(k) % capacity;
         for (int i = 0; i < capacity; i++) {
             pos = (pos + STEP) % capacity;
             if (table[pos] == -1) {
                 table[pos] = k;
+                values[pos] = val;
                 size++;
                 return;
             }
@@ -66,6 +76,14 @@ public class HashTable {
             }
         }
         return -1;
+    }
+
+    public short get(short k) {
+        int pos = locate(k);
+        if (table[pos] == -1) {
+            throw new NoSuchElementException();
+        }
+        return values[pos];
     }
 
     public boolean contains(short k) {
@@ -91,7 +109,7 @@ public class HashTable {
             }
             table[pos] = -1;
             size--;
-            add(key);
+            put(key, values[pos]);
         }
     }
 

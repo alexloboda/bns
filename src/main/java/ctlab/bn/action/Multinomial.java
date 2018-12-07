@@ -21,6 +21,7 @@ public class Multinomial {
     private short[] batchHits;
     private float[] batchMCFactor;
     private BitSet batchResolved;
+    private Heap topActions;
 
     private int batch(int k) {
         return k / batchSize;
@@ -63,7 +64,6 @@ public class Multinomial {
         }
     }
 
-
     private void init() {
         actions = new SegmentTree(batchesNum + mainCacheSize);
         batchResolved = new BitSet(batchesNum);
@@ -73,6 +73,7 @@ public class Multinomial {
             actions.set(batchNode(i), (float)(initialLL + Math.log(batchSize(i))));
         }
         initialized = true;
+        batchMCFactor = new float[batchesNum];
     }
 
     /*
