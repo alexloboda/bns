@@ -94,6 +94,10 @@ public class HashTable {
         return capacity;
     }
 
+    public int size() {
+        return size;
+    }
+
     public void remove(short k) {
         int pos = locate(k);
         if (pos == -1) {

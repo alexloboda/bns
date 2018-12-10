@@ -71,7 +71,7 @@ public class Multinomial {
     private void init() {
         actions = new SegmentTree(batchesNum + 1);
         batchResolved = new BitSet(batchesNum);
-        cache = new HashTableCache(mainCacheSize);
+        cache = new HashTableCache(mainCacheSize, re);
         batchHits = new short[batchesNum];
         for (int i = 0; i < batchesNum; i++) {
             actions.set(batchNode(i), (float)(initialLL + Math.log(batchSize(i))));
@@ -91,7 +91,7 @@ public class Multinomial {
 
     public Short randomAction() {
         hits++;
-        Short result = null;
+        Short result;
         if (!initialized) {
             int pos = re.nextInt(n);
             result = tryAction(pos);
@@ -151,7 +151,7 @@ public class Multinomial {
             int action = processingQ.poll();
             double ll = computeLL.apply(action);
             if (ll > cache.min()) {
-                Short other = cache.add((short)action);
+                Short other = cache.add((short)action, (float)ll);
                 if (other != null) {
                     if (batch(other) == b) {
                         processingQ.add((int)other);
