@@ -8,7 +8,7 @@ import java.util.SplittableRandom;
 import java.util.function.Function;
 
 public class MultinomialTest {
-    private final static int NCHOICES = 1000;
+    private final static int NCHOICES = 5000;
 
     @Test
     public void multinomialTest() {
@@ -35,7 +35,7 @@ public class MultinomialTest {
         int sum = Arrays.stream(hits).sum();
         double[] fs = Arrays.stream(hits).mapToDouble(x -> (double)x / sum).toArray();
         for (int i = 0; i < ps.length; i++) {
-            Assert.assertEquals(ps[i] / psSum, fs[i], 0.1);
+            Assert.assertEquals(ps[i] / psSum, fs[i], 0.01);
         }
     }
 }

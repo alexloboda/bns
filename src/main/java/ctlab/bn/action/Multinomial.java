@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Multinomial {
+    public static final float EPS = 1e-6f;
+
     private int n;
     private int batchSize;
     private int batchesNum;
@@ -132,6 +134,7 @@ public class Multinomial {
         double ll = computeLL.apply((int)action);
         int b = batch(action);
         batchMCFactor[b] = Math.max(batchMCFactor[b], (float)Math.exp(ll + Math.log(batchSize(b))));
+        ll += initialLL;
         double newLL = likelihoodsSum(actions.get(b), ll);
         actions.set(b, (float)newLL);
     }
@@ -145,7 +148,7 @@ public class Multinomial {
         while(!processingQ.isEmpty()) {
             int action = processingQ.poll();
             double ll = computeLL.apply(action);
-            if (!cache.isFull() || ll > cache.min()) {
+            if (!cache.isFull() || ll + initialLL > cache.min() + EPS) {
                 Short other = cache.add((short)action, (float)(ll + initialLL));
                 if (other != null) {
                     if (batch(other) == b) {
@@ -154,9 +157,10 @@ public class Multinomial {
                         insertBack(other);
                     }
                 }
+            } else {
+                overallLL = likelihoodsSum(overallLL, ll);
+                maxLL = Math.max(ll, maxLL);
             }
-            overallLL = likelihoodsSum(overallLL, ll);
-            maxLL = Math.max(ll, maxLL);
         }
         actions.set(b, (float)(overallLL + initialLL));
         batchMCFactor[b] = (float)Math.exp(maxLL + Math.log(batchSize(b)));

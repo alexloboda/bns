@@ -37,7 +37,7 @@ public class HashTableCache implements Cache {
 
     @Override
     public float min() {
-        return topActionsMin.min();
+        return actions.get(topActionsMin.min());
     }
 
     @Override
@@ -47,6 +47,7 @@ public class HashTableCache implements Cache {
         if (topActionNodes.size() == topActions.length) {
             pos = topActionsMin.extractMin();
             ret = topActions[pos];
+            topActionNodes.remove(topActions[pos]);
         }
         topActions[pos] = action;
         actions.set(pos, ll);
