@@ -43,7 +43,7 @@ public class HashTableCache implements Cache {
     @Override
     public Short add(short action, float ll) {
         Short ret = null;
-        short pos = (short)topActions.length;
+        short pos = (short)topActionNodes.size();
         if (topActionNodes.size() == topActions.length) {
             pos = topActionsMin.extractMin();
             ret = topActions[pos];
@@ -53,5 +53,10 @@ public class HashTableCache implements Cache {
         topActionNodes.put(action, pos);
         topActionsMin.add(pos);
         return ret;
+    }
+
+    @Override
+    public boolean isFull() {
+        return topActionNodes.size() == topActions.length;
     }
 }

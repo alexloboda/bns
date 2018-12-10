@@ -33,6 +33,9 @@ public class SegmentTree {
     }
 
     public void set(int k, float ll) {
+        if (Float.isNaN(ll)) {
+            throw new IllegalArgumentException();
+        }
         lls[k] = ll;
         if (k >= sum.length) {
             k = parent(k);

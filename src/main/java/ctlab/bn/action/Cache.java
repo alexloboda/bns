@@ -6,4 +6,5 @@ public interface Cache {
     Short randomAction();
     float min();
     Short add(short action, float ll);
+    boolean isFull();
 }
