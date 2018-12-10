@@ -27,6 +27,9 @@ public class HashTableCache implements Cache {
 
     @Override
     public float loglikelihood() {
+        if (topActions.length == 0) {
+            return Float.NEGATIVE_INFINITY;
+        }
         return actions.likelihood();
     }
 
@@ -37,6 +40,9 @@ public class HashTableCache implements Cache {
 
     @Override
     public float min() {
+        if (topActions.length == 0) {
+            return Float.POSITIVE_INFINITY;
+        }
         return actions.get(topActionsMin.min());
     }
 

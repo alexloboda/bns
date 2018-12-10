@@ -107,6 +107,9 @@ public class Multinomial {
             double c = -batchMaxLL[node] + actions.get(node) + Math.log(bs);
             while (true) {
                 int curr = re.nextInt(bs) + node * batchSize;
+                if (cache.contains((short)curr)) {
+                    continue;
+                }
                 double ll = computeLL.apply(curr);
                 if (Math.log(re.nextDouble()) < ll + c) {
                     return (short)curr;
