@@ -81,13 +81,17 @@ public class SegmentTree {
     private class Distribution {
         public float left, right, current, maxLL, sum;
 
+        private float NANSafe(float x) {
+            return Float.isNaN(x) ? 0 : x;
+        }
+
         public Distribution(int k) {
             float left_sum = get_sum(child(k));
             float right_sum = get_sum(child(k) + 1);
             maxLL = Math.max(lls[k], Math.max(left_sum, right_sum));
-            left = (float)Math.exp(left_sum - maxLL);
-            right = (float)Math.exp(right_sum - maxLL);
-            current = (float)Math.exp(lls[k] - maxLL);
+            left = NANSafe((float)Math.exp(left_sum - maxLL));
+            right = NANSafe((float)Math.exp(right_sum - maxLL));
+            current = NANSafe((float)Math.exp(lls[k] - maxLL));
             sum = left + right + current;
             left /= sum;
             right /= sum;

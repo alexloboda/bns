@@ -25,7 +25,7 @@ public class Multinomial {
     private Cache cache;
 
     private short[] batchHits;
-    private float[] batchMCFactor;
+    private float[] batchMaxLL;
     private BitSet batchResolved;
 
     private int batchSize(int batch) {
@@ -75,7 +75,7 @@ public class Multinomial {
             actions.set(i, (float)(initialLL + Math.log(batchSize(i))));
         }
         initialized = true;
-        batchMCFactor = new float[batchesNum];
+        batchMaxLL = new float[batchesNum];
     }
 
     public Short tryAction(int pos) {
@@ -104,7 +104,7 @@ public class Multinomial {
         }
         if (batchResolved.get(node)) {
             int bs = batchSize(node);
-            double c = -Math.log(batchMCFactor[node]) - Math.log(bs);
+            double c = -batchMaxLL[node] + actions.get(node) + Math.log(bs);
             while (true) {
                 int curr = re.nextInt(bs) + node * batchSize;
                 double ll = computeLL.apply(curr);
@@ -133,7 +133,7 @@ public class Multinomial {
         }
         double ll = computeLL.apply((int)action);
         int b = batch(action);
-        batchMCFactor[b] = Math.max(batchMCFactor[b], (float)Math.exp(ll + Math.log(batchSize(b))));
+        batchMaxLL[b] = Math.max(batchMaxLL[b], (float)ll);
         ll += initialLL;
         double newLL = likelihoodsSum(actions.get(b), ll);
         actions.set(b, (float)newLL);
@@ -163,7 +163,7 @@ public class Multinomial {
             }
         }
         actions.set(b, (float)(overallLL + initialLL));
-        batchMCFactor[b] = (float)Math.exp(maxLL + Math.log(batchSize(b)));
+        batchMaxLL[b] = (float)maxLL;
         batchResolved.set(b, true);
         refreshCacheNode();
     }
