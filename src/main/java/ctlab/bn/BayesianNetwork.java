@@ -1,7 +1,5 @@
 package ctlab.bn;
 
-import ctlab.bn.prior.PriorDistribution;
-import ctlab.bn.prior.ScaleFreePrior;
 import ctlab.bn.sf.ScoringFunction;
 
 import java.util.*;
@@ -10,19 +8,17 @@ import java.util.stream.Collectors;
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
-    private PriorDistribution pd;
     private Map<String, Integer> names;
-    private int cacheSize = 20;
 
     public BayesianNetwork(List<Variable> variables) {
         g = new Graph(variables.size());
         this.variables = variables;
+        Collections.shuffle(this.variables);
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
-        pd = new ScaleFreePrior(variables.size(), 2);
         names = new HashMap<>();
         for (int i = 0; i < variables.size(); i++) {
-            names.put(variables.get(i).getName(), i);
+            names.put(this.variables.get(i).getName(), i);
         }
     }
 
@@ -36,21 +32,14 @@ public class BayesianNetwork {
             variables.add(new Variable(v));
         }
         g = new Graph(bn.g);
-        pd = bn.pd.clone();
         names = new HashMap<>(bn.names);
     }
 
-    public void set_prior_distribution(PriorDistribution pd) {
-        this.pd = pd;
-    }
-
     public void add_edge(int v, int u) {
-        pd.insert(v, u);
         g.add_edge(v, u);
     }
 
     public void remove_edge(int v, int u) {
-        pd.remove(v, u);
         g.remove_edge(v, u);
     }
 
@@ -95,10 +84,6 @@ public class BayesianNetwork {
 
     public Variable var(int v) {
         return variables.get(v);
-    }
-
-    public double logPrior() {
-        return pd.value();
     }
 
     public double score(int v, ScoringFunction sf) {

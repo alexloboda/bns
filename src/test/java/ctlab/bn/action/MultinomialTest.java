@@ -19,7 +19,6 @@ public class MultinomialTest {
         double psSum = Arrays.stream(ps).sum();
         double[] lls = Arrays.stream(ps).map(Math::log).toArray();
 
-
         Function<Integer, Double> calcLL = i -> lls[i];
 
         Multinomial multinomial = new Multinomial(9, 5, (short)4, calcLL, initialLL, re);
