@@ -36,7 +36,7 @@ public class Model {
         time = new long[n][n];
         ll = new double[n];
         transitions = new SegmentTree(n);
-        cachedStates = new Distribution(nCachedStates);
+        //cachedStates = new Distribution(nCachedStates);
     }
 
     private void calculateLikelihood() {

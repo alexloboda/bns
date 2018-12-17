@@ -2,7 +2,6 @@ package ctlab.mcmc;
 
 import joptsimple.internal.Strings;
 
-import javax.xml.ws.WebServiceException;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -98,7 +97,7 @@ public class Logger implements Closeable  {
     }
 
     @Override
-    public void close() throws WebServiceException {
+    public void close() {
         if (pw != null) {
             pw.close();
         }

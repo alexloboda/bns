@@ -3,14 +3,17 @@ package ctlab.mcmc;
 import ctlab.bn.action.Multinomial;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Distribution {
     private List<GeneDistribution> distributions;
 
-    public Distribution(int n, int nCachedStates) {
+    public Distribution(int n, int nCachedStates, Function<Integer, Multinomial> multinomialFactory) {
         distributions = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            distributions.add(new GeneDistribution(nCachedStates));
+            Integer finalI = i;
+            distributions.add(new GeneDistribution(nCachedStates, () -> multinomialFactory.apply(finalI)));
         }
     }
 
@@ -19,16 +22,79 @@ public class Distribution {
     }
 
     private static class GeneDistribution {
-        private Map<List<Integer>, Multinomial> cacheMap;
+        private Map<List<Integer>, LinkedList.Entry> cacheMap;
+        private Supplier<Multinomial> spark;
+        private LinkedList queue;
+        private int capacity;
 
-        public GeneDistribution(int nCachedStates) {
+        public GeneDistribution(int nCachedStates, Supplier<Multinomial> multinomialSpark) {
             cacheMap = new HashMap<>();
+            spark = multinomialSpark;
+            capacity = nCachedStates;
         }
 
         public Multinomial request(List<Integer> ps) {
-            Multinomial mult = cacheMap.get(ps);
-            if (mult == null) {
-                mult = new Multinomial();
+            LinkedList.Entry entry = cacheMap.get(ps);
+            Multinomial mult;
+            if (entry != null) {
+                mult = entry.multinomial;
+                entry.remove();
+                queue.push(entry.multinomial, entry.ps);
+            } else {
+                mult = spark.get();
+                if (queue.size == capacity) {
+                    LinkedList.Entry worst = queue.pop();
+                    cacheMap.remove(worst.ps);
+                }
+                LinkedList.Entry e = queue.push(mult, ps);
+                cacheMap.put(ps, e);
+            }
+            return mult;
+        }
+    }
+
+    private static class LinkedList {
+        private Entry first;
+        private int size;
+
+        Entry push(Multinomial mult, List<Integer> ps) {
+            Entry e = new Entry(mult, ps, first.left, first.right);
+            e.left.right = e;
+            e.right.left = e;
+            first = e;
+            size++;
+            return e;
+        }
+
+        Entry pop() {
+            Entry e = first.left;
+            e.remove();
+            size--;
+            return e;
+        }
+
+        class Entry {
+            private Multinomial multinomial;
+            private List<Integer> ps;
+            private Entry left;
+            private Entry right;
+
+            private Entry(Multinomial m, List<Integer> ps, Entry left, Entry right) {
+                this.multinomial = m;
+                this.ps = ps;
+                this.left = left;
+                this.right = right;
+            }
+
+            public void remove() {
+                if (first == this) {
+                    first = first.right;
+                    if (first == this) {
+                        first = null;
+                    }
+                }
+                left.right = right;
+                right.left = left;
             }
         }
     }

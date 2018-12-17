@@ -140,7 +140,7 @@ public class Main {
             double logprior = scanner.nextDouble();
             priors[v][u] = logprior;
         }
-        bn.set_prior_distribution(new ExplicitPrior(priors));
+        // bn.set_prior_distribution(new ExplicitPrior(priors));
     }
 
     private static List<Variable> parse_ge_table(File file) throws FileNotFoundException {
@@ -222,10 +222,11 @@ public class Main {
         bn.clear_edges();
 
         List<Model> models = new ArrayList<>();
+        SplittableRandom re = new SplittableRandom();
 
         try {
             for (int i = 0; i < executors; i++) {
-                Model model = new Model(bn, main_sf, random_policy, random_dag);
+                Model model = new Model(bn, main_sf, re.split(), random_policy, random_dag, 100);
                 models.add(model);
             }
 
@@ -276,10 +277,10 @@ public class Main {
         public void run() {
             m.run();
             for (int i = 0; i < warmup; i++) {
-                m.step(true);
+                m.step();
             }
             for (int i = 0; i < steps; i++){
-                m.step(false);
+                m.step();
             }
             m.finish();
             synchronized (System.err) {
