@@ -31,6 +31,7 @@ public class Distribution {
             cacheMap = new HashMap<>();
             spark = multinomialSpark;
             capacity = nCachedStates;
+            queue = new LinkedList();
         }
 
         public Multinomial request(List<Integer> ps) {
@@ -58,7 +59,12 @@ public class Distribution {
         private int size;
 
         Entry push(Multinomial mult, List<Integer> ps) {
-            Entry e = new Entry(mult, ps, first.left, first.right);
+            Entry e;
+            if (first != null) {
+                e = new Entry(mult, ps, first.left, first.right);
+            } else {
+                e = new Entry(mult, ps, null, null);
+            }
             e.left.right = e;
             e.right.left = e;
             first = e;
@@ -67,6 +73,9 @@ public class Distribution {
         }
 
         Entry pop() {
+            if (first == null) {
+                throw new NoSuchElementException();
+            }
             Entry e = first.left;
             e.remove();
             size--;
@@ -82,8 +91,8 @@ public class Distribution {
             private Entry(Multinomial m, List<Integer> ps, Entry left, Entry right) {
                 this.multinomial = m;
                 this.ps = ps;
-                this.left = left;
-                this.right = right;
+                this.left = left != null ? left : this;
+                this.right = right != null ? right : this;
             }
 
             public void remove() {
