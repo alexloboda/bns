@@ -90,6 +90,20 @@ public class BayesianNetwork {
         return sf.score(variables.get(v), parent_set(v));
     }
 
+    public double scoreIncluding(int v, ScoringFunction sf, int u) {
+        List<Integer> ps = g.ingoing_edges(v);
+        assert !ps.contains(u);
+        ps.add(v);
+        return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+    }
+
+    public double scoreExcluding(int v, ScoringFunction sf, int u) {
+        List<Integer> ps = g.ingoing_edges(v);
+        assert ps.contains(u);
+        ps.remove(v);
+        return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+    }
+
     public void clear_edges() {
         for (int u = 0; u < size(); u++) {
             for (int v: new ArrayList<>(ingoing_edges(u))) {

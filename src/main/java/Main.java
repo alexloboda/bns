@@ -140,7 +140,7 @@ public class Main {
             double logprior = scanner.nextDouble();
             priors[v][u] = logprior;
         }
-        // bn.set_prior_distribution(new ExplicitPrior(priors));
+        //bn.set_prior_distribution(new ExplicitPrior(priors));
     }
 
     private static List<Variable> parse_ge_table(File file) throws FileNotFoundException {

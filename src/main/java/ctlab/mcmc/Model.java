@@ -2,10 +2,13 @@ package ctlab.mcmc;
 
 import ctlab.SegmentTree;
 import ctlab.bn.BayesianNetwork;
+import ctlab.bn.action.Multinomial;
+import ctlab.bn.action.MultinomialFactory;
 import ctlab.bn.sf.ScoringFunction;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 public class Model {
     private int n;
@@ -16,7 +19,10 @@ public class Model {
     private boolean random_policy;
     private boolean random_dag;
 
-    private Distribution cachedStates;
+    private List<Cache> cache;
+    private List<Multinomial> distributions;
+    private MultinomialFactory multFactory;
+    private int nCachedStates;
 
     private BayesianNetwork bn;
     private ScoringFunction sf;
@@ -25,7 +31,8 @@ public class Model {
     private SegmentTree transitions;
 
     public Model(BayesianNetwork bn, ScoringFunction sf, SplittableRandom random,
-                 boolean random_policy, boolean random_dag, int nCachedStates) {
+                 boolean random_policy, boolean random_dag, MultinomialFactory multFactory,
+                 int nCachedStates) {
         this.random_policy = random_policy;
         this.random_dag = random_dag;
         this.sf = sf;
@@ -35,8 +42,10 @@ public class Model {
         this.random = random;
         time = new long[n][n];
         ll = new double[n];
-        transitions = new SegmentTree(n);
-        //cachedStates = new Distribution(nCachedStates);
+        distributions = new ArrayList<>();
+        this.multFactory = multFactory;
+        this.nCachedStates = nCachedStates;
+        cache = new ArrayList<>();
     }
 
     private void calculateLikelihood() {
@@ -45,6 +54,23 @@ public class Model {
             ll[i] = bn.score(i, sf);
             loglik += ll[i];
         }
+    }
+
+    public Function<List<Integer>, Multinomial> multinomials(int v) {
+        return ps -> {
+            double currLL = ll[v];
+            Function<Integer, Double> computeLL = i -> {
+                if (i >= v) {
+                    ++i;
+                }
+                if (bn.edge_exists(i, v)) {
+                    return bn.scoreExcluding(v, sf, i) - currLL;
+                } else {
+                    return bn.scoreIncluding(v, sf, i) - currLL;
+                }
+            };
+            return multFactory.spark(computeLL, -2 * Math.log(n - 1));
+        };
     }
 
     public void run() {
@@ -56,6 +82,12 @@ public class Model {
             sample_dag();
         }
         calculateLikelihood();
+
+        for (int i = 0; i < n; i++) {
+            cache.add(new Cache(nCachedStates, multinomials(i)));
+            distributions.add(cache.get(i).request(Collections.emptyList()));
+        }
+        transitions = new SegmentTree(n);
     }
 
     private void sample_dag() {
@@ -81,6 +113,7 @@ public class Model {
     public void step() {
 
     }
+
 
     public long[][] hits() {
         return hits;
