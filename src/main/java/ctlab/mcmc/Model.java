@@ -81,6 +81,7 @@ public class Model {
         if (random_dag) {
             sample_dag();
         }
+
         calculateLikelihood();
 
         for (int i = 0; i < n; i++) {

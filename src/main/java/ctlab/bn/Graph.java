@@ -102,7 +102,7 @@ public class Graph {
         return adj.get(v).size();
     }
 
-    boolean path_exists(int v, int u) {
+    public boolean path_exists(int v, int u) {
         // men meet in the middle
         int[] vis = new int[adj.size()];
         boolean[] player = new boolean[adj.size()];
@@ -130,7 +130,7 @@ public class Graph {
         return false;
     }
 
-    boolean edge_exists(int v, int u) {
+    public boolean edge_exists(int v, int u) {
         return edges[v][u] != null;
     }
 
