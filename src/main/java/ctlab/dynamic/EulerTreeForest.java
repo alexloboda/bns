@@ -168,7 +168,9 @@ class EulerTreeForest {
 
         ETFIterator(Entry entry) {
             this.entry = entry;
-            findNext();
+            if (!this.entry.good) {
+                findNext();
+            }
         }
 
         @Override
@@ -198,7 +200,6 @@ class EulerTreeForest {
                     }
                     if (entry.parent.right != null && entry.parent.right == entry) {
                         entry = entry.parent;
-                        continue;
                     } else {
                         entry = entry.parent;
                         break;
@@ -339,11 +340,7 @@ class EulerTreeForest {
 
         ETFIterator iterator() {
             Entry curr = findRoot(this).leftmost();
-            ETFIterator it = new ETFIterator(curr);
-            if (!curr.good) {
-                iterator().next();
-            }
-            return it;
+            return new ETFIterator(curr);
         }
 
         Entry succ() {

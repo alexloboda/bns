@@ -12,14 +12,14 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class DynamicGraphTest {
-    public static final int MAX_SIZE = 256;
-    public static final int TESTS_PER_SIZE = 1000;
+    public static final int MAX_SIZE = 33;
+    public static final int TESTS_PER_SIZE = 1;
     public static final Function<Integer, Integer> actions = x -> 2 * x * x;
 
     @Test
     public void testDynamicGraphs() {
         Random re = new Random(42);
-        for (int i = 2; i < MAX_SIZE; i++) {
+        for (int i = 2; i < MAX_SIZE; i += 3) {
             for (int j = 0; j < TESTS_PER_SIZE; j++) {
                 Graph g = new Graph(i);
                 DynamicGraph dg = new DynamicGraph(i);
@@ -48,7 +48,10 @@ public class DynamicGraphTest {
                     }
                     for (int w = 0; w < i; w++) {
                         for (int z = 0; z < i; z++) {
-                            Assert.assertEquals(g.edge_exists(w, z), dg.isConnected(w, z));
+                            if (w != z) {
+                                String errMsg = "TEST SIZE: " + i + ", TEST #" + j + ", ACTION #" + k + "\n" + w + "\t" + z;
+                                Assert.assertEquals(errMsg, g.path_exists(w, z), dg.isConnected(w, z));
+                            }
                         }
                     }
                 }

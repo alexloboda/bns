@@ -185,7 +185,7 @@ public class DynamicGraph {
         }
 
         boolean isTreeEdge() {
-            return treeEdges.isEmpty();
+            return !treeEdges.isEmpty();
         }
     }
 
