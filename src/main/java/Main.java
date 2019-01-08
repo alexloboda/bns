@@ -1,6 +1,6 @@
 import ctlab.bn.*;
-import ctlab.bn.prior.ExplicitPrior;
 import ctlab.bn.sf.ScoringFunction;
+import ctlab.graph.Graph;
 import ctlab.mcmc.Model;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;

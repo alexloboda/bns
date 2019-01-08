@@ -1,4 +1,4 @@
-package ctlab.dynamic;
+package ctlab.graph;
 
 import org.apache.commons.math3.util.Pair;
 

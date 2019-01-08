@@ -1,4 +1,4 @@
-package ctlab.dynamic;
+package ctlab.graph;
 
 import java.util.ArrayList;
 import java.util.Iterator;

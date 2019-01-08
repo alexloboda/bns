@@ -1,7 +1,7 @@
 package ctlab;
 
-import ctlab.bn.Graph;
-import ctlab.dynamic.DynamicGraph;
+import ctlab.graph.Graph;
+import ctlab.graph.DynamicGraph;
 import org.junit.Assert;
 import org.junit.Test;
 

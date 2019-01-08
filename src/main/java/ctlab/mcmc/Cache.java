@@ -5,20 +5,20 @@ import ctlab.bn.action.Multinomial;
 import java.util.*;
 import java.util.function.Function;
 
-public class Cache {
+class Cache {
     private Map<List<Integer>, LinkedList.Entry> cacheMap;
     private Function<List<Integer>, Multinomial> spark;
     private LinkedList queue;
     private int capacity;
 
-    public Cache(int nCachedStates, Function<List<Integer>, Multinomial> multinomialSpark) {
+    Cache(int nCachedStates, Function<List<Integer>, Multinomial> multinomialSpark) {
         cacheMap = new HashMap<>();
         spark = multinomialSpark;
         capacity = nCachedStates;
         queue = new LinkedList();
     }
 
-    public Multinomial request(List<Integer> ps) {
+    Multinomial request(List<Integer> ps) {
         LinkedList.Entry entry = cacheMap.get(ps);
         Multinomial mult;
         if (entry != null) {

@@ -5,6 +5,8 @@ import ctlab.bn.BayesianNetwork;
 import ctlab.bn.action.Multinomial;
 import ctlab.bn.action.MultinomialFactory;
 import ctlab.bn.sf.ScoringFunction;
+import org.apache.commons.math3.distribution.GeometricDistribution;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -84,11 +86,12 @@ public class Model {
 
         calculateLikelihood();
 
+        transitions = new SegmentTree(n);
         for (int i = 0; i < n; i++) {
             cache.add(new Cache(nCachedStates, multinomials(i)));
             distributions.add(cache.get(i).request(Collections.emptyList()));
+            transitions.set(i, (float)distributions.get(i).logLikelihood());
         }
-        transitions = new SegmentTree(n);
     }
 
     private void sample_dag() {
@@ -112,7 +115,25 @@ public class Model {
     }
 
     public void step() {
+        float ll = transitions.likelihood();
+        GeometricDistribution gd = new GeometricDistribution(1.0 - Math.exp(ll));
+        double jump = gd.getNumericalMean();
+        steps += (int)jump + 1;
+        if (random.nextDouble() < jump - (int)jump) {
+            steps++;
+        }
 
+        int node = transitions.randomChoice(random);
+        Multinomial mult = distributions.get(node);
+        Short parent = mult.randomAction();
+        if (parent == null) {
+            return;
+        }
+        if (bn.edge_exists(parent, node)) {
+            try_remove(parent, node);
+        } else {
+            try_add(parent, node);
+        }
     }
 
 

@@ -1,6 +1,7 @@
 package ctlab.bn;
 
 import ctlab.bn.sf.ScoringFunction;
+import ctlab.graph.Graph;
 import joptsimple.internal.Strings;
 
 import java.io.File;

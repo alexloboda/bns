@@ -1,6 +1,6 @@
 package ctlab.bn.prior;
 
-import ctlab.bn.Graph;
+import ctlab.graph.Graph;
 
 public class ExplicitPrior implements PriorDistribution {
     private int loglik;

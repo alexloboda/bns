@@ -1,6 +1,7 @@
 package ctlab.bn;
 
 import ctlab.bn.sf.ScoringFunction;
+import ctlab.graph.Graph;
 
 import java.util.*;
 import java.util.stream.Collectors;
