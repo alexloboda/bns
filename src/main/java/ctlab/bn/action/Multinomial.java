@@ -1,7 +1,6 @@
 package ctlab.bn.action;
 
 import ctlab.SegmentTree;
-import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
@@ -79,18 +78,18 @@ public class Multinomial {
         batchMaxLL = new float[batchesNum];
     }
 
-    private Pair<Short, Double> tryAction(int pos) {
+    private Short tryAction(int pos) {
         double ll = computeLL.apply(pos);
         if (Math.log(re.nextDouble()) < ll) {
-            return new Pair<>((short)pos, ll);
+            return (short)pos;
         } else {
             return null;
         }
     }
 
-    public Pair<Short, Double> randomAction() {
+    public Short randomAction() {
         hits++;
-        Pair<Short, Double> result;
+        Short result;
         if (!initialized) {
             int pos = re.nextInt(n);
             result = tryAction(pos);
@@ -113,7 +112,7 @@ public class Multinomial {
                 }
                 double ll = computeLL.apply(curr);
                 if (Math.log(re.nextDouble()) < ll + c) {
-                    return new Pair<>((short)curr, );
+                    return (short)curr;
                 }
             }
         } else {

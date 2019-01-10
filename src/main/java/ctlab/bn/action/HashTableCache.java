@@ -1,6 +1,7 @@
 package ctlab.bn.action;
 
 import ctlab.SegmentTree;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.Comparator;
 import java.util.SplittableRandom;
@@ -34,7 +35,7 @@ public class HashTableCache implements Cache {
     }
 
     @Override
-    public Short randomAction() {
+    public Pair<Short, Double> randomAction() {
         return topActions[(short)actions.randomChoice(re)];
     }
 

@@ -36,25 +36,25 @@ public class BayesianNetwork {
         names = new HashMap<>(bn.names);
     }
 
-    public void add_edge(int v, int u) {
+    public void addEdge(int v, int u) {
         g.add_edge(v, u);
     }
 
-    public void remove_edge(int v, int u) {
+    public void removeEdge(int v, int u) {
         g.remove_edge(v, u);
     }
 
-    private List<Variable> parent_set(int v) {
+    private List<Variable> parentSet(int v) {
         return g.ingoing_edges(v).stream()
                 .map(x -> variables.get(x))
                 .collect(Collectors.toList());
     }
 
-    private void discretization_step() {
+    private void discretizationStep() {
         List<Integer> order = g.top_sort();
         for (int v : order) {
             Variable var = variables.get(v);
-            List<Variable> ps = parent_set(v);
+            List<Variable> ps = parentSet(v);
             List<Variable> cs = g.outgoing_edges(v).stream()
                     .map(x -> variables.get(x))
                     .collect(Collectors.toList());
@@ -75,7 +75,7 @@ public class BayesianNetwork {
                 .collect(Collectors.toList());
     }
 
-    public void random_policy() {
+    public void randomPolicy() {
         variables.forEach(Variable::random_policy);
     }
 
@@ -88,7 +88,7 @@ public class BayesianNetwork {
     }
 
     public double score(int v, ScoringFunction sf) {
-        return sf.score(variables.get(v), parent_set(v));
+        return sf.score(variables.get(v), parentSet(v));
     }
 
     public double scoreIncluding(int v, ScoringFunction sf, int u) {
@@ -107,8 +107,8 @@ public class BayesianNetwork {
 
     public void clear_edges() {
         for (int u = 0; u < size(); u++) {
-            for (int v: new ArrayList<>(ingoing_edges(u))) {
-                remove_edge(v, u);
+            for (int v: new ArrayList<>(ingoingEdges(u))) {
+                removeEdge(v, u);
             }
         }
     }
@@ -117,15 +117,15 @@ public class BayesianNetwork {
         return variables.size();
     }
 
-    public boolean edge_exists(int v, int u) {
+    public boolean edgeExists(int v, int u) {
         return g.edge_exists(v, u);
     }
 
-    public boolean path_exists(int v, int u) {
+    public boolean pathExists(int v, int u) {
         return g.path_exists(v, u);
     }
 
-    public List<Integer> ingoing_edges(int v) {
+    public List<Integer> ingoingEdges(int v) {
         return g.ingoing_edges(v);
     }
 
@@ -133,7 +133,7 @@ public class BayesianNetwork {
         List<List<Double>> disc_policy = discretization_policy();
         int ret = -1;
         for (int i = 0; i < steps_ub; i++) {
-            discretization_step();
+            discretizationStep();
             List<List<Double>> new_policy = discretization_policy();
             if (disc_policy.equals(new_policy)) {
                 ret = i + 1;

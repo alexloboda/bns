@@ -7,6 +7,7 @@ import ctlab.bn.action.MultinomialFactory;
 import ctlab.bn.sf.ScoringFunction;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -18,8 +19,8 @@ public class Model {
     private long[][] time;
     private double[] ll;
     private double loglik;
-    private boolean random_policy;
-    private boolean random_dag;
+    private boolean randomPolicy;
+    private boolean randomDAG;
 
     private List<Cache> cache;
     private List<Multinomial> distributions;
@@ -35,8 +36,8 @@ public class Model {
     public Model(BayesianNetwork bn, ScoringFunction sf, SplittableRandom random,
                  boolean random_policy, boolean random_dag, MultinomialFactory multFactory,
                  int nCachedStates) {
-        this.random_policy = random_policy;
-        this.random_dag = random_dag;
+        this.randomPolicy = random_policy;
+        this.randomDAG = random_dag;
         this.sf = sf;
         n = bn.size();
         hits = new long[n][n];
@@ -58,14 +59,14 @@ public class Model {
         }
     }
 
-    public Function<List<Integer>, Multinomial> multinomials(int v) {
+    private Function<List<Integer>, Multinomial> multinomials(int v) {
         return ps -> {
             double currLL = ll[v];
             Function<Integer, Double> computeLL = i -> {
                 if (i >= v) {
                     ++i;
                 }
-                if (bn.edge_exists(i, v)) {
+                if (bn.edgeExists(i, v)) {
                     return bn.scoreExcluding(v, sf, i) - currLL;
                 } else {
                     return bn.scoreIncluding(v, sf, i) - currLL;
@@ -77,11 +78,12 @@ public class Model {
 
     public void run() {
         this.bn = new BayesianNetwork(this.bn);
-        if (random_policy) {
-            bn.random_policy();
+        if (randomPolicy) {
+            bn.randomPolicy();
         }
-        if (random_dag) {
-            sample_dag();
+
+        if (randomDAG) {
+            sampleDAG();
         }
 
         calculateLikelihood();
@@ -94,7 +96,7 @@ public class Model {
         }
     }
 
-    private void sample_dag() {
+    private void sampleDAG() {
         int n = bn.size();
         List<Integer> order = new ArrayList<>();
 
@@ -108,7 +110,7 @@ public class Model {
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
                 if (rd.nextBoolean()) {
-                    add_edge(order.get(i), order.get(j));
+                    bn.addEdge(order.get(i), order.get(j));
                 }
             }
         }
@@ -129,75 +131,40 @@ public class Model {
         if (parent == null) {
             return;
         }
-        if (bn.edge_exists(parent, node)) {
-            try_remove(parent, node);
+        if (bn.edgeExists(parent, node)) {
+            removeEdge(parent, node);
         } else {
-            try_add(parent, node);
+            if (bn.pathExists(node, parent)) {
+                return;
+            }
+
+            addEdge(parent, node);
         }
     }
-
 
     public long[][] hits() {
         return hits;
     }
 
-    private void fix_edge_deletion(int v, int u) {
+    private void addEdge(int v, int u) {
+        bn.addEdge(v, u);
+        loglik -= ll[u];
+        ll[u] = bn.score(u, sf);
+        loglik += ll[u];
+    }
+
+    private void removeEdge(int v, int u) {
+        bn.removeEdge(v, u);
+        loglik -= ll[u];
+        ll[u] = bn.score(u, sf);
+        loglik += ll[u];
         hits[v][u] += steps - time[v][u];
     }
 
-    private void add_edge(int v, int u) {
-        /*
-        bn.add_edge(v, u);
-        loglik -= ll[u];
-        ll[u] = bn.score(u, sf);
-        loglik += ll[u];
-        */
-    }
-
-    private void remove_edge(int v, int u) {
-        /*
-        bn.remove_edge(v, u);
-        loglik -= ll[u];
-        ll[u] = bn.score(u, sf);
-        loglik += ll[u];
-        */
-    }
-
-    private void try_remove(int v, int u) {
-        /*double prevll = loglik;
-        remove_edge(v, u);
-
-        double log_accept = loglik - prevll + LDEL;
-        if (log(random.nextDouble()) < log_accept) {
-            fix_edge_deletion(v, u);
-        } else {
-            add_edge(v, u);
-        }*/
-    }
-
-    private void try_add(int v, int u){
-        /*
-       double prevll = loglik;
-       if (bn.path_exists(u, v)) {
-           return;
-       }
-
-       add_edge(v, u);
-
-       double log_accept = loglik - prevll + LADD;
-       if (log(random.nextDouble()) < log_accept) {
-           time[v][u] = steps;
-       } else {
-           remove_edge(v, u);
-       }
-       */
-   }
-
     public void finish() {
         for (int u = 0; u < n; u++) {
-            for (int v : bn.ingoing_edges(u)) {
-                remove_edge(v, u);
-                fix_edge_deletion(v, u);
+            for (int v : bn.ingoingEdges(u)) {
+                removeEdge(v, u);
             }
         }
         bn = null;
