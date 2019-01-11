@@ -226,7 +226,7 @@ public class Main {
 
         try {
             for (int i = 0; i < executors; i++) {
-                //Model model = new Model(bn, main_sf, re.split(), random_policy, random_dag, 100);
+                //Model model = new Model(bn, main_sf, re.split(), randomPolicy, random_dag, 100);
                 Model model = null;
                 models.add(model);
             }

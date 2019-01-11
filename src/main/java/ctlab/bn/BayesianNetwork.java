@@ -71,12 +71,12 @@ public class BayesianNetwork {
 
     private List<List<Double>> discretizationPolicy() {
         return variables.stream()
-                .map(Variable::discretization_edges)
+                .map(Variable::discretizationEdges)
                 .collect(Collectors.toList());
     }
 
     public void randomPolicy() {
-        variables.forEach(Variable::random_policy);
+        variables.forEach(Variable::randomPolicy);
     }
 
     public int observations() {

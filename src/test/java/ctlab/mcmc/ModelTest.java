@@ -9,17 +9,30 @@ import org.apache.commons.math3.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.SplittableRandom;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ModelTest {
     @Test
     public void test() {
+        Random random = new Random(0xC0FFEE);
         ScoringFunction sf = new BDE();
 
-        Variable var1 = new Variable("VAR1", Arrays.asList(), 2, null);
-        Variable var2 = new Variable("VAR2", Arrays.asList(), 2, null);
-        Variable var3 = new Variable("VAR3", Arrays.asList(), 2, null);
+        List<Double> data1 = random.doubles(32).boxed().collect(Collectors.toList());
+        List<Double> data2 = random.doubles(32).boxed().collect(Collectors.toList());
+        List<Double> data3 = new ArrayList<>();
+
+        for (int i = 0; i < 32; i++) {
+            if (data1.get(i) > 0.5 && data2.get(i) > 0.6) {
+                data3.add(random.nextDouble() / 2);
+            } else {
+                data3.add(random.nextDouble());
+            }
+        }
+
+        Variable var1 = new Variable("VAR1", data1, 3, Variable.DiscretizationPrior.UNIFORM);
+        Variable var2 = new Variable("VAR2", data2, 3, Variable.DiscretizationPrior.UNIFORM);
+        Variable var3 = new Variable("VAR3", data3, 3, Variable.DiscretizationPrior.UNIFORM);
         BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3));
 
         SplittableRandom sr = new SplittableRandom(42);
@@ -33,7 +46,7 @@ public class ModelTest {
         }
         model.finish();
         double[][] fs = model.frequencies();
-        double[][] expectedFs = {{}, {}, {}};
+        double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
         for (int i = 0; i < 3; i++) {
             Assert.assertArrayEquals(expectedFs[i], fs[i], 1e-4);
         }

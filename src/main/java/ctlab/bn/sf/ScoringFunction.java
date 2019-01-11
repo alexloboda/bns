@@ -7,12 +7,12 @@ import java.util.*;
 public abstract class ScoringFunction {
     public double score(Variable v, List<Variable> ps) {
 
-        int[] parent_cls = v.map_obs(ps);
+        int[] parent_cls = v.mapObs(ps);
 
         List<Variable> vs = new ArrayList<>(ps);
         vs.add(v);
 
-        int[] all_cls = v.map_obs(vs);
+        int[] all_cls = v.mapObs(vs);
 
         return score(parent_cls, all_cls, v.cardinality());
     }
