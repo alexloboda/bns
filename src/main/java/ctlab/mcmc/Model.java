@@ -6,14 +6,14 @@ import ctlab.bn.action.Multinomial;
 import ctlab.bn.action.MultinomialFactory;
 import ctlab.bn.sf.ScoringFunction;
 import org.apache.commons.math3.distribution.GeometricDistribution;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 public class Model {
+    public static final double EPS = 1e-5;
+
     private int n;
     private long[][] hits;
     private long[][] time;
@@ -72,7 +72,7 @@ public class Model {
                     return bn.scoreIncluding(v, sf, i) - currLL;
                 }
             };
-            return multFactory.spark(computeLL, -2 * Math.log(n - 1));
+            return multFactory.spark(computeLL, -Math.log(n * (n - 1)));
         };
     }
 
@@ -118,8 +118,13 @@ public class Model {
 
     public void step() {
         float ll = transitions.likelihood();
-        GeometricDistribution gd = new GeometricDistribution(1.0 - Math.exp(ll));
-        double jump = gd.getNumericalMean();
+        double jump = 0.0;
+        double likelihood = Math.exp(ll);
+        assert likelihood > -EPS && likelihood < 1 + EPS;
+        if (likelihood < 1.0) {
+            GeometricDistribution gd = new GeometricDistribution(1.0 - likelihood);
+            jump = gd.getNumericalMean();
+        }
         steps += (int)jump + 1;
         if (random.nextDouble() < jump - (int)jump) {
             steps++;

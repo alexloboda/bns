@@ -39,9 +39,9 @@ public class ModelTest {
         Model model = new Model(bn, sf, sr,
                 false, true,
                 new MultinomialFactory(2, 3, 1, sr),
-                0);
+                1);
         model.run();
-        while(model.steps() < 1000000) {
+        while(model.steps() < 1000) {
             model.step();
         }
         model.finish();
@@ -53,10 +53,8 @@ public class ModelTest {
     }
 
     private Pair<double[][], Double> exactSolve(BayesianNetwork bn, ScoringFunction sf, int v, int u) {
-        if (u >= bn.size()) {
-            return exactSolve(bn, sf, v + 1, u + 2);
-        }
         double[][] res = new double[bn.size()][bn.size()];
+
         if (v == bn.size()) {
             double score = 0.0;
             for (int i = 0; i < bn.size(); i++) {
@@ -69,6 +67,11 @@ public class ModelTest {
             }
             return new Pair<>(res, score);
         }
+
+        if (u >= bn.size()) {
+            return exactSolve(bn, sf, v + 1, v + 2);
+        }
+
         BayesianNetwork bnWithEdge = new BayesianNetwork(bn);
         bnWithEdge.addEdge(v, u);
         Pair<double[][], Double> resWOEdge = exactSolve(bn, sf, v, u + 1);
