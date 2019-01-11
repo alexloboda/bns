@@ -69,7 +69,7 @@ public class BayesianNetwork {
         }
     }
 
-    public List<List<Double>> discretization_policy() {
+    private List<List<Double>> discretizationPolicy() {
         return variables.stream()
                 .map(Variable::discretization_edges)
                 .collect(Collectors.toList());
@@ -105,7 +105,7 @@ public class BayesianNetwork {
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
-    public void clear_edges() {
+    public void clearEdges() {
         for (int u = 0; u < size(); u++) {
             for (int v: new ArrayList<>(ingoingEdges(u))) {
                 removeEdge(v, u);
@@ -129,12 +129,12 @@ public class BayesianNetwork {
         return g.ingoing_edges(v);
     }
 
-    public int discretize(int steps_ub) {
-        List<List<Double>> disc_policy = discretization_policy();
+    int discretize(int steps_ub) {
+        List<List<Double>> disc_policy = discretizationPolicy();
         int ret = -1;
         for (int i = 0; i < steps_ub; i++) {
             discretizationStep();
-            List<List<Double>> new_policy = discretization_policy();
+            List<List<Double>> new_policy = discretizationPolicy();
             if (disc_policy.equals(new_policy)) {
                 ret = i + 1;
                 break;

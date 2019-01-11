@@ -35,7 +35,7 @@ public class HashTableCache implements Cache {
     }
 
     @Override
-    public Pair<Short, Double> randomAction() {
+    public Short randomAction() {
         return topActions[(short)actions.randomChoice(re)];
     }
 

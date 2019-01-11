@@ -108,7 +108,7 @@ public class Variable {
         }
     }
 
-    public Variable(Variable v) {
+    Variable(Variable v) {
         data = new ArrayList<>(v.data);
         u_x = Arrays.copyOf(v.u_x, v.u_x.length);
         uniq = Arrays.copyOf(v.uniq, v.uniq.length);

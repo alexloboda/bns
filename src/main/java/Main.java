@@ -219,7 +219,7 @@ public class Main {
             solver.solve(bn, parse_bound(bn), n_optimizer);
         }
 
-        bn.clear_edges();
+        bn.clearEdges();
 
         List<Model> models = new ArrayList<>();
         SplittableRandom re = new SplittableRandom();
@@ -293,12 +293,12 @@ public class Main {
     }
 
     private static List<Edge> count_hits(int n, List<Model> models) {
-        long[][] hits = new long[n][n];
+        double[][] fs = new double[n][n];
         for (Model m : models) {
-            long[][] hs = m.hits();
+            double[][] hs = m.frequencies();
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    hits[i][j] += hs[i][j];
+                    fs[i][j] += hs[i][j] / models.size();
                 }
             }
         }
@@ -306,7 +306,7 @@ public class Main {
         List<Edge> edges = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                edges.add(new Edge(i, j, hits[i][j]));
+                edges.add(new Edge(i, j, fs[i][j]));
             }
         }
 

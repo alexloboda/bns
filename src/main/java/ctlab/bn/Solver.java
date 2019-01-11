@@ -27,13 +27,13 @@ public class Solver {
         this.bn = bayesianNetwork;
         for (int i = 0; i < steps; i++) {
             System.err.println("step");
-            solver_step();
+            solverStep();
             bayesianNetwork.discretize(100);
 
         }
     }
 
-    private void solver_step() throws IOException {
+    private void solverStep() throws IOException {
         File scoresFile = File.createTempFile("baynet", ".scores");
         scoresFile.deleteOnExit();
 
@@ -60,7 +60,7 @@ public class Solver {
     }
 
     public void runGobnilp(File scoresFile) throws IOException {
-        bn.clear_edges();
+        bn.clearEdges();
         String[] args = {"gobnilp", "-v=0", "-g=settings", scoresFile.getAbsolutePath()};
         Process p = Runtime.getRuntime().exec(args);
         InputStream is = p.getInputStream();
@@ -78,7 +78,7 @@ public class Solver {
             if (lr.length > 1) {
                 for (String s : lr[1].split(",")) {
                     int v = Integer.parseInt(s);
-                    bn.add_edge(v, u);
+                    bn.addEdge(v, u);
                     m++;
                 }
             }

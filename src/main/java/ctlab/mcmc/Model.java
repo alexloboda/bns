@@ -142,8 +142,18 @@ public class Model {
         }
     }
 
-    public long[][] hits() {
-        return hits;
+    public long steps() {
+        return steps;
+    }
+
+    public double[][] frequencies() {
+        double[][] fs = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                fs[i][j] = (double)hits[i][j] / steps;
+            }
+        }
+        return fs;
     }
 
     private void addEdge(int v, int u) {
