@@ -133,6 +133,7 @@ public class Model {
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction();
+        transitions.set(node, (float)mult.logLikelihood());
         if (parent == null) {
             return;
         }

@@ -14,7 +14,6 @@ public class BayesianNetwork {
     public BayesianNetwork(List<Variable> variables) {
         g = new Graph(variables.size());
         this.variables = variables;
-        Collections.shuffle(this.variables);
         LogFactorial lf = new LogFactorial();
         variables.forEach(v -> v.setLF(lf));
         names = new HashMap<>();
