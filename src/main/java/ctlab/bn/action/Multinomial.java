@@ -104,14 +104,13 @@ public class Multinomial {
         }
         if (batchResolved.get(node)) {
             int bs = batchSize(node);
-            double c = -batchMaxLL[node] + actions.get(node) + Math.log(bs);
             while (true) {
                 int curr = re.nextInt(bs) + node * batchSize;
                 if (cache.contains((short)curr)) {
                     continue;
                 }
                 double ll = computeLL.apply(curr);
-                if (Math.log(re.nextDouble()) < ll + c) {
+                if (Math.log(re.nextDouble()) < ll - batchMaxLL[node]) {
                     return (short)curr;
                 }
             }

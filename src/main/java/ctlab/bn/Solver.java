@@ -94,7 +94,7 @@ public class Solver {
         if (j == bn.size()) {
             return;
         }
-        if (bound.edge_exists(j, i)) {
+        if (bound.edgeExists(j, i)) {
             vars.add(j);
             double score = sf.score(bn.var(i), vars.stream().map(x -> bn.var(x)).collect(Collectors.toList()));
             Record r = new Record(score);

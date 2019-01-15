@@ -37,29 +37,29 @@ public class BayesianNetwork {
     }
 
     public void addEdge(int v, int u) {
-        g.add_edge(v, u);
+        g.addEdge(v, u);
     }
 
     public void removeEdge(int v, int u) {
-        g.remove_edge(v, u);
+        g.removeEdge(v, u);
     }
 
     private List<Variable> parentSet(int v) {
-        return g.ingoing_edges(v).stream()
+        return g.ingoingEdges(v).stream()
                 .map(x -> variables.get(x))
                 .collect(Collectors.toList());
     }
 
     private void discretizationStep() {
-        List<Integer> order = g.top_sort();
+        List<Integer> order = g.topSort();
         for (int v : order) {
             Variable var = variables.get(v);
             List<Variable> ps = parentSet(v);
-            List<Variable> cs = g.outgoing_edges(v).stream()
+            List<Variable> cs = g.outgoingEdges(v).stream()
                     .map(x -> variables.get(x))
                     .collect(Collectors.toList());
-            List<List<Variable>> ss = g.outgoing_edges(v).stream()
-                    .map(x -> g.ingoing_edges(x))
+            List<List<Variable>> ss = g.outgoingEdges(v).stream()
+                    .map(x -> g.ingoingEdges(x))
                     .map(x -> x.stream()
                             .map(y -> variables.get(y))
                             .filter(y -> !y.equals(var))
@@ -92,14 +92,14 @@ public class BayesianNetwork {
     }
 
     public double scoreIncluding(int v, ScoringFunction sf, int u) {
-        List<Integer> ps = g.ingoing_edges(v);
+        List<Integer> ps = g.ingoingEdges(v);
         assert !ps.contains(u);
         ps.add(v);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
     public double scoreExcluding(int v, ScoringFunction sf, int u) {
-        List<Integer> ps = g.ingoing_edges(v);
+        List<Integer> ps = g.ingoingEdges(v);
         assert ps.contains(u);
         ps.remove((Integer)v);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
@@ -118,15 +118,15 @@ public class BayesianNetwork {
     }
 
     public boolean edgeExists(int v, int u) {
-        return g.edge_exists(v, u);
+        return g.edgeExists(v, u);
     }
 
     public boolean pathExists(int v, int u) {
-        return g.path_exists(v, u);
+        return g.pathExists(v, u);
     }
 
     public List<Integer> ingoingEdges(int v) {
-        return g.ingoing_edges(v);
+        return g.ingoingEdges(v);
     }
 
     int discretize(int steps_ub) {

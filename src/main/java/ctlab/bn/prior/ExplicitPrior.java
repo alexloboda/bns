@@ -20,13 +20,13 @@ public class ExplicitPrior implements PriorDistribution {
 
     @Override
     public void insert(int v, int u) {
-        g.add_edge(v, u);
+        g.addEdge(v, u);
         loglik += priors[v][u];
     }
 
     @Override
     public void remove(int v, int u) {
-        g.remove_edge(v, u);
+        g.removeEdge(v, u);
         loglik -= priors[v][u];
     }
 

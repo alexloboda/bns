@@ -36,19 +36,30 @@ public class ModelTest {
         BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3));
 
         SplittableRandom sr = new SplittableRandom(42);
-        Model model = new Model(bn, sf, sr,
-                false, true,
-                new MultinomialFactory(2, 3, 1, sr),
-                1);
-        model.run();
-        while(model.steps() < 1000) {
-            model.step();
+        double[][] actual = new double[bn.size()][bn.size()];
+
+        int models = 2000;
+
+        for (int i = 0; i < models; i++) {
+            Model model = new Model(bn, sf, sr,
+                    false, false,
+                    new MultinomialFactory(2, 3, 1, sr),
+                    2);
+            model.run();
+            while (model.steps() < 100) {
+                model.step();
+            }
+            double[][] fs = model.adjMatrix();
+            for (int v = 0; v < bn.size(); v++) {
+                for (int u = 0; u < bn.size(); u++) {
+                    actual[v][u] += fs[v][u] / models;
+                }
+            }
+            model.finish();
         }
-        model.finish();
-        double[][] fs = model.frequencies();
         double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
         for (int i = 0; i < 3; i++) {
-            Assert.assertArrayEquals(expectedFs[i], fs[i], 1e-4);
+            Assert.assertArrayEquals(expectedFs[i], actual[i], 0.025);
         }
     }
 
@@ -69,7 +80,11 @@ public class ModelTest {
         }
 
         if (u >= bn.size()) {
-            return exactSolve(bn, sf, v + 1, v + 2);
+            return exactSolve(bn, sf, v + 1, 0);
+        }
+
+        if (v == u || bn.pathExists(u, v)) {
+            return exactSolve(bn, sf, v, u + 1);
         }
 
         BayesianNetwork bnWithEdge = new BayesianNetwork(bn);

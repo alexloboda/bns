@@ -22,8 +22,8 @@ public class Graph {
     public Graph(Graph g) {
         this(g.size());
         for (int v = 0; v < g.size(); v++) {
-            for (int u : g.outgoing_edges(v)) {
-                add_edge(v, u);
+            for (int u : g.outgoingEdges(v)) {
+                addEdge(v, u);
             }
         }
     }
@@ -52,7 +52,7 @@ public class Graph {
         return false;
     }
 
-    public List<Integer> top_sort() {
+    public List<Integer> topSort() {
         List<Boolean> vis = new ArrayList<>(Collections.nCopies(size(), false));
         List<Integer> out = new ArrayList<>(Collections.nCopies(size(), 0));
         int time = 0;
@@ -77,7 +77,7 @@ public class Graph {
 
     private int dfs(int v, List<Boolean> vis, List<Integer> out, int time) {
         vis.set(v, true);
-        for (int u : outgoing_edges(v)) {
+        for (int u : outgoingEdges(v)) {
             if (!vis.get(u)) {
                 time = dfs(u, vis, out, time + 1);
             }
@@ -86,7 +86,7 @@ public class Graph {
         return time;
     }
 
-    public List<Integer> ingoing_edges(int v) {
+    public List<Integer> ingoingEdges(int v) {
         List<Integer> ingoing = new ArrayList<>(radj.get(v).size());
         for (Edge e: radj.get(v)) {
             ingoing.add(e.v);
@@ -94,15 +94,15 @@ public class Graph {
        return ingoing;
     }
 
-    public List<Integer> outgoing_edges(int v) {
+    public List<Integer> outgoingEdges(int v) {
         return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
     }
 
-    public int out_degree(int v) {
+    public int outDegree(int v) {
         return adj.get(v).size();
     }
 
-    public boolean path_exists(int v, int u) {
+    public boolean pathExists(int v, int u) {
         // men meet in the middle
         int[] vis = new int[adj.size()];
         boolean[] player = new boolean[adj.size()];
@@ -130,17 +130,17 @@ public class Graph {
         return false;
     }
 
-    public boolean edge_exists(int v, int u) {
+    public boolean edgeExists(int v, int u) {
         return edges[v][u] != null;
     }
 
-    public void add_edge(int v, int u) {
+    public void addEdge(int v, int u) {
         edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
         adj.get(v).add(edges[v][u]);
         radj.get(u).add(edges[v][u]);
     }
 
-    public void remove_edge(int v, int u) {
+    public void removeEdge(int v, int u) {
         Edge e = edges[v][u];
         List<Edge> nei = adj.get(v);
         List<Edge> rnei = radj.get(u);
@@ -153,7 +153,7 @@ public class Graph {
         edges[v][u] = null;
     }
 
-    public int in_degree(int v) {
+    public int inDegree(int v) {
         return radj.get(v).size();
     }
 

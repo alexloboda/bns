@@ -180,8 +180,8 @@ public class Main {
                 int v = bn.getID(scanner.next());
                 int u = bn.getID(scanner.next());
                 scanner.next();
-                if (g.in_degree(u) < preranking_limit) {
-                    g.add_edge(v, u);
+                if (g.inDegree(u) < preranking_limit) {
+                    g.addEdge(v, u);
                 }
             }
         }

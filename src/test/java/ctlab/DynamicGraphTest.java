@@ -33,15 +33,15 @@ public class DynamicGraphTest {
                     if (v == u) {
                         continue;
                     }
-                    if (g.edge_exists(v, u)) {
-                        g.remove_edge(v, u);
-                        g.remove_edge(u, v);
+                    if (g.edgeExists(v, u)) {
+                        g.removeEdge(v, u);
+                        g.removeEdge(u, v);
                         dg.remove(tokens.get(v).get(u));
                         tokens.get(v).set(u, null);
                         tokens.get(u).set(v, null);
                     } else {
-                        g.add_edge(v, u);
-                        g.add_edge(u, v);
+                        g.addEdge(v, u);
+                        g.addEdge(u, v);
                         DynamicGraph.EdgeToken token = dg.add(v, u);
                         tokens.get(v).set(u, token);
                         tokens.get(u).set(v, token);
@@ -50,7 +50,7 @@ public class DynamicGraphTest {
                         for (int z = 0; z < i; z++) {
                             if (w != z) {
                                 String errMsg = "TEST SIZE: " + i + ", TEST #" + j + ", ACTION #" + k + "\n" + w + "\t" + z;
-                                Assert.assertEquals(errMsg, g.path_exists(w, z), dg.isConnected(w, z));
+                                Assert.assertEquals(errMsg, g.pathExists(w, z), dg.isConnected(w, z));
                             }
                         }
                     }

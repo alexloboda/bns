@@ -67,9 +67,9 @@ public class Model {
                     ++i;
                 }
                 if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(v, sf, i) - currLL;
+                    return Math.min(bn.scoreExcluding(v, sf, i) - currLL, 0.0);
                 } else {
-                    return bn.scoreIncluding(v, sf, i) - currLL;
+                    return Math.min(bn.scoreIncluding(v, sf, i) - currLL, 0.0);
                 }
             };
             return multFactory.spark(computeLL, -Math.log(n * (n - 1)));
@@ -136,6 +136,9 @@ public class Model {
         if (parent == null) {
             return;
         }
+        if (parent >= node) {
+            ++parent;
+        }
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node);
         } else {
@@ -151,6 +154,16 @@ public class Model {
         return steps;
     }
 
+    public double[][] adjMatrix() {
+        double[][] m = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                m[i][j] = bn.edgeExists(i, j) ? 1.0 : 0.0;
+            }
+        }
+        return m;
+    }
+
     public double[][] frequencies() {
         double[][] fs = new double[n][n];
         for (int i = 0; i < n; i++) {
@@ -161,11 +174,20 @@ public class Model {
         return fs;
     }
 
+    private void updateDistribution(int u) {
+        List<Integer> parentSet = bn.ingoingEdges(u);
+        Collections.sort(parentSet);
+        Multinomial mult = cache.get(u).request(parentSet);
+        distributions.set(u, mult);
+        transitions.set(u, (float)mult.logLikelihood());
+    }
+
     private void addEdge(int v, int u) {
         bn.addEdge(v, u);
         loglik -= ll[u];
         ll[u] = bn.score(u, sf);
         loglik += ll[u];
+        updateDistribution(u);
     }
 
     private void removeEdge(int v, int u) {
@@ -174,6 +196,7 @@ public class Model {
         ll[u] = bn.score(u, sf);
         loglik += ll[u];
         hits[v][u] += steps - time[v][u];
+        updateDistribution(u);
     }
 
     public void finish() {
