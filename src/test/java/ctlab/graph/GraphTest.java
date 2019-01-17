@@ -9,6 +9,7 @@ import java.util.Random;
 public class GraphTest {
     public static final int TEST_SIZE = 16;
     public static final int TEST_ACTIONS = 1000;
+    private static final int TEST_CASES = 10;
 
     private class ReferenceGraph {
         private boolean[][] adj;
@@ -49,48 +50,50 @@ public class GraphTest {
 
     @Test
     public void test() {
-        Graph g = new Graph(TEST_SIZE);
-        ReferenceGraph rg = new ReferenceGraph(TEST_SIZE);
         Random random = new Random(0xC0FFEE);
         int n = TEST_SIZE;
 
-        int edges = 0;
-        for (int i = 0; i < TEST_ACTIONS; i++) {
-            boolean remove = false;
-            if (edges != 0) {
-                if (edges > n + 5) {
-                    remove = random.nextDouble() < 0.75;
-                } else {
-                    remove = random.nextDouble() < 0.25;
-                }
-            }
-            if (edges == n * (n - 1) / 2) {
-                remove = true;
-            }
-            while (true) {
-                int v = random.nextInt(n);
-                int u = random.nextInt(n);
-                Assert.assertEquals(rg.edgeExists(v, u), g.edgeExists(v, u));
-                if (v == u || rg.edgeExists(v, u) != remove || rg.pathExists(u, v)) {
-                    continue;
-                }
-                if (remove) {
-                    rg.removeEdge(v, u);
-                    g.removeEdge(v, u);
-                    --edges;
-                } else {
-                    rg.addEdge(v, u);
-                    g.addEdge(v, u);
-                    ++edges;
-                }
-                for (int j = 0; j < n; j++) {
-                    for (int k = 0; k < n; k++) {
-                        if (j != k) {
-                            Assert.assertEquals(rg.pathExists(j, k), g.pathExists(j, k));
-                        }
+        for (int t = 0; t < TEST_CASES; t++) {
+            Graph g = new Graph(TEST_SIZE);
+            ReferenceGraph rg = new ReferenceGraph(TEST_SIZE);
+            int edges = 0;
+            for (int i = 0; i < TEST_ACTIONS; i++) {
+                boolean remove = false;
+                if (edges != 0) {
+                    if (edges > n + 5) {
+                        remove = random.nextDouble() < 0.75;
+                    } else {
+                        remove = random.nextDouble() < 0.25;
                     }
                 }
-                break;
+                if (edges == n * (n - 1) / 2) {
+                    remove = true;
+                }
+                while (true) {
+                    int v = random.nextInt(n);
+                    int u = random.nextInt(n);
+                    Assert.assertEquals(rg.edgeExists(v, u), g.edgeExists(v, u));
+                    if (v == u || rg.edgeExists(v, u) != remove || rg.pathExists(u, v)) {
+                        continue;
+                    }
+                    if (remove) {
+                        rg.removeEdge(v, u);
+                        g.removeEdge(v, u);
+                        --edges;
+                    } else {
+                        rg.addEdge(v, u);
+                        g.addEdge(v, u);
+                        ++edges;
+                    }
+                    for (int j = 0; j < n; j++) {
+                        for (int k = 0; k < n; k++) {
+                            if (j != k) {
+                                Assert.assertEquals(rg.pathExists(j, k), g.pathExists(j, k));
+                            }
+                        }
+                    }
+                    break;
+                }
             }
         }
     }
