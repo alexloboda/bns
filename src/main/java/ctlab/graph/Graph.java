@@ -9,12 +9,19 @@ public class Graph {
     private List<List<Edge>> radj;
     private Edge[][] edges;
 
+    private List<Map<Integer, DynamicGraph.EdgeToken>> tokens;
+    private DynamicGraph dgraph;
+
     public Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
+        dgraph = new DynamicGraph(n);
+        tokens = new ArrayList<>();
+
         for (int i = 0; i < n; i++) {
             adj.add(new ArrayList<>());
             radj.add(new ArrayList<>());
+            tokens.add(new HashMap<>());
         }
         edges = new Edge[n][n];
     }
@@ -103,6 +110,9 @@ public class Graph {
     }
 
     public boolean pathExists(int v, int u) {
+        if (!dgraph.isConnected(v, u)) {
+            return false;
+        }
         // men meet in the middle
         int[] vis = new int[adj.size()];
         boolean[] player = new boolean[adj.size()];
@@ -138,6 +148,16 @@ public class Graph {
         edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
         adj.get(v).add(edges[v][u]);
         radj.get(u).add(edges[v][u]);
+        DynamicGraph.EdgeToken token = dgraph.add(v, u);
+        assert token != null;
+
+        if (u < v) {
+            int t = u;
+            u = v;
+            v = t;
+        }
+        assert v < u;
+        tokens.get(v).put(u, token);
     }
 
     public void removeEdge(int v, int u) {
@@ -151,6 +171,15 @@ public class Graph {
         nei.remove(nei.size() - 1);
         rnei.remove(rnei.size() - 1);
         edges[v][u] = null;
+
+        if (u < v) {
+            int t = u;
+            u = v;
+            v = t;
+        }
+        DynamicGraph.EdgeToken token = tokens.get(v).remove(u);
+        assert token != null;
+        dgraph.remove(token);
     }
 
     public int inDegree(int v) {

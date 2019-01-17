@@ -93,14 +93,14 @@ public class BayesianNetwork {
     public double scoreIncluding(int v, ScoringFunction sf, int u) {
         List<Integer> ps = g.ingoingEdges(v);
         assert !ps.contains(u);
-        ps.add(v);
+        ps.add(u);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
     public double scoreExcluding(int v, ScoringFunction sf, int u) {
         List<Integer> ps = g.ingoingEdges(v);
         assert ps.contains(u);
-        ps.remove((Integer)v);
+        ps.remove((Integer)u);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
