@@ -1,6 +1,8 @@
 package ctlab.bn.action;
 
 public interface Cache {
+    void disable(short action);
+    void reEnable(short action, float ll);
     boolean contains(short action);
     float loglikelihood();
     Short randomAction();

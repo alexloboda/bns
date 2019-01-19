@@ -1,16 +1,15 @@
 package ctlab.bn.action;
 
-import java.util.Comparator;
 import java.util.NoSuchElementException;
 
 public class Heap {
     private short[] heap;
+    private float[] weights;
     private int size;
-    private Comparator<Short> comparator;
 
-    public Heap(int capacity, Comparator<Short> comparator) {
+    public Heap(int capacity) {
         heap = new short[capacity];
-        this.comparator = comparator;
+        weights = new float[capacity];
     }
 
     private void siftDown(int k) {
@@ -18,9 +17,9 @@ public class Heap {
             int c1 = 2 * k + 1;
             int c2 = 2 * k + 2;
             if (c1 < size) {
-                int min = comparator.compare(heap[k], heap[c1]) <= 0 ? k : c1;
+                int min = weights[heap[k]] <= weights[heap[c1]] ? k : c1;
                 if (c2 < size) {
-                    min = comparator.compare(heap[min], heap[c2]) <= 0 ? min : c2;
+                    min = weights[heap[min]] <- weights[heap[c2]] ? min : c2;
                 }
                 if (k == min) {
                     return;
@@ -39,7 +38,7 @@ public class Heap {
     private void siftUp(int k) {
         while (k != 0) {
             int j = (k - 1) / 2;
-            if (comparator.compare(heap[k], heap[j]) < 0) {
+            if (weights[heap[k]] < weights[heap[j]]) {
                 short t = heap[k];
                 heap[k] = heap[j];
                 heap[j] = t;
@@ -50,8 +49,9 @@ public class Heap {
         }
     }
 
-    public void add(short value) {
+    public void add(short value, float weight) {
         heap[size] = value;
+        weights[size] = weight;
         siftUp(size);
         size++;
     }

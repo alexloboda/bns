@@ -4,8 +4,6 @@ import ctlab.SegmentTree;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Multinomial {
     public static final float EPS = 1e-6f;
@@ -28,6 +26,8 @@ public class Multinomial {
     private float[] batchMaxLL;
     private BitSet batchResolved;
 
+    private HashMap<Short, Float> disabledActions;
+
     private int batchSize(int batch) {
         if (batch < batchesNum - 1) {
             return batchSize;
@@ -36,11 +36,70 @@ public class Multinomial {
         }
     }
 
+    public void disableAction(short action, Float ll) {
+        disabledActions.put(action, ll);
+        if (initialized) {
+            if (cache.contains(action)) {
+                cache.disable(action);
+                refreshCacheNode();
+                return;
+            }
+            int b = batch(action);
+            if (batchResolved.get(b)) {
+                actions.set(b, (float)likelihoodSubtract(actions.get(b), ll));
+            } else {
+                actions.set(b, (float)likelihoodSubtract(actions.get(b), initialLL));
+            }
+        }
+    }
+
+    public void reEnableAction(short action) {
+        if (!disabledActions.containsKey(action)) {
+            return;
+        }
+
+        float ll = disabledActions.get(action);
+        disabledActions.remove(action);
+        if (cache.contains(action)) {
+            cache.reEnable(action, ll);
+            refreshCacheNode();
+        } else {
+            int b = batch(action);
+            if (batchResolved.get(b)) {
+                float batchLL = (float)likelihoodsSum(actions.get(b), resolveAction(action, ll - initialLL));
+                actions.set(b, batchLL);
+                refreshCacheNode();
+            } else {
+                actions.set(b, (float)likelihoodsSum(actions.get(b), initialLL));
+            }
+        }
+    }
+
+    public void deactivate() {
+        for (Short action: disabledActions.keySet()) {
+            reEnableAction(action);
+        }
+        disabledActions = new LinkedHashMap<>();
+    }
+
     private double likelihoodsSum(double ll1, double ll2) {
+        if (ll1 == Double.NEGATIVE_INFINITY) {
+            return ll2;
+        }
+        if (ll2 == Double.NEGATIVE_INFINITY) {
+            return ll1;
+        }
         double maxLL = Math.max(ll1, ll2);
         ll1 -= maxLL;
         ll2 -= maxLL;
         return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
+    }
+
+    private double likelihoodSubtract(double ll1, double ll2) {
+        double maxLL = Math.max(ll1, ll2);
+        ll1 -= maxLL;
+        ll2 -= maxLL;
+        return Math.log(Math.exp(ll1) - Math.exp(ll2)) + maxLL;
     }
 
     public Multinomial(int maxSize, int batchesNum, short mainCacheSize, Function<Integer, Double> computeLL,
@@ -52,6 +111,7 @@ public class Multinomial {
         this.computeLL = computeLL;
         this.initialLL = initialLL;
         this.re = re;
+        this.disabledActions = new LinkedHashMap<>();
     }
 
     public double logLikelihood() {
@@ -76,6 +136,7 @@ public class Multinomial {
         }
         initialized = true;
         batchMaxLL = new float[batchesNum];
+        Arrays.fill(batchMaxLL, Float.NEGATIVE_INFINITY);
     }
 
     private Short tryAction(int pos) {
@@ -129,11 +190,11 @@ public class Multinomial {
         return action / batchSize;
     }
 
-    private void insertBack(Short action) {
+    private void insertBack(Short action, Double loglik) {
         if (action == null) {
             return;
         }
-        double ll = computeLL.apply((int)action);
+        double ll = loglik == null ? computeLL.apply((int)action) : loglik;
         int b = batch(action);
         batchMaxLL[b] = Math.max(batchMaxLL[b], (float)ll);
         ll += initialLL;
@@ -141,31 +202,36 @@ public class Multinomial {
         actions.set(b, (float)newLL);
     }
 
-    private void resolveBatch(int b) {
-        double overallLL = Double.NEGATIVE_INFINITY;
-        Queue<Integer> processingQ = IntStream.range(0, batchSize(b))
-                .mapToObj(x -> x + batchSize * b)
-                .collect(Collectors.toCollection(ArrayDeque::new));
-        double maxLL = Double.NEGATIVE_INFINITY;
-        while(!processingQ.isEmpty()) {
-            int action = processingQ.poll();
-            double ll = computeLL.apply(action);
-            if (!cache.isFull() || ll + initialLL > cache.min() + EPS) {
-                Short other = cache.add((short)action, (float)(ll + initialLL));
-                if (other != null) {
-                    if (batch(other) == b) {
-                        processingQ.add((int)other);
-                    } else {
-                        insertBack(other);
-                    }
-                }
-            } else {
-                overallLL = likelihoodsSum(overallLL, ll);
-                maxLL = Math.max(ll, maxLL);
-            }
+    private double resolveAction(short action, Double loglik) {
+        if (disabledActions.containsKey(action)) {
+            return Double.NEGATIVE_INFINITY;
         }
-        actions.set(b, (float)(overallLL + initialLL));
-        batchMaxLL[b] = (float)maxLL;
+        int b = batch(action);
+        double batchLL = Double.NEGATIVE_INFINITY;
+        double ll = loglik == null ? computeLL.apply((int)action) + initialLL : loglik;
+        if (!cache.isFull() || ll > cache.min() + EPS) {
+            Short other = cache.add(action, (float)ll);
+            if (other != null) {
+                if (batch(other) == b) {
+                    batchLL = likelihoodsSum(resolveAction(other, null), batchLL);
+                } else {
+                    insertBack(other, null);
+                }
+            }
+        } else {
+            batchMaxLL[b] = (float)Math.max(ll - initialLL, batchMaxLL[b]);
+            batchLL = likelihoodsSum(batchLL, ll);
+        }
+        return batchLL;
+    }
+
+    private void resolveBatch(int b) {
+        double batchLL = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < batchSize(b); i++) {
+            short action = (short)(i + batchSize * b);
+            batchLL = likelihoodsSum(batchLL, resolveAction(action, null));
+        }
+        actions.set(b, (float)batchLL);
         batchResolved.set(b, true);
         refreshCacheNode();
     }

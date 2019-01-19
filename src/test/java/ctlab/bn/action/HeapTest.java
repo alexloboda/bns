@@ -16,15 +16,16 @@ public class HeapTest {
         int[] positions = random.ints(inputSize, 0, 100).toArray();
         Comparator<Short> cmp = Comparator.comparingDouble(i -> weights[positions[i]]);
         PriorityQueue<Short> queue = new PriorityQueue<>(cmp);
-        Heap heap = new Heap(inputSize, cmp);
+        Heap heap = new Heap(inputSize);
         List<Short> input = IntStream.range(0, inputSize).mapToObj(x -> (short)x).collect(Collectors.toList());
         Collections.shuffle(input);
         for (int i = 0; i < inputSize; i++) {
             if (!queue.isEmpty() && random.nextDouble() < 0.1) {
                 Assert.assertEquals(weights[positions[queue.poll()]], weights[positions[heap.extractMin()]], 1e-6);
             }
-            queue.add(input.get(i));
-            heap.add(input.get(i));
+            short w = input.get(i);
+            queue.add(w);
+            heap.add(w, (float)weights[w]);
         }
         while(!queue.isEmpty()) {
             Assert.assertEquals(weights[positions[queue.poll()]], weights[positions[heap.extractMin()]], 1e-6);
@@ -33,8 +34,8 @@ public class HeapTest {
 
     @Test(expected = NoSuchElementException.class)
     public void emptyHeapTest() {
-        Heap heap = new Heap(16, Comparator.comparingInt(x -> x));
-        heap.add((short)5);
+        Heap heap = new Heap(16);
+        heap.add((short)5, 0.5f);
         heap.extractMin();
         heap.extractMin();
     }

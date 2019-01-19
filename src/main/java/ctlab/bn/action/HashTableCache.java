@@ -18,7 +18,17 @@ public class HashTableCache implements Cache {
         topActionNodes = new HashTable(cacheSize);
         topActions = new short[cacheSize];
         actions = new SegmentTree(cacheSize);
-        topActionsMin = new Heap(cacheSize, Comparator.comparingDouble(k -> actions.get(k)));
+        topActionsMin = new Heap(cacheSize);
+    }
+
+    @Override
+    public void disable(short action) {
+        actions.set(topActionNodes.get(action), Float.NEGATIVE_INFINITY);
+    }
+
+    @Override
+    public void reEnable(short action, float ll) {
+        actions.set(topActionNodes.get(action), ll);
     }
 
     @Override
@@ -59,7 +69,7 @@ public class HashTableCache implements Cache {
         topActions[pos] = action;
         actions.set(pos, ll);
         topActionNodes.put(action, pos);
-        topActionsMin.add(pos);
+        topActionsMin.add(pos, ll);
         return ret;
     }
 
