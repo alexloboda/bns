@@ -47,7 +47,7 @@ public class ModelTest {
         for (int i = 0; i < models; i++) {
             Model model = new Model(bn, sf, sr,
                     false, true,
-                    new MultinomialFactory(2, 3, 1, sr),
+                    new MultinomialFactory(2, 1, 1, sr),
                     2);
             model.run();
             while (model.steps() < 500) {

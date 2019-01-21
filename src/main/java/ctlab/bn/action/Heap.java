@@ -49,9 +49,9 @@ public class Heap {
         }
     }
 
-    public void add(short value, float weight) {
+    public void add(short value, double weight) {
         heap[size] = value;
-        weights[size] = weight;
+        weights[size] = (float)weight;
         siftUp(size);
         size++;
     }

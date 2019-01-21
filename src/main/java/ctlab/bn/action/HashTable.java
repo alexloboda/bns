@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 
 public class HashTable {
     private final static int p = 9871;
-    public static final int STEP = 3;
+    public static final int STEP = 1;
 
     private int capacity;
     private short size;

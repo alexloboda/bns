@@ -92,7 +92,7 @@ public class Model {
         for (int i = 0; i < n; i++) {
             cache.add(new Cache(nCachedStates, multinomials(i)));
             distributions.add(cache.get(i).request(Collections.emptyList()));
-            transitions.set(i, (float)distributions.get(i).logLikelihood());
+            transitions.set(i, distributions.get(i).logLikelihood());
         }
     }
 
@@ -117,7 +117,7 @@ public class Model {
     }
 
     public void step() {
-        float ll = transitions.likelihood();
+        double ll = transitions.likelihood();
         double jump = 0.0;
         double likelihood = Math.exp(ll);
         assert likelihood > -EPS && likelihood < 1 + EPS;
@@ -133,7 +133,7 @@ public class Model {
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction();
-        transitions.set(node, (float)mult.logLikelihood());
+        transitions.set(node, mult.logLikelihood());
         if (parent == null) {
             return;
         }
@@ -180,7 +180,7 @@ public class Model {
         Collections.sort(parentSet);
         Multinomial mult = cache.get(u).request(parentSet);
         distributions.set(u, mult);
-        transitions.set(u, (float)mult.logLikelihood());
+        transitions.set(u, mult.logLikelihood());
     }
 
     private void addEdge(int v, int u) {
