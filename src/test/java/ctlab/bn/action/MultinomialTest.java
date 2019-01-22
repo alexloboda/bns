@@ -147,15 +147,15 @@ public class MultinomialTest {
                 .collect(Collectors.toList());
 
         for (int i = 0; i < LOG_STEPS; i++) {
-            long steps = Math.round(Math.exp(i));
+            long steps = Math.round(Math.pow(2, i));
             int[] hits = new int[N_VARIABLES_COMPLEX];
             Collections.shuffle(changeOrder, rnd);
             int[] actionStep = re.ints(0, (int)steps).limit(ACTIONS_COMPLEX).toArray();
-            boolean[] disabled = new boolean[N_VARIABLES_COMPLEX];
 
             for (int j = 0; j < NCHOICES; j++) {
                 Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 10, calcLL,
                                                    Math.log(1.0 / N_VARIABLES_COMPLEX), re);
+                resetStructures();
                 for (int k = 0; k < steps; k++) {
                     for (int l = 0; l < ACTIONS_COMPLEX; l++) {
                         if (actionStep[l] == k) {
@@ -165,7 +165,7 @@ public class MultinomialTest {
                                 mult.reEnableAction((short)toChange);
                             }  else {
                                 ps[toChange] = 0.0;
-                                mult.disableAction((short)toChange, calcLL.apply(toChange) - initialLL);
+                                mult.disableAction((short)toChange, calcLL.apply(toChange) + initialLL);
                             }
                             disabled[toChange] = !disabled[toChange];
                         }

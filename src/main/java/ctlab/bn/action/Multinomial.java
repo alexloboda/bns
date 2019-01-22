@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Multinomial {
-    public static final float EPS = 1e-6f;
+    public static final double EPS = 1e-8;
 
     private int n;
     private int batchSize;
@@ -106,6 +106,9 @@ public class Multinomial {
         double maxLL = Math.max(ll1, ll2);
         ll1 -= maxLL;
         ll2 -= maxLL;
+        if (ll1 < 0 && ll1 > -EPS) {
+            return Double.NEGATIVE_INFINITY;
+        }
         return Math.log(Math.exp(ll1) - Math.exp(ll2)) + maxLL;
     }
 
@@ -204,8 +207,14 @@ public class Multinomial {
             }
         } else {
             batchHits[node]++;
-            int pos = re.nextInt(batchSize(node));
-            result = tryAction(batchSize * node + pos);
+            int pos;
+            while (true) {
+                pos = batchSize * node + re.nextInt(batchSize(node));
+                if (!disabledActions.containsKey((short)pos)) {
+                    break;
+                }
+            }
+            result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
                 resolveBatch(node);
             }
