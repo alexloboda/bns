@@ -4,15 +4,46 @@ import org.apache.commons.math3.special.Beta;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.SplittableRandom;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class MultinomialTest {
-    public static final int NCHOICES = 10000;
-    public static final int NVARIABLES = 10;
-    public static final int N_DISABLE_ACTIONS = 100;
+    private static final int NCHOICES = 10000;
+    private static final int NVARIABLES = 10;
+    private static final int N_DISABLE_ACTIONS = 100;
+    private static final int LOG_STEPS = 10;
+    private static final int N_VARIABLES_COMPLEX = 32;
+    private static final int ACTIONS_COMPLEX = 30;
+
+    private SplittableRandom re;
+
+    private double initialLL;
+    private double[] psOriginal;
+    private double[] ps;
+    private boolean[] disabled;
+
+    Function<Integer, Double> calcLL;
+
+    public MultinomialTest() {
+        init(NVARIABLES);
+    }
+
+    private void init(int vars) {
+        re = new SplittableRandom(42);
+
+        initialLL = Math.log(1.0 / vars);
+        ps = re.doubles(vars).toArray();
+        psOriginal = Arrays.copyOf(ps, ps.length);
+        disabled = new boolean[vars];
+
+        calcLL = i -> Math.log(psOriginal[i]);
+    }
+
+    private void resetStructures() {
+        ps = Arrays.copyOf(psOriginal, psOriginal.length);
+        Arrays.fill(disabled, false);
+    }
 
     private double binomialCDF(int k, int n, double p) {
         if (k == n) {
@@ -25,16 +56,8 @@ public class MultinomialTest {
         return 1.0 - (binomialCDF(n - k, n, p) - binomialCDF(k, n, p));
     }
 
-    private void testMultinomial(Multinomial mult, double[] ps) {
+    private void assertComparable(double[] ps, int[] hits) {
         double psSum = Arrays.stream(ps).sum();
-        int hits[] = new int[ps.length];
-        for (int i = 0; i < NCHOICES; i++) {
-            Short choice = mult.randomAction();
-            if (choice != null) {
-                ++hits[choice];
-            }
-        }
-
         int sum = Arrays.stream(hits).sum();
         StringBuilder msg = new StringBuilder("\nn = " + sum + "\n");
         for (int i = 0; i < ps.length; i++) {
@@ -51,10 +74,20 @@ public class MultinomialTest {
         }
     }
 
+    private void testMultinomial(Multinomial mult, double[] ps) {
+        int hits[] = new int[ps.length];
+        for (int i = 0; i < NCHOICES; i++) {
+            Short choice = mult.randomAction();
+            if (choice != null) {
+                ++hits[choice];
+            }
+        }
+
+        assertComparable(ps, hits);
+    }
+
     @Test
     public void multinomialTest() {
-        SplittableRandom re = new SplittableRandom(42);
-
         double initialLL = Math.log(1.0 / 9);
         double[] ps = {1.0, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.5, 0.5};
         double[] lls = Arrays.stream(ps).map(Math::log).toArray();
@@ -73,27 +106,62 @@ public class MultinomialTest {
     public void disableActionsTest() {
         SplittableRandom re = new SplittableRandom(42);
 
-        double initialLL = Math.log(1.0 / NVARIABLES);
-        double[] ps = re.doubles(NVARIABLES).toArray();
-        double[] ps_original = Arrays.copyOf(ps, ps.length);
-        double[] lls = Arrays.stream(ps).map(Math::log).toArray();
-        boolean[] disabled = new boolean[NVARIABLES];
-
-        Function<Integer, Double> calcLL = i -> lls[i];
-
         Multinomial multinomial = new Multinomial(NVARIABLES, 3, 2, calcLL, initialLL, re);
 
         for (int i = 0; i < N_DISABLE_ACTIONS; i++) {
             short var = (short)re.nextInt(NVARIABLES);
             if (!disabled[var]) {
                 ps[var] = 0.0;
-                multinomial.disableAction(var, lls[var] + initialLL);
+                multinomial.disableAction(var, calcLL.apply((int)var) + initialLL);
             } else {
-                ps[var] = ps_original[var];
+                ps[var] = psOriginal[var];
                 multinomial.reEnableAction(var);
             }
             disabled[var] = !disabled[var];
             testMultinomial(multinomial, ps);
+        }
+        resetStructures();
+    }
+
+    @Test
+    public void earlyPhaseMultinomialTest() {
+        init(N_VARIABLES_COMPLEX);
+
+        SplittableRandom re = new SplittableRandom(42);
+        Random rnd = new Random(42);
+
+        List<Integer> changeOrder = re.ints(ACTIONS_COMPLEX, N_VARIABLES_COMPLEX).boxed().collect(Collectors.toList());
+
+        for (int i = 0; i < LOG_STEPS; i++) {
+            long steps = Math.round(Math.exp(i));
+            int[] hits = new int[N_VARIABLES_COMPLEX];
+            Collections.shuffle(changeOrder, rnd);
+            int[] actionStep = re.ints(ACTIONS_COMPLEX, (int)steps).toArray();
+            boolean[] disabled = new boolean[N_VARIABLES_COMPLEX];
+
+            for (int j = 0; j < NCHOICES; j++) {
+                Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 10, calcLL,
+                                                   Math.log(1.0 / N_VARIABLES_COMPLEX), re);
+                for (int k = 0; k < steps; k++) {
+                    for (int l = 0; l < N_DISABLE_ACTIONS; l++) {
+                        if (actionStep[l] == k) {
+                            int toChange = changeOrder.get(l);
+                            if (disabled[toChange]) {
+                                ps[toChange] = psOriginal[toChange];
+                                mult.reEnableAction((short)toChange);
+                            }  else {
+                                ps[toChange] = 0.0;
+                                mult.disableAction((short)toChange, calcLL.apply(toChange) - initialLL);
+                            }
+                            disabled[toChange] = !disabled[toChange];
+                        }
+                    }
+                    mult.randomAction();
+                }
+                ++hits[mult.randomAction()];
+            }
+
+            assertComparable(ps, hits);
         }
     }
 }

@@ -7,30 +7,30 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class GraphTest {
-    public static final int TEST_SIZE = 16;
-    public static final int TEST_ACTIONS = 1000;
+    private static final int TEST_SIZE = 16;
+    private static final int TEST_ACTIONS = 1000;
     private static final int TEST_CASES = 10;
 
     private class ReferenceGraph {
         private boolean[][] adj;
 
-        public ReferenceGraph(int n) {
+        ReferenceGraph(int n) {
             adj = new boolean[n][n];
         }
 
-        public void addEdge(int v, int u) {
+        void addEdge(int v, int u) {
             adj[v][u] = true;
         }
 
-        public void removeEdge(int v, int u) {
+        void removeEdge(int v, int u) {
             adj[v][u] = false;
         }
 
-        public boolean edgeExists(int v, int u) {
+        boolean edgeExists(int v, int u) {
             return adj[v][u];
         }
 
-        public boolean pathExists(int v, int u) {
+        boolean pathExists(int v, int u) {
             int n = adj.length;
 
             boolean[][] closure = Arrays.stream(adj).map(boolean[]::clone).toArray(boolean[][]::new);
