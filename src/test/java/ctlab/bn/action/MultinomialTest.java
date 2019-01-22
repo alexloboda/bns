@@ -9,10 +9,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MultinomialTest {
-    private static final int NCHOICES = 10000;
+    private static final int NCHOICES = 20000;
     private static final int NVARIABLES = 10;
     private static final int N_DISABLE_ACTIONS = 100;
-    private static final int LOG_STEPS = 10;
+    private static final int LOG_STEPS = 8;
     private static final int N_VARIABLES_COMPLEX = 32;
     private static final int ACTIONS_COMPLEX = 30;
 
@@ -45,15 +45,26 @@ public class MultinomialTest {
         Arrays.fill(disabled, false);
     }
 
-    private double binomialCDF(int k, int n, double p) {
-        if (k == n) {
+    private double binomialCDF(double k, double n, double p) {
+        if (k >= n) {
             return 1.0;
         }
-        return Beta.regularizedBeta(1 - p, (double)(n - k), (double)(k + 1));
+        if (k <= 0.0) {
+            return 0.0;
+        }
+        return Beta.regularizedBeta(1 - p, n - k, k + 1);
     }
 
     private double binomialTest(int k, int n, double p) {
-        return 1.0 - (binomialCDF(n - k, n, p) - binomialCDF(k, n, p));
+        double mean = p * n;
+        double pos = k;
+        if (k > mean) {
+            pos = mean - (k - mean);
+        }
+        double lower = binomialCDF(pos, n, p);
+        double term = k < mean ? -1.0 : 0.0;
+        double higher = binomialCDF(mean + (mean - pos) + term, n, p);
+        return Math.min(1.0, 1.0 - (higher - lower));
     }
 
     private void assertComparable(double[] ps, int[] hits) {
@@ -130,20 +141,23 @@ public class MultinomialTest {
         SplittableRandom re = new SplittableRandom(42);
         Random rnd = new Random(42);
 
-        List<Integer> changeOrder = re.ints(ACTIONS_COMPLEX, N_VARIABLES_COMPLEX).boxed().collect(Collectors.toList());
+        List<Integer> changeOrder = re.ints(0, N_VARIABLES_COMPLEX)
+                .limit(ACTIONS_COMPLEX)
+                .boxed()
+                .collect(Collectors.toList());
 
         for (int i = 0; i < LOG_STEPS; i++) {
             long steps = Math.round(Math.exp(i));
             int[] hits = new int[N_VARIABLES_COMPLEX];
             Collections.shuffle(changeOrder, rnd);
-            int[] actionStep = re.ints(ACTIONS_COMPLEX, (int)steps).toArray();
+            int[] actionStep = re.ints(0, (int)steps).limit(ACTIONS_COMPLEX).toArray();
             boolean[] disabled = new boolean[N_VARIABLES_COMPLEX];
 
             for (int j = 0; j < NCHOICES; j++) {
                 Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 10, calcLL,
                                                    Math.log(1.0 / N_VARIABLES_COMPLEX), re);
                 for (int k = 0; k < steps; k++) {
-                    for (int l = 0; l < N_DISABLE_ACTIONS; l++) {
+                    for (int l = 0; l < ACTIONS_COMPLEX; l++) {
                         if (actionStep[l] == k) {
                             int toChange = changeOrder.get(l);
                             if (disabled[toChange]) {
@@ -158,7 +172,10 @@ public class MultinomialTest {
                     }
                     mult.randomAction();
                 }
-                ++hits[mult.randomAction()];
+                Short action = mult.randomAction();
+                if (action != null) {
+                    ++hits[action];
+                }
             }
 
             assertComparable(ps, hits);
