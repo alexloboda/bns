@@ -83,7 +83,8 @@ public class Multinomial {
     }
 
     public void deactivate() {
-        for (Short action: disabledActions.keySet()) {
+        List<Short> toDisable = new ArrayList<>(disabledActions.keySet());
+        for (Short action: toDisable) {
             reEnableAction(action);
         }
         disabledActions = new LinkedHashMap<>();

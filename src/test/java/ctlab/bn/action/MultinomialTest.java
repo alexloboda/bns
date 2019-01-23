@@ -132,6 +132,9 @@ public class MultinomialTest {
             testMultinomial(multinomial, ps);
         }
         resetStructures();
+
+        multinomial.deactivate();
+        testMultinomial(multinomial, psOriginal);
     }
 
     @Test
