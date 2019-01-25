@@ -12,6 +12,7 @@ public class HashTableCache implements Cache {
     private Heap topActionsMin;
     private short[] topActions;
     private SplittableRandom re;
+    private double ll;
 
     public HashTableCache(short cacheSize, SplittableRandom re) {
         if (cacheSize == 0) {
@@ -22,6 +23,10 @@ public class HashTableCache implements Cache {
         topActions = new short[cacheSize];
         actions = new SegmentTree(cacheSize);
         topActionsMin = new Heap(cacheSize);
+    }
+
+    public double getLastLL() {
+        return ll;
     }
 
     @Override
@@ -52,7 +57,9 @@ public class HashTableCache implements Cache {
 
     @Override
     public Short randomAction() {
-        return topActions[(short)actions.randomChoice(re)];
+        short node = (short)actions.randomChoice(re);
+        ll = actions.get(node);
+        return topActions[node];
     }
 
     @Override

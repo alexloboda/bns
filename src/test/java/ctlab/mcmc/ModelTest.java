@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class ModelTest {
     @Test
-    public void test() {
+    public void toyModelTest() {
         Random random = new Random(0xC0FFEE);
         ScoringFunction sf = new BDE();
         int sampleSize = 750;
@@ -42,16 +42,18 @@ public class ModelTest {
         SplittableRandom sr = new SplittableRandom(42);
         double[][] actual = new double[bn.size()][bn.size()];
 
-        int models = 2000;
+        int models = 100;
 
+        long timeBefore = System.currentTimeMillis();
         for (int i = 0; i < models; i++) {
+            System.err.println(i);
             Model model = new Model(bn, sf, sr,
                     false, true,
-                    new MultinomialFactory(2, 1, 1, sr),
-                    2);
+                    new MultinomialFactory(2, 1, 2, sr),
+                    10);
             model.run();
-            while (model.steps() < 500) {
-                model.step();
+            while (model.steps() < 100_000_000) {
+                model.step(100_000_000);
             }
             double[][] fs = model.adjMatrix();
             for (int v = 0; v < bn.size(); v++) {
@@ -61,6 +63,7 @@ public class ModelTest {
             }
             model.finish();
         }
+        System.err.println("Time " + (System.currentTimeMillis() - timeBefore));
         double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {

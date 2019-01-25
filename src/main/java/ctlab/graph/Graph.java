@@ -3,6 +3,8 @@ package ctlab.graph;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -15,6 +17,7 @@ public class Graph {
 
     private List<Map<Integer, DynamicGraph.EdgeToken>> tokens;
     private DynamicGraph dgraph;
+    private BiConsumer<Integer, Integer> noPathSupportCallback;
 
     public Graph(int n) {
         adj = new ArrayList<>();
@@ -29,6 +32,10 @@ public class Graph {
         }
         edges = new Edge[n][n];
         subscriptions = new int[n][n];
+    }
+
+    public void setCallback(BiConsumer<Integer, Integer> callback) {
+        this.noPathSupportCallback = callback;
     }
 
     public Graph(Graph g) {
@@ -234,6 +241,7 @@ public class Graph {
 
         public void processDeletion() {
             --subscriptions[v][u];
+            noPathSupportCallback.accept(v, u);
             for (LinkedList.Entry ref: backRefs) {
                 ref.remove();
             }

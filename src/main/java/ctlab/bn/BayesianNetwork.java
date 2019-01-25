@@ -4,6 +4,8 @@ import ctlab.bn.sf.ScoringFunction;
 import ctlab.graph.Graph;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class BayesianNetwork {
@@ -24,6 +26,10 @@ public class BayesianNetwork {
 
     public int getID(String name) {
         return names.get(name);
+    }
+
+    public void setCallback(BiConsumer<Integer, Integer> callback) {
+        g.setCallback(callback);
     }
 
     public BayesianNetwork(BayesianNetwork bn) {

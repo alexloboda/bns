@@ -7,6 +7,7 @@ public interface Cache {
     double loglikelihood();
     Short randomAction();
     double min();
+    double getLastLL();
     Short add(short action, double ll);
     boolean isFull();
 }

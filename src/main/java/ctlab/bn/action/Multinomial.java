@@ -18,6 +18,8 @@ public class Multinomial {
     private double initialLL;
     private boolean initialized;
 
+    private double lastLL;
+
     private Function<Integer, Double> computeLL;
     private SplittableRandom re;
 
@@ -55,6 +57,10 @@ public class Multinomial {
         }
     }
 
+    public double getLastLL() {
+        return lastLL;
+    }
+
     public void reEnableAction(short action) {
         if (!disabledActions.containsKey(action)) {
             return;
@@ -88,6 +94,7 @@ public class Multinomial {
             reEnableAction(action);
         }
         disabledActions = new LinkedHashMap<>();
+        assert logLikelihood() < 0.1;
     }
 
     private double likelihoodsSum(double ll1, double ll2) {
@@ -160,6 +167,7 @@ public class Multinomial {
 
     private Short tryAction(int pos) {
         double ll = computeLL.apply(pos);
+        lastLL = ll + initialLL;
         if (Math.log(re.nextDouble()) < ll) {
             return (short)pos;
         } else {
@@ -169,7 +177,6 @@ public class Multinomial {
 
     public Short randomAction() {
         hits++;
-        Short result;
         if (!initialized) {
             short pos;
             while (true) {
@@ -178,7 +185,7 @@ public class Multinomial {
                     break;
                 }
             }
-            result = tryAction(pos);
+            Short result = tryAction(pos);
             if (hits > (batchSize + mainCacheSize) / 2) {
                 init();
             }
@@ -186,7 +193,9 @@ public class Multinomial {
         }
         int node = actions.randomChoice(re);
         if (node == batchesNum) {
-            return cache.randomAction();
+            Short result = cache.randomAction();
+            lastLL = cache.getLastLL() + initialLL;
+            return result;
         }
         if (batchResolved.get(node)) {
             int bs = batchSize(node);
@@ -202,6 +211,7 @@ public class Multinomial {
                     continue;
                 }
                 double ll = computeLL.apply(curr);
+                lastLL = ll + initialLL;
                 if (Math.log(re.nextDouble()) < ll - batchMaxLL[node]) {
                     return (short)curr;
                 }
@@ -215,12 +225,14 @@ public class Multinomial {
                     break;
                 }
             }
-            result = tryAction(pos);
+
+            Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
                 resolveBatch(node);
             }
+
+            return result;
         }
-        return result;
     }
 
     private int batch(int action) {

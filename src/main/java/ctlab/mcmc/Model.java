@@ -59,6 +59,11 @@ public class Model {
         }
     }
 
+    public void processPathElimination(int v, int u) {
+        distributions.get(u).reEnableAction((short)v);
+        transitions.set(u, distributions.get(u).logLikelihood());
+    }
+
     private Function<List<Integer>, Multinomial> multinomials(int v) {
         return ps -> {
             double currLL = ll[v];
@@ -78,6 +83,7 @@ public class Model {
 
     public void run() {
         this.bn = new BayesianNetwork(this.bn);
+        this.bn.setCallback(this::processPathElimination);
         if (randomPolicy) {
             bn.randomPolicy();
         }
@@ -104,30 +110,33 @@ public class Model {
             order.add(i);
         }
 
-        Random rd = ThreadLocalRandom.current();
-        Collections.shuffle(order, rd);
+        Random re = new Random(random.nextInt());
+        Collections.shuffle(order, re);
 
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                if (rd.nextBoolean()) {
+                if (random.nextBoolean()) {
                     bn.addEdge(order.get(i), order.get(j));
                 }
             }
         }
     }
 
-    public void step() {
+    public void step(long limit) {
         double ll = transitions.likelihood();
+        assert ll < 0.1;
         double jump = 0.0;
         double likelihood = Math.exp(ll);
-        assert likelihood > -EPS && likelihood < 1 + EPS;
         if (likelihood < 1.0) {
-            GeometricDistribution gd = new GeometricDistribution(1.0 - likelihood);
+            GeometricDistribution gd = new GeometricDistribution(likelihood);
             jump = gd.getNumericalMean();
         }
         steps += (int)jump + 1;
         if (random.nextDouble() < jump - (int)jump) {
             steps++;
+        }
+        if (steps > limit) {
+            return;
         }
 
         int node = transitions.randomChoice(random);
@@ -144,6 +153,8 @@ public class Model {
             removeEdge(parent, node);
         } else {
             if (bn.pathExists(node, parent)) {
+                mult.disableAction((short)(parent > node ? parent - 1 : parent), mult.getLastLL());
+                transitions.set(node, mult.logLikelihood());
                 return;
             }
 
@@ -176,6 +187,7 @@ public class Model {
     }
 
     private void updateDistribution(int u) {
+        distributions.get(u).deactivate();
         List<Integer> parentSet = bn.ingoingEdges(u);
         Collections.sort(parentSet);
         Multinomial mult = cache.get(u).request(parentSet);

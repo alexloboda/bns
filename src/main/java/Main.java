@@ -278,10 +278,10 @@ public class Main {
         public void run() {
             m.run();
             for (int i = 0; i < warmup; i++) {
-                m.step();
+                m.step(1);
             }
             for (int i = 0; i < steps; i++){
-                m.step();
+                m.step(1);
             }
             m.finish();
             synchronized (System.err) {
