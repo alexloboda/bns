@@ -9,6 +9,8 @@ import org.apache.commons.math3.distribution.GeometricDistribution;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Model {
     public static final double EPS = 1e-5;
@@ -32,9 +34,12 @@ public class Model {
     private SplittableRandom random;
     private SegmentTree transitions;
 
+    private List<Integer> permutation;
+
     public Model(BayesianNetwork bn, ScoringFunction sf, SplittableRandom random,
                  boolean random_policy, boolean random_dag, MultinomialFactory multFactory,
                  int nCachedStates) {
+        permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.randomPolicy = random_policy;
         this.randomDAG = random_dag;
         this.sf = sf;
@@ -106,12 +111,14 @@ public class Model {
     }
 
     public void run() {
+        bn = new BayesianNetwork(bn);
+        permutation = bn.shuffleVariables(new Random(random.nextInt()));
+
         if (randomPolicy) {
             bn.randomPolicy();
         }
 
-        this.bn = new BayesianNetwork(this.bn);
-        this.bn.setCallback(this::processPathElimination);
+        bn.setCallback(this::processPathElimination);
         if (randomDAG) {
             sampleDAG();
         }
@@ -196,7 +203,7 @@ public class Model {
         boolean[][] m = new boolean[n][n];
         for (int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
-                m[i][j] = bn.edgeExists(i, j);
+                m[permutation.get(i)][permutation.get(j)] = bn.edgeExists(i, j);
             }
         }
         return m;

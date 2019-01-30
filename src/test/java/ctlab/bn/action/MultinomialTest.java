@@ -1,6 +1,5 @@
 package ctlab.bn.action;
 
-import org.apache.commons.math3.special.Beta;
 import org.junit.Assert;
 import org.junit.Test;
 

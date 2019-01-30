@@ -2,11 +2,13 @@ package ctlab.bn;
 
 import ctlab.bn.sf.ScoringFunction;
 import ctlab.graph.Graph;
+import org.apache.commons.math3.util.MathArrays;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BayesianNetwork {
     private List<Variable> variables;
@@ -152,5 +154,20 @@ public class BayesianNetwork {
             cs[v.cardinality()]++;
         }
         return ret != -1 ? ret : steps_ub;
+    }
+
+    public List<Integer> shuffleVariables(Random random) {
+        List<Integer> perm = IntStream.range(0, variables.size()).boxed().collect(Collectors.toList());
+        Collections.shuffle(perm, random);
+        Map<Integer, Integer> inverseMap = IntStream.range(0, variables.size()).boxed()
+                .collect(Collectors.toMap(perm::get, x -> x));
+        names = names.keySet().stream()
+                .collect(Collectors.toMap(x -> x, x -> inverseMap.get(names.get(x))));
+        List<Variable> newList = new ArrayList<>();
+        for (int k: perm) {
+            newList.add(variables.get(k));
+        }
+        variables = newList;
+        return perm;
     }
 }

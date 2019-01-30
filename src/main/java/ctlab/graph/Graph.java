@@ -117,7 +117,7 @@ public class Graph {
         return adj.get(v).size();
     }
 
-    private void processPath(Pair<Integer, Integer> meet, int first, int last, boolean[] player, int[] parent) {
+    private void processPath(Pair<Integer, Integer> meet, int first, int last, int[] parent) {
         Subscription subscription = new Subscription(first, last);
         ++subscriptions[first][last];
         int v = meet.getFirst();
@@ -159,7 +159,7 @@ public class Graph {
         for (int i = 0; i < adj.size() / 2; i++) {
             Pair<Integer, Integer> directResult = step(direct, vis, player, parent);
             if (directResult != null) {
-                processPath(directResult, v, u, player, parent);
+                processPath(directResult, v, u, parent);
                 return true;
             }
             if (direct.isEmpty()) {
@@ -167,7 +167,7 @@ public class Graph {
             }
             Pair<Integer, Integer> backResult = step(back, vis, player, parent);
             if (backResult != null) {
-                processPath(backResult, v, u, player, parent);
+                processPath(backResult, v, u, parent);
                 return true;
             }
             if (back.isEmpty()) {
