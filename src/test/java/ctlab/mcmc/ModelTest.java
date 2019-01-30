@@ -1,5 +1,6 @@
 package ctlab.mcmc;
 
+import ctlab.Utils;
 import ctlab.bn.BayesianNetwork;
 import ctlab.bn.Variable;
 import ctlab.bn.action.MultinomialFactory;
@@ -17,16 +18,16 @@ public class ModelTest {
     public void toyModelTest() {
         Random random = new Random(0xC0FFEE);
         ScoringFunction sf = new BDE();
-        int sampleSize = 750;
+        int sampleSize = 200;
 
         List<Double> data1 = random.doubles(sampleSize).boxed().collect(Collectors.toList());
         List<Double> data2 = random.doubles(sampleSize).boxed().collect(Collectors.toList());
         List<Double> data3 = new ArrayList<>();
 
         for (int i = 0; i < sampleSize; i++) {
-            if (data1.get(i) > 2.0 / 3.0 && data2.get(i) > 2.0 / 3.0) {
+            if (data1.get(i) > 0.6 && data2.get(i) > 0.6) {
                 data3.add(random.nextDouble() / 3.0);
-            } else if (data1.get(i) < 1.0 / 3.0 && data2.get(i) < 1.0 / 3.0) {
+            } else if (data1.get(i) < 0.6 && data2.get(i) < 0.6) {
                 data3.add(0.6 + random.nextDouble() / 3.0);
             } else {
                 data3.add(random.nextDouble());
@@ -38,33 +39,33 @@ public class ModelTest {
         Variable var3 = new Variable("VAR3", data3, 3, Variable.DiscretizationPrior.UNIFORM);
 
         BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3));
+        double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
 
         SplittableRandom sr = new SplittableRandom(42);
-        double[][] actual = new double[bn.size()][bn.size()];
+        int[][] actual = new int[bn.size()][bn.size()];
 
         int models = 100;
 
         long timeBefore = System.currentTimeMillis();
         for (int i = 0; i < models; i++) {
-            System.err.println(i);
+            System.out.println("Model " + i);
             Model model = new Model(bn, sf, sr,
-                    false, true,
+                    false, false,
                     new MultinomialFactory(2, 1, 2, sr),
                     10);
             model.run();
-            while (model.steps() < 100_000_000) {
-                model.step(100_000_000);
+            while (model.steps() < 10_000_000) {
+                model.step(10_000_000);
             }
-            double[][] fs = model.adjMatrix();
+            boolean[][] adj = model.adjMatrix();
             for (int v = 0; v < bn.size(); v++) {
                 for (int u = 0; u < bn.size(); u++) {
-                    actual[v][u] += fs[v][u] / models;
+                    actual[v][u] += adj[v][u] ? 1 : 0;
                 }
             }
             model.finish();
         }
         System.err.println("Time " + (System.currentTimeMillis() - timeBefore));
-        double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 System.err.print(expectedFs[i][j] + "\t");
@@ -78,7 +79,12 @@ public class ModelTest {
             System.err.println();
         }
         for (int i = 0; i < 3; i++) {
-            Assert.assertArrayEquals(expectedFs[i], actual[i], 0.025);
+            for (int j = 0; j < 3; j++) {
+                if (i == j){
+                    continue;
+                }
+                Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-4);
+            }
         }
     }
 

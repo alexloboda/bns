@@ -8,7 +8,6 @@ import ctlab.bn.sf.ScoringFunction;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 public class Model {
@@ -52,7 +51,7 @@ public class Model {
     }
 
     private void calculateLikelihood() {
-        loglik = -Double.NEGATIVE_INFINITY;
+        loglik = 0.0;
         for (int i = 0; i < n; i++) {
             ll[i] = bn.score(i, sf);
             loglik += ll[i];
@@ -60,8 +59,9 @@ public class Model {
     }
 
     public void processPathElimination(int v, int u) {
-        distributions.get(u).reEnableAction((short)v);
-        transitions.set(u, distributions.get(u).logLikelihood());
+        u = u > v ? u - 1 : u;
+        distributions.get(v).reEnableAction((short)u);
+        transitions.set(v, distributions.get(v).logLikelihood());
     }
 
     private Function<List<Integer>, Multinomial> multinomials(int v) {
@@ -81,13 +81,37 @@ public class Model {
         };
     }
 
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        for (int u = 0; u < n; u++) {
+            for (int v: bn.ingoingEdges(u)) {
+                s.append(v).append("->").append(u).append(" ");
+            }
+        }
+        return s.toString();
+    }
+
+    public void printDebugInfo() {
+        System.out.println("Current log-likelihood " + loglik);
+        for (int u = 0; u < n; u++) {
+            for (int v: bn.ingoingEdges(u)) {
+                System.out.print(v + "->" + u + " ");
+            }
+        }
+        System.out.println();
+        for (int i = 0; i < n; i++) {
+            distributions.get(i).printDebugInfo(i);
+        }
+        System.out.println();
+    }
+
     public void run() {
-        this.bn = new BayesianNetwork(this.bn);
-        this.bn.setCallback(this::processPathElimination);
         if (randomPolicy) {
             bn.randomPolicy();
         }
 
+        this.bn = new BayesianNetwork(this.bn);
+        this.bn.setCallback(this::processPathElimination);
         if (randomDAG) {
             sampleDAG();
         }
@@ -97,7 +121,9 @@ public class Model {
         transitions = new SegmentTree(n);
         for (int i = 0; i < n; i++) {
             cache.add(new Cache(nCachedStates, multinomials(i)));
-            distributions.add(cache.get(i).request(Collections.emptyList()));
+            List<Integer> ps = this.bn.ingoingEdges(i);
+            Collections.sort(ps);
+            distributions.add(cache.get(i).request(ps));
             transitions.set(i, distributions.get(i).logLikelihood());
         }
     }
@@ -166,11 +192,11 @@ public class Model {
         return steps;
     }
 
-    public double[][] adjMatrix() {
-        double[][] m = new double[n][n];
+    public boolean[][] adjMatrix() {
+        boolean[][] m = new boolean[n][n];
         for (int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
-                m[i][j] = bn.edgeExists(i, j) ? 1.0 : 0.0;
+                m[i][j] = bn.edgeExists(i, j);
             }
         }
         return m;

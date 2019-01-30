@@ -194,7 +194,7 @@ public class Multinomial {
         int node = actions.randomChoice(re);
         if (node == batchesNum) {
             Short result = cache.randomAction();
-            lastLL = cache.getLastLL() + initialLL;
+            lastLL = cache.getLastLL();
             return result;
         }
         if (batchResolved.get(node)) {
@@ -283,5 +283,35 @@ public class Multinomial {
         actions.set(b, batchLL);
         batchResolved.set(b, true);
         refreshCacheNode();
+    }
+
+    public void printDebugInfo(int u) {
+        if (!initialized) {
+            System.out.println("Structure is not yet initialized");
+            for (int i = 0; i < n; i++) {
+                int v = i >= u ? i + 1 : i;
+                double ll = computeLL.apply(i) + initialLL;
+                System.out.println(v + "->" + u + ": " + ll + "(" + Math.exp(ll) + ")");
+            }
+            return;
+        }
+        System.out.println("Cache:");
+        cache.printDebugInfo(u);
+        System.out.println("Regular:");
+        for (int i = 0; i < n; i++) {
+            if (cache.contains((short)i)) {
+                continue;
+            }
+            int v = i >= u ? i + 1 : i;
+            System.out.print(v + "->" + u + ": ");
+            if (disabledActions.containsKey(i)) {
+                System.out.println("disabled");
+                return;
+            }
+            int b = batch(i);
+            System.out.print("batch " + b + (batchResolved.get(b) ? "(resolved)" : "(unresolved)") + " - ");
+            double ll = computeLL.apply(i) + initialLL;
+            System.out.println(ll + "(" + Math.exp(ll) + ")");
+        }
     }
 }

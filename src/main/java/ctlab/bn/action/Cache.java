@@ -10,4 +10,6 @@ public interface Cache {
     double getLastLL();
     Short add(short action, double ll);
     boolean isFull();
+
+    void printDebugInfo(int u);
 }

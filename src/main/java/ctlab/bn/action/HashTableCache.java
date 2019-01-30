@@ -93,4 +93,13 @@ public class HashTableCache implements Cache {
         }
         return topActionNodes.size() == topActions.length;
     }
+
+    @Override
+    public void printDebugInfo(int u) {
+        for (int i = 0; i < topActionNodes.size(); i++) {
+            int v = topActions[i];
+            int edgeFrom = v >= u ? v + 1 : v;
+            System.out.println(edgeFrom + "->" + u + ": " + actions.get(i));
+        }
+    }
 }
