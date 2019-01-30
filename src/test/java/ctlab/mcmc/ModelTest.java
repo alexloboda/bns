@@ -18,16 +18,16 @@ public class ModelTest {
     public void toyModelTest() {
         Random random = new Random(0xC0FFEE);
         ScoringFunction sf = new BDE();
-        int sampleSize = 200;
+        int sampleSize = 750;
 
         List<Double> data1 = random.doubles(sampleSize).boxed().collect(Collectors.toList());
         List<Double> data2 = random.doubles(sampleSize).boxed().collect(Collectors.toList());
         List<Double> data3 = new ArrayList<>();
 
         for (int i = 0; i < sampleSize; i++) {
-            if (data1.get(i) > 0.6 && data2.get(i) > 0.6) {
+            if (data1.get(i) > 2.0 / 3.0 && data2.get(i) > 2.0 / 3.0) {
                 data3.add(random.nextDouble() / 3.0);
-            } else if (data1.get(i) < 0.6 && data2.get(i) < 0.6) {
+            } else if (data1.get(i) < 1.0 / 3.0 && data2.get(i) < 1.0 / 3.0) {
                 data3.add(0.6 + random.nextDouble() / 3.0);
             } else {
                 data3.add(random.nextDouble());
