@@ -16,7 +16,7 @@ public class MultinomialFactory {
         this.re = re;
     }
 
-    public Multinomial spark(Function<Integer, Double> computeLL, double initialLL) {
-        return new Multinomial(maxSize, batchSize, mainCacheSize, computeLL, initialLL, re);
+    public Multinomial spark(Function<Integer, Double> computeLL, double initialLL, double beta) {
+        return new Multinomial(maxSize, batchSize, beta, mainCacheSize, computeLL, initialLL, re);
     }
 }

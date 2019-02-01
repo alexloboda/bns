@@ -22,6 +22,7 @@ public class Model {
     private double loglik;
     private boolean randomPolicy;
     private boolean randomDAG;
+    private double beta;
 
     private List<Cache> cache;
     private List<Multinomial> distributions;
@@ -38,11 +39,12 @@ public class Model {
 
     public Model(BayesianNetwork bn, ScoringFunction sf, SplittableRandom random,
                  boolean random_policy, boolean random_dag, MultinomialFactory multFactory,
-                 int nCachedStates) {
+                 int nCachedStates, double beta) {
         permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.randomPolicy = random_policy;
         this.randomDAG = random_dag;
         this.sf = sf;
+        this.beta = beta;
         n = bn.size();
         hits = new long[n][n];
         this.bn = bn;
@@ -77,12 +79,12 @@ public class Model {
                     ++i;
                 }
                 if (bn.edgeExists(i, v)) {
-                    return Math.min(bn.scoreExcluding(v, sf, i) - currLL, 0.0);
+                    return bn.scoreExcluding(v, sf, i) - currLL;
                 } else {
-                    return Math.min(bn.scoreIncluding(v, sf, i) - currLL, 0.0);
+                    return bn.scoreIncluding(v, sf, i) - currLL;
                 }
             };
-            return multFactory.spark(computeLL, -Math.log(n * (n - 1)));
+            return multFactory.spark(computeLL, -Math.log(n * (n - 1)), beta);
         };
     }
 

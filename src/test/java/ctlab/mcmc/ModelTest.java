@@ -52,7 +52,7 @@ public class ModelTest {
             Model model = new Model(bn, sf, sr,
                     false, false,
                     new MultinomialFactory(2, 1, 2, sr),
-                    10);
+                    10, 1.0);
             model.run();
             while (model.steps() < 10_000_000) {
                 model.step(10_000_000);
@@ -83,7 +83,7 @@ public class ModelTest {
                 if (i == j){
                     continue;
                 }
-                Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-4);
+                Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-3);
             }
         }
     }

@@ -80,14 +80,15 @@ public class MultinomialTest {
     @Test
     public void multinomialTest() {
         double initialLL = Math.log(1.0 / 9);
-        double[] ps = {1.0, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.5, 0.5};
+        double[] ps = {1.5, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.5, 0.5};
         double[] lls = Arrays.stream(ps).map(Math::log).toArray();
+        ps = Arrays.stream(ps).map(x -> Math.min(x, 1.0)).toArray();
 
         Function<Integer, Double> calcLL = i -> lls[i];
 
         for (int bs = 1; bs <= NVARIABLES; bs++) {
             for (short cacheSize = 0; cacheSize <= NVARIABLES; cacheSize++) {
-                Multinomial mult = new Multinomial(ps.length, bs, cacheSize, calcLL, initialLL, re);
+                Multinomial mult = new Multinomial(ps.length, bs, 1.0, cacheSize, calcLL, initialLL, re);
                 testMultinomial(mult, ps);
             }
         }
@@ -97,13 +98,13 @@ public class MultinomialTest {
     public void disableActionsTest() {
         SplittableRandom re = new SplittableRandom(42);
 
-        Multinomial multinomial = new Multinomial(NVARIABLES, 3, 2, calcLL, initialLL, re);
+        Multinomial multinomial = new Multinomial(NVARIABLES, 3, 1.0,  2, calcLL, initialLL, re);
 
         for (int i = 0; i < N_DISABLE_ACTIONS; i++) {
             short var = (short)re.nextInt(NVARIABLES);
             if (!disabled[var]) {
                 ps[var] = 0.0;
-                multinomial.disableAction(var, calcLL.apply((int)var) + initialLL);
+                multinomial.disableAction(var, calcLL.apply((int)var));
             } else {
                 ps[var] = psOriginal[var];
                 multinomial.reEnableAction(var);
@@ -136,7 +137,7 @@ public class MultinomialTest {
             int[] actionStep = re.ints(0, (int)steps).limit(ACTIONS_COMPLEX).toArray();
 
             for (int j = 0; j < NCHOICES; j++) {
-                Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 10, calcLL,
+                Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 1.0,2, calcLL,
                                                    Math.log(1.0 / N_VARIABLES_COMPLEX), re);
                 resetStructures();
                 for (int k = 0; k < steps; k++) {
@@ -148,7 +149,7 @@ public class MultinomialTest {
                                 mult.reEnableAction((short)toChange);
                             }  else {
                                 ps[toChange] = 0.0;
-                                mult.disableAction((short)toChange, calcLL.apply(toChange) + initialLL);
+                                mult.disableAction((short)toChange, calcLL.apply(toChange));
                             }
                             disabled[toChange] = !disabled[toChange];
                         }

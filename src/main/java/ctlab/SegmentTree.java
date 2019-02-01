@@ -7,8 +7,14 @@ public class SegmentTree {
     private double[] lls;
     private double[] sum;
     private int n;
+    private double beta;
 
     public SegmentTree(int size) {
+        this(size, 1.0);
+    }
+
+    public SegmentTree(int size, double beta) {
+        this.beta = beta;
         n = size;
         int sumSize = (size + 1) / 2;
         sum = new double[sumSize];
@@ -29,7 +35,7 @@ public class SegmentTree {
         if (k >= n) {
             return Double.NEGATIVE_INFINITY;
         }
-        return k >= sum.length ? lls[k] : sum[k];
+        return k >= sum.length ? Math.min(beta * lls[k], 0.0) : sum[k];
     }
 
     public void set(int k, double ll) {
@@ -55,7 +61,7 @@ public class SegmentTree {
     }
 
     public double likelihood() {
-        return sum[0];
+        return get_sum(0);
     }
 
     public int randomChoice(SplittableRandom re) {
@@ -88,10 +94,11 @@ public class SegmentTree {
         public Distribution(int k) {
             double left_sum = get_sum(child(k));
             double right_sum = get_sum(child(k) + 1);
-            maxLL = Math.max(lls[k], Math.max(left_sum, right_sum));
+            double ll = Math.min(lls[k], 0.0);
+            maxLL = Math.max(ll, Math.max(left_sum, right_sum));
             left = NANSafe((float)Math.exp(left_sum - maxLL));
             right = NANSafe((float)Math.exp(right_sum - maxLL));
-            current = NANSafe((float)Math.exp(lls[k] - maxLL));
+            current = NANSafe((float)Math.exp(ll - maxLL));
             sum = left + right + current;
             left /= sum;
             right /= sum;

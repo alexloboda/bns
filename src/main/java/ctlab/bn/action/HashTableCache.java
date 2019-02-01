@@ -14,14 +14,14 @@ public class HashTableCache implements Cache {
     private SplittableRandom re;
     private double ll;
 
-    public HashTableCache(short cacheSize, SplittableRandom re) {
+    public HashTableCache(short cacheSize, SplittableRandom re, double beta) {
         if (cacheSize == 0) {
             return;
         }
         this.re = re;
         topActionNodes = new HashTable(cacheSize);
         topActions = new short[cacheSize];
-        actions = new SegmentTree(cacheSize);
+        actions = new SegmentTree(cacheSize, beta);
         topActionsMin = new Heap(cacheSize);
     }
 
