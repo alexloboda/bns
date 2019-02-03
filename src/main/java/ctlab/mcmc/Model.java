@@ -65,6 +65,18 @@ public class Model {
         }
     }
 
+    public double logLikelihood() {
+        return loglik;
+    }
+
+    double computeLogLikelihood() {
+        double ll = 0.0;
+        for (int i = 0; i < n; i++) {
+            ll += bn.score(i, sf);
+        }
+        return ll;
+    }
+
     public void processPathElimination(int v, int u) {
         u = u > v ? u - 1 : u;
         distributions.get(v).reEnableAction((short)u);
@@ -185,7 +197,7 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-            removeEdge(parent, node);
+            removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short)(parent > node ? parent - 1 : parent), mult.getLastLL());
@@ -193,7 +205,7 @@ public class Model {
                 return;
             }
 
-            addEdge(parent, node);
+            addEdge(parent, node, mult.getLastLL());
         }
     }
 
@@ -230,19 +242,17 @@ public class Model {
         transitions.set(u, mult.logLikelihood());
     }
 
-    private void addEdge(int v, int u) {
+    private void addEdge(int v, int u, double actionLL) {
         bn.addEdge(v, u);
-        loglik -= ll[u];
-        ll[u] = bn.score(u, sf);
-        loglik += ll[u];
+        ll[u] += actionLL;
+        loglik += actionLL;
         updateDistribution(u);
     }
 
-    private void removeEdge(int v, int u) {
+    private void removeEdge(int v, int u, double actionLL) {
         bn.removeEdge(v, u);
-        loglik -= ll[u];
-        ll[u] = bn.score(u, sf);
-        loglik += ll[u];
+        ll[u] += actionLL;
+        loglik += actionLL;
         hits[v][u] += steps - time[v][u];
         updateDistribution(u);
     }
@@ -250,7 +260,7 @@ public class Model {
     public void finish() {
         for (int u = 0; u < n; u++) {
             for (int v : bn.ingoingEdges(u)) {
-                removeEdge(v, u);
+                removeEdge(v, u, 0.0);
             }
         }
         bn = null;

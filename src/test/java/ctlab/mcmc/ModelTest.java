@@ -57,6 +57,7 @@ public class ModelTest {
             while (model.steps() < 10_000_000) {
                 model.step(10_000_000);
             }
+            Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
             for (int v = 0; v < bn.size(); v++) {
                 for (int u = 0; u < bn.size(); u++) {
