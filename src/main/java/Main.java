@@ -18,26 +18,26 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 
 public class Main {
-    private static File ge_file;
+    private static File geneExpressionFile;
     private static File output;
     private static File log;
     private static File preranking;
-    private static File priors_file;
+    private static File priorsFile;
 
-    private static int n_steps;
-    private static int warmup_steps;
+    private static int nSteps;
+    private static int warmupSteps;
     private static int executors;
-    private static int n_cores;
-    private static int default_cls;
-    private static int n_optimizer;
-    private static int preranking_limit;
-    private static Integer disc_lb;
-    private static Integer disc_ub;
-    private static boolean random_policy;
-    private static boolean random_dag;
+    private static int nThreads;
+    private static int defaultCls;
+    private static int nOptimizer;
+    private static int prerankingLimit;
+    private static Integer discLB;
+    private static Integer discUB;
+    private static boolean randomPolicy;
+    private static boolean randomDAG;
 
-    private static ScoringFunction main_sf;
-    private static ScoringFunction disc_sf;
+    private static ScoringFunction mainSF;
+    private static ScoringFunction discSF;
     private static Variable.DiscretizationPrior disc_prior;
 
     private static boolean parse_args(String[] args) throws FileNotFoundException {
@@ -60,7 +60,7 @@ public class Main {
                 "output file").withRequiredArg().ofType(String.class).required();
         OptionSpec<String> log_file = optionParser.acceptsAll(asList("l", "log"),
                 "log directory").withRequiredArg().ofType(String.class);
-        OptionSpec<Integer> cores = optionParser.acceptsAll(asList("m", "cores"),
+        OptionSpec<Integer> cores = optionParser.acceptsAll(asList("m", "threads"),
                 "number of cores").withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<String> main_sf_opt = optionParser.accepts("main-sf",
                 "scoring function used in main algorithm").withRequiredArg().ofType(String.class).defaultsTo("BDE 1");
@@ -94,33 +94,33 @@ public class Main {
 
         optionSet = optionParser.parse(args);
 
-        n_steps = optionSet.valueOf(steps);
-        warmup_steps = optionSet.valueOf(warmup);
+        nSteps = optionSet.valueOf(steps);
+        warmupSteps = optionSet.valueOf(warmup);
         executors = optionSet.valueOf(exec);
-        n_cores = optionSet.valueOf(cores);
-        default_cls = optionSet.valueOf(default_classes);
-        random_policy = optionSet.has("random-policy");
-        random_dag = optionSet.has("random-dag");
+        nThreads = optionSet.valueOf(cores);
+        defaultCls = optionSet.valueOf(default_classes);
+        randomPolicy = optionSet.has("random-policy");
+        randomDAG = optionSet.has("random-dag");
 
-        ge_file = new File(optionSet.valueOf(ge));
+        geneExpressionFile = new File(optionSet.valueOf(ge));
         output = new File(optionSet.valueOf(outfile));
         if (optionSet.has(log_file)) {
             log = new File(optionSet.valueOf(log_file));
         }
         if (optionSet.has("priors")) {
-            priors_file = new File(optionSet.valueOf(priors_opt));
+            priorsFile = new File(optionSet.valueOf(priors_opt));
         }
         if (optionSet.has(disc_lb_opt)) {
-            disc_lb = optionSet.valueOf(disc_lb_opt);
+            discLB = optionSet.valueOf(disc_lb_opt);
         }
         if (optionSet.has(disc_ub_opt)) {
-            disc_ub = optionSet.valueOf(disc_ub_opt);
+            discUB = optionSet.valueOf(disc_ub_opt);
         }
-        main_sf = ScoringFunction.parse(optionSet.valueOf(main_sf_opt));
-        disc_sf = ScoringFunction.parse(optionSet.valueOf(disc_sf_opt));
+        mainSF = ScoringFunction.parse(optionSet.valueOf(main_sf_opt));
+        discSF = ScoringFunction.parse(optionSet.valueOf(disc_sf_opt));
         disc_prior = Variable.DiscretizationPrior.valueOf(optionSet.valueOf(disc_prior_opt).toUpperCase());
-        n_optimizer = optionSet.valueOf(n_optimizer_opt);
-        preranking_limit = optionSet.valueOf(prerank_limit_opt);
+        nOptimizer = optionSet.valueOf(n_optimizer_opt);
+        prerankingLimit = optionSet.valueOf(prerank_limit_opt);
         if (optionSet.has(preranking_opt)) {
             preranking = new File(optionSet.valueOf(preranking_opt));
             if (!preranking.exists()) {
@@ -131,10 +131,10 @@ public class Main {
         return true;
     }
 
-    private static void parse_priors(BayesianNetwork bn) throws FileNotFoundException {
+    private static void parsePriors(BayesianNetwork bn) throws FileNotFoundException {
         int n = bn.size();
         double[][] priors = new double[n][n];
-        try(Scanner scanner = new Scanner(priors_file)) {
+        try(Scanner scanner = new Scanner(priorsFile)) {
             int v = bn.getID(scanner.next());
             int u = bn.getID(scanner.next());
             double logprior = scanner.nextDouble();
@@ -143,7 +143,7 @@ public class Main {
         //bn.set_prior_distribution(new ExplicitPrior(priors));
     }
 
-    private static List<Variable> parse_ge_table(File file) throws FileNotFoundException {
+    private static List<Variable> parseGETable(File file) throws FileNotFoundException {
         List<Variable> res = new ArrayList<>();
         List<String> names = new ArrayList<>();
         List<List<Double>> data = new ArrayList<>();
@@ -166,7 +166,7 @@ public class Main {
             }
 
             for (int i = 0; i < n; i++) {
-                res.add(new Variable(names.get(i), data.get(i), default_cls, disc_prior));
+                res.add(new Variable(names.get(i), data.get(i), defaultCls, disc_prior));
             }
         }
 
@@ -180,7 +180,7 @@ public class Main {
                 int v = bn.getID(scanner.next());
                 int u = bn.getID(scanner.next());
                 scanner.next();
-                if (g.inDegree(u) < preranking_limit) {
+                if (g.inDegree(u) < prerankingLimit) {
                     g.addEdge(v, u);
                 }
             }
@@ -193,30 +193,30 @@ public class Main {
             System.exit(0);
         }
 
-        List<Variable> genes = parse_ge_table(ge_file);
+        List<Variable> genes = parseGETable(geneExpressionFile);
 
         for (Variable v : genes) {
             int lb = 1;
             int ub = v.obsNum();
-            if (disc_lb != null) {
-                lb = disc_lb;
+            if (discLB != null) {
+                lb = discLB;
             }
-            if (disc_ub != null) {
-                ub = disc_ub;
+            if (discUB != null) {
+                ub = discUB;
             }
-            v.set_disc_limits(lb, ub);
+            v.setDiscLimits(lb, ub);
         }
 
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes);
 
-        if (priors_file != null) {
-            parse_priors(bn);
+        if (priorsFile != null) {
+            parsePriors(bn);
         }
 
-        if (n_optimizer > 0) {
-            Solver solver = new Solver(disc_sf);
-            solver.solve(bn, parse_bound(bn), n_optimizer);
+        if (nOptimizer > 0) {
+            Solver solver = new Solver(discSF);
+            solver.solve(bn, parse_bound(bn), nOptimizer);
         }
 
         bn.clearEdges();
@@ -226,15 +226,15 @@ public class Main {
 
         try {
             for (int i = 0; i < executors; i++) {
-                //Model model = new Model(bn, main_sf, re.split(), randomPolicy, random_dag, 100);
+                //Model model = new Model(bn, mainSF, re.split(), randomPolicy, randomDAG, 100);
                 Model model = null;
                 models.add(model);
             }
 
             AtomicInteger counter = new AtomicInteger();
-            ExecutorService es = Executors.newFixedThreadPool(n_cores);
+            ExecutorService es = Executors.newFixedThreadPool(nThreads);
             List<Future<?>> fs = models.stream()
-                    .map(x -> es.submit(new Task(x, n_steps, warmup_steps, counter)))
+                    .map(x -> es.submit(new Task(x, nSteps, warmupSteps, counter)))
                     .collect(Collectors.toList());
             es.shutdown();
             es.awaitTermination(1_000_000, TimeUnit.HOURS);
@@ -249,9 +249,9 @@ public class Main {
             e.printStackTrace();
         }
 
-        List<Edge> edges = count_hits(n, models);
+        List<Edge> edges = countHits(n, models);
 
-        edges.forEach(x -> x.scale((n_steps * executors)));
+        edges.forEach(x -> x.scale((nSteps * executors)));
         try (PrintWriter pw = new PrintWriter(output)) {
             for (Edge e : edges) {
                 if (e.v != e.u) {
@@ -292,7 +292,7 @@ public class Main {
         }
     }
 
-    private static List<Edge> count_hits(int n, List<Model> models) {
+    private static List<Edge> countHits(int n, List<Model> models) {
         double[][] fs = new double[n][n];
         for (Model m : models) {
             double[][] hs = m.frequencies();

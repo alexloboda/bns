@@ -24,7 +24,7 @@ public class Variable {
     private int lb;
     private int ub;
 
-    public void set_disc_limits(int lb, int ub) {
+    public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
         this.ub = ub;
     }
