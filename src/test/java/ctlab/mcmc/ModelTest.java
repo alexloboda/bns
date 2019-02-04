@@ -39,14 +39,13 @@ public class ModelTest {
         Variable var3 = new Variable("VAR3", data3, 3, Variable.DiscretizationPrior.UNIFORM);
 
         BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3), sf);
-        double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
+        double[][] expectedFs = exactSolve(new BayesianNetwork(bn), 0, 1).getFirst();
 
         SplittableRandom sr = new SplittableRandom(42);
         int[][] actual = new int[bn.size()][bn.size()];
 
         int models = 100;
 
-        long timeBefore = System.currentTimeMillis();
         for (int i = 0; i < models; i++) {
             Model model = new Model(bn, new MultinomialFactory(2, 1, 2, sr),
                     10, 1.0);
@@ -63,7 +62,7 @@ public class ModelTest {
             }
             model.finish();
         }
-        System.err.println("Time " + (System.currentTimeMillis() - timeBefore));
+
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (i == j){
@@ -81,7 +80,7 @@ public class ModelTest {
         return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
     }
 
-    private Pair<double[][], Double> exactSolve(BayesianNetwork bn, ScoringFunction sf, int v, int u) {
+    private Pair<double[][], Double> exactSolve(BayesianNetwork bn, int v, int u) {
         double[][] res = new double[bn.size()][bn.size()];
 
         if (v == bn.size()) {
@@ -98,17 +97,17 @@ public class ModelTest {
         }
 
         if (u >= bn.size()) {
-            return exactSolve(bn, sf, v + 1, 0);
+            return exactSolve(bn, v + 1, 0);
         }
 
         if (v == u || bn.pathExists(u, v)) {
-            return exactSolve(bn, sf, v, u + 1);
+            return exactSolve(bn, v, u + 1);
         }
 
         BayesianNetwork bnWithEdge = new BayesianNetwork(bn);
         bnWithEdge.addEdge(v, u);
-        Pair<double[][], Double> resWOEdge = exactSolve(bn, sf, v, u + 1);
-        Pair<double[][], Double> resWithEdge = exactSolve(bnWithEdge, sf, v, u + 1);
+        Pair<double[][], Double> resWOEdge = exactSolve(bn, v, u + 1);
+        Pair<double[][], Double> resWithEdge = exactSolve(bnWithEdge, v, u + 1);
         double sum = likelihoodsSum(resWithEdge.getSecond(), resWOEdge.getSecond());
         double k1 = Math.exp(resWOEdge.getSecond() - sum);
         double k2 = Math.exp(resWithEdge.getSecond() - sum);

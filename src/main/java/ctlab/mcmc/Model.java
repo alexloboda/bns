@@ -209,9 +209,9 @@ public class Model {
 
     public boolean[][] adjMatrix() {
         boolean[][] m = new boolean[n][n];
-        for (int i = 0; i < n; i++) {
-            for(int j = 0; j < n; j++) {
-                m[permutation.get(i)][permutation.get(j)] = bn.edgeExists(i, j);
+        for (int u = 0; u < bn.size(); u++) {
+            for (int v: bn.ingoingEdges(u)) {
+                m[permutation.get(v)][permutation.get(u)] = true;
             }
         }
         return m;
