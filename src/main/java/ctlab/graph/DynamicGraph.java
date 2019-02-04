@@ -7,7 +7,7 @@ import java.util.List;
 public class DynamicGraph {
     private int n;
     private int size;
-    private List<EulerTreeForest> forests;
+    private List<EulerTourForest> forests;
     private List<List<LinkedList>> adjLists;
 
     public DynamicGraph(int n) {
@@ -18,7 +18,7 @@ public class DynamicGraph {
         forests = new ArrayList<>();
         adjLists = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            forests.add(new EulerTreeForest(n));
+            forests.add(new EulerTourForest(n));
             adjLists.add(new ArrayList<>());
             for (int j = 0; j < n; j++) {
                 adjLists.get(i).add(new LinkedList());
@@ -147,7 +147,7 @@ public class DynamicGraph {
         private int u;
         private LinkedList firstLink;
         private LinkedList secondLink;
-        private List<EulerTreeForest.TreeEdge> treeEdges;
+        private List<EulerTourForest.TreeEdge> treeEdges;
 
         Edge(int lvl, int v, int u) {
             this.lvl = lvl;
@@ -180,7 +180,7 @@ public class DynamicGraph {
             return u;
         }
 
-        void addTreeEdge(EulerTreeForest.TreeEdge edge) {
+        void addTreeEdge(EulerTourForest.TreeEdge edge) {
             treeEdges.add(edge);
         }
 

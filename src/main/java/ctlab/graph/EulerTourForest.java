@@ -7,12 +7,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-class EulerTreeForest {
+class EulerTourForest {
     private int n;
     private List<Entry> any;
     private Entry anyRoot;
 
-    EulerTreeForest(int n) {
+    EulerTourForest(int n) {
         this.n = n;
         anyRoot = null;
         any = new ArrayList<>();

@@ -69,18 +69,6 @@ public class ModelTest {
         System.err.println("Time " + (System.currentTimeMillis() - timeBefore));
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                System.err.print(expectedFs[i][j] + "\t");
-            }
-            System.err.println();
-        }
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                System.err.print(actual[i][j] + "\t");
-            }
-            System.err.println();
-        }
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
                 if (i == j){
                     continue;
                 }
