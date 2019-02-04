@@ -4,7 +4,6 @@ import ctlab.SegmentTree;
 import ctlab.bn.BayesianNetwork;
 import ctlab.bn.action.Multinomial;
 import ctlab.bn.action.MultinomialFactory;
-import ctlab.bn.sf.ScoringFunction;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 
 import java.util.*;
@@ -29,18 +28,16 @@ public class Model {
     private int nCachedStates;
 
     private BayesianNetwork bn;
-    private ScoringFunction sf;
     private long steps;
     private SplittableRandom random;
     private SegmentTree transitions;
 
     private List<Integer> permutation;
 
-    public Model(BayesianNetwork bn, ScoringFunction sf, boolean randomDAG, MultinomialFactory multFactory,
+    public Model(BayesianNetwork bn, boolean randomDAG, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
         permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.randomDAG = randomDAG;
-        this.sf = sf;
         this.beta = beta;
         n = bn.size();
         hits = new long[n][n];
@@ -61,7 +58,7 @@ public class Model {
     private void calculateLikelihood() {
         loglik = 0.0;
         for (int i = 0; i < n; i++) {
-            ll[i] = bn.score(i, sf);
+            ll[i] = bn.score(i);
             loglik += ll[i];
         }
     }
@@ -73,7 +70,7 @@ public class Model {
     double computeLogLikelihood() {
         double ll = 0.0;
         for (int i = 0; i < n; i++) {
-            ll += bn.score(i, sf);
+            ll += bn.score(i);
         }
         return ll;
     }
@@ -92,9 +89,9 @@ public class Model {
                     ++i;
                 }
                 if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(v, sf, i) - currLL;
+                    return bn.scoreExcluding(v, i) - currLL;
                 } else {
-                    return bn.scoreIncluding(v, sf, i) - currLL;
+                    return bn.scoreIncluding(v, i) - currLL;
                 }
             };
             return multFactory.spark(computeLL, -Math.log(n * (n - 1)), beta);

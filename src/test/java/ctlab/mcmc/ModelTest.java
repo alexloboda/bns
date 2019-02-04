@@ -38,7 +38,7 @@ public class ModelTest {
         Variable var2 = new Variable("VAR2", data2, 3, Variable.DiscretizationPrior.UNIFORM);
         Variable var3 = new Variable("VAR3", data3, 3, Variable.DiscretizationPrior.UNIFORM);
 
-        BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3));
+        BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3), sf);
         double[][] expectedFs = exactSolve(new BayesianNetwork(bn), sf, 0, 1).getFirst();
 
         SplittableRandom sr = new SplittableRandom(42);
@@ -49,7 +49,7 @@ public class ModelTest {
         long timeBefore = System.currentTimeMillis();
         for (int i = 0; i < models; i++) {
             System.out.println("Model " + i);
-            Model model = new Model(bn, sf, false,
+            Model model = new Model(bn, false,
                     new MultinomialFactory(2, 1, 2, sr),
                     10, 1.0);
             model.setRandomGenerator(sr);
@@ -90,7 +90,7 @@ public class ModelTest {
         if (v == bn.size()) {
             double score = 0.0;
             for (int i = 0; i < bn.size(); i++) {
-                score += bn.score(i, sf);
+                score += bn.score(i);
             }
             for (int i = 0; i < bn.size(); i++) {
                 for (int j = 0; j < bn.size(); j++) {

@@ -2,20 +2,23 @@ package ctlab.bn;
 
 import ctlab.bn.sf.ScoringFunction;
 import ctlab.graph.Graph;
-import org.apache.commons.math3.util.MathArrays;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
+    private ScoringFunction sf;
     private Map<String, Integer> names;
 
     public BayesianNetwork(List<Variable> variables) {
+        this(variables, null);
+    }
+
+    public BayesianNetwork(List<Variable> variables, ScoringFunction sf) {
         g = new Graph(variables.size());
         this.variables = variables;
         LogFactorial lf = new LogFactorial();
@@ -24,6 +27,11 @@ public class BayesianNetwork {
         for (int i = 0; i < variables.size(); i++) {
             names.put(this.variables.get(i).getName(), i);
         }
+        this.sf = sf;
+    }
+
+    public void setScoringFunction(ScoringFunction sf) {
+        this.sf = sf;
     }
 
     public int getID(String name) {
@@ -41,6 +49,7 @@ public class BayesianNetwork {
         }
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
+        sf = bn.sf;
     }
 
     public void addEdge(int v, int u) {
@@ -94,18 +103,18 @@ public class BayesianNetwork {
         return variables.get(v);
     }
 
-    public double score(int v, ScoringFunction sf) {
+    public double score(int v) {
         return sf.score(variables.get(v), parentSet(v));
     }
 
-    public double scoreIncluding(int v, ScoringFunction sf, int u) {
+    public double scoreIncluding(int v, int u) {
         List<Integer> ps = g.ingoingEdges(v);
         assert !ps.contains(u);
         ps.add(u);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
-    public double scoreExcluding(int v, ScoringFunction sf, int u) {
+    public double scoreExcluding(int v, int u) {
         List<Integer> ps = g.ingoingEdges(v);
         assert ps.contains(u);
         ps.remove((Integer)u);
