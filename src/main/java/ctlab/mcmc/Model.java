@@ -19,7 +19,6 @@ public class Model {
     private long[][] time;
     private double[] ll;
     private double loglik;
-    private boolean randomDAG;
     private double beta;
 
     private List<Cache> cache;
@@ -34,10 +33,9 @@ public class Model {
 
     private List<Integer> permutation;
 
-    public Model(BayesianNetwork bn, boolean randomDAG, MultinomialFactory multFactory,
+    public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
         permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
-        this.randomDAG = randomDAG;
         this.beta = beta;
         n = bn.size();
         hits = new long[n][n];
@@ -122,7 +120,7 @@ public class Model {
         System.out.println();
     }
 
-    public void run() {
+    public void init(boolean randomDAG) {
         bn = new BayesianNetwork(bn);
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
@@ -163,7 +161,7 @@ public class Model {
         }
     }
 
-    public void step(long limit) {
+    public boolean step(long limit) {
         double ll = transitions.likelihood();
         assert ll < 0.1;
         double jump = 0.0;
@@ -172,20 +170,21 @@ public class Model {
             GeometricDistribution gd = new GeometricDistribution(likelihood);
             jump = gd.getNumericalMean();
         }
-        steps += (int)jump + 1;
+        jump += 1.0;
         if (random.nextDouble() < jump - (int)jump) {
-            steps++;
+            jump += 1.0;
         }
-        if (steps > limit) {
-            return;
+        if (steps + jump > limit) {
+            return true;
         }
+        steps += jump;
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction();
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
-            return;
+            return steps == limit;
         }
         if (parent >= node) {
             ++parent;
@@ -196,11 +195,12 @@ public class Model {
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short)(parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
-                return;
+                return steps == limit;
             }
 
             addEdge(parent, node, mult.getLastLL());
         }
+        return steps == limit;
     }
 
     public long steps() {
@@ -286,5 +286,9 @@ public class Model {
         bn = null;
         time = null;
         ll = null;
+    }
+
+    public double beta() {
+        return beta;
     }
 }

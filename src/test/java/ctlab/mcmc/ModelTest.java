@@ -48,15 +48,12 @@ public class ModelTest {
 
         long timeBefore = System.currentTimeMillis();
         for (int i = 0; i < models; i++) {
-            System.out.println("Model " + i);
-            Model model = new Model(bn, false,
-                    new MultinomialFactory(2, 1, 2, sr),
+            Model model = new Model(bn, new MultinomialFactory(2, 1, 2, sr),
                     10, 1.0);
             model.setRandomGenerator(sr);
-            model.run();
-            while (model.steps() < 10_000_000) {
-                model.step(10_000_000);
-            }
+            model.init(true);
+            while (!model.step(10_000_000)) {}
+
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
             for (int v = 0; v < bn.size(); v++) {

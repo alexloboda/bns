@@ -241,7 +241,9 @@ public class Graph {
 
         public void processDeletion() {
             --subscriptions[v][u];
-            noPathSupportCallback.accept(v, u);
+            if (noPathSupportCallback != null) {
+                noPathSupportCallback.accept(v, u);
+            }
             for (LinkedList.Entry ref: backRefs) {
                 ref.remove();
             }

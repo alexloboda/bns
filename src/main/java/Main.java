@@ -49,7 +49,7 @@ public class Main {
         OptionSpec<String> ge = optionParser.acceptsAll(asList("g", "ge"),
                 "gene expression data file").withRequiredArg().ofType(String.class).required();
         OptionSpec<Integer> steps = optionParser.acceptsAll(asList("s", "steps"),
-                "Number of steps for each run").withRequiredArg().ofType(Integer.class).required();
+                "Number of steps for each init").withRequiredArg().ofType(Integer.class).required();
         OptionSpec<Integer> warmup = optionParser.acceptsAll(asList("w", "warmup"),
                 "Number of steps before main loop").withRequiredArg().ofType(Integer.class).defaultsTo(0);
         OptionSpec<Integer> exec = optionParser.acceptsAll(asList("r", "runs"),
@@ -276,7 +276,7 @@ public class Main {
 
         @Override
         public void run() {
-            m.run();
+            m.init(true);
             for (int i = 0; i < warmup; i++) {
                 m.step(1);
             }

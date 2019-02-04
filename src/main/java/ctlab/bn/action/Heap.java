@@ -12,21 +12,28 @@ public class Heap {
         weights = new float[capacity];
     }
 
+    private void swap(int i, int j) {
+        short t = heap[i];
+        heap[i] = heap[j];
+        heap[j] = t;
+        float tmp = weights[i];
+        weights[i] = weights[j];
+        weights[j] = tmp;
+    }
+
     private void siftDown(int k) {
         while (true) {
             int c1 = 2 * k + 1;
             int c2 = 2 * k + 2;
             if (c1 < size) {
-                int min = weights[heap[k]] <= weights[heap[c1]] ? k : c1;
+                int min = weights[k] <= weights[c1] ? k : c1;
                 if (c2 < size) {
-                    min = weights[heap[min]] <- weights[heap[c2]] ? min : c2;
+                    min = weights[min] <= weights[c2] ? min : c2;
                 }
                 if (k == min) {
                     return;
                 } else {
-                    short t = heap[k];
-                    heap[k] = heap[min];
-                    heap[min] = t;
+                    swap(k, min);
                     k = min;
                 }
             } else {
@@ -38,10 +45,8 @@ public class Heap {
     private void siftUp(int k) {
         while (k != 0) {
             int j = (k - 1) / 2;
-            if (weights[heap[k]] < weights[heap[j]]) {
-                short t = heap[k];
-                heap[k] = heap[j];
-                heap[j] = t;
+            if (weights[k] < weights[j]) {
+                swap(k, j);
                 k = j;
             } else {
                 return;
@@ -68,6 +73,7 @@ public class Heap {
         size--;
         if (size != 0) {
             heap[0] = heap[size];
+            weights[0] = weights[size];
             siftDown(0);
         }
         return min;
