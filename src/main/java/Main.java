@@ -283,7 +283,6 @@ public class Main {
             for (int i = 0; i < steps; i++){
                 m.step(1);
             }
-            m.finish();
             synchronized (System.err) {
                 int c = counter.incrementAndGet();
                 System.err.print("\r" + c);
@@ -294,14 +293,6 @@ public class Main {
 
     private static List<Edge> countHits(int n, List<Model> models) {
         double[][] fs = new double[n][n];
-        for (Model m : models) {
-            double[][] hs = m.frequencies();
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    fs[i][j] += hs[i][j] / models.size();
-                }
-            }
-        }
 
         List<Edge> edges = new ArrayList<>();
         for (int i = 0; i < n; i++) {

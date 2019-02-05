@@ -60,7 +60,6 @@ public class ModelTest {
                     actual[v][u] += adj[v][u] ? 1 : 0;
                 }
             }
-            model.finish();
         }
 
         for (int i = 0; i < 3; i++) {

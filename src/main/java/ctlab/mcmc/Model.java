@@ -12,11 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Model {
-    public static final double EPS = 1e-5;
-
     private int n;
-    private long[][] hits;
-    private long[][] time;
     private double[] ll;
     private double loglik;
     private double beta;
@@ -38,10 +34,8 @@ public class Model {
         permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
         n = bn.size();
-        hits = new long[n][n];
         this.bn = bn;
         this.random = new SplittableRandom();
-        time = new long[n][n];
         ll = new double[n];
         distributions = new ArrayList<>();
         this.multFactory = multFactory;
@@ -203,10 +197,6 @@ public class Model {
         return steps == limit;
     }
 
-    public long steps() {
-        return steps;
-    }
-
     public boolean[][] adjMatrix() {
         boolean[][] m = new boolean[n][n];
         for (int u = 0; u < bn.size(); u++) {
@@ -215,16 +205,6 @@ public class Model {
             }
         }
         return m;
-    }
-
-    public double[][] frequencies() {
-        double[][] fs = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                fs[i][j] = (double)hits[i][j] / steps;
-            }
-        }
-        return fs;
     }
 
     private void updateDistribution(int u) {
@@ -247,7 +227,6 @@ public class Model {
         bn.removeEdge(v, u);
         ll[u] += actionLL;
         loglik += actionLL;
-        hits[v][u] += steps - time[v][u];
         updateDistribution(u);
     }
 
@@ -275,17 +254,6 @@ public class Model {
         double ll = model.loglik;
         model.loglik = other.loglik;
         other.loglik = ll;
-    }
-
-    public void finish() {
-        for (int u = 0; u < n; u++) {
-            for (int v : bn.ingoingEdges(u)) {
-                removeEdge(v, u, 0.0);
-            }
-        }
-        bn = null;
-        time = null;
-        ll = null;
     }
 
     public double beta() {
