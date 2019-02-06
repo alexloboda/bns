@@ -16,16 +16,17 @@ public class Model {
     private double[] ll;
     private double loglik;
     private double beta;
+    private long steps;
 
-    private List<Cache> cache;
-    private List<Multinomial> distributions;
-    private MultinomialFactory multFactory;
+    private List<Cache> caches;
     private int nCachedStates;
 
-    private BayesianNetwork bn;
-    private long steps;
-    private SplittableRandom random;
+    private List<Multinomial> distributions;
+    private MultinomialFactory multFactory;
     private SegmentTree transitions;
+
+    private BayesianNetwork bn;
+    private SplittableRandom random;
 
     private List<Integer> permutation;
 
@@ -40,7 +41,7 @@ public class Model {
         distributions = new ArrayList<>();
         this.multFactory = multFactory;
         this.nCachedStates = nCachedStates;
-        cache = new ArrayList<>();
+        caches = new ArrayList<>();
     }
 
     public void setRandomGenerator(SplittableRandom re) {
@@ -127,10 +128,10 @@ public class Model {
 
         transitions = new SegmentTree(n);
         for (int i = 0; i < n; i++) {
-            cache.add(new Cache(nCachedStates, multinomials(i)));
+            caches.add(new Cache(nCachedStates, multinomials(i)));
             List<Integer> ps = this.bn.ingoingEdges(i);
             Collections.sort(ps);
-            distributions.add(cache.get(i).request(ps));
+            distributions.add(caches.get(i).request(ps));
             transitions.set(i, distributions.get(i).logLikelihood());
         }
     }
@@ -211,7 +212,7 @@ public class Model {
         distributions.get(u).deactivate();
         List<Integer> parentSet = bn.ingoingEdges(u);
         Collections.sort(parentSet);
-        Multinomial mult = cache.get(u).request(parentSet);
+        Multinomial mult = caches.get(u).request(parentSet);
         distributions.set(u, mult);
         transitions.set(u, mult.logLikelihood());
     }
@@ -250,6 +251,9 @@ public class Model {
             double ll = model.ll[u];
             model.ll[u] = other.ll[u];
             other.ll[u] = ll;
+
+            model.updateDistribution(u);
+            other.updateDistribution(u);
         }
         double ll = model.loglik;
         model.loglik = other.loglik;
