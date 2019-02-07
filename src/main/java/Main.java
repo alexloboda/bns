@@ -22,7 +22,6 @@ public class Main {
     private static File output;
     private static File log;
     private static File preranking;
-    private static File priorsFile;
 
     private static int nSteps;
     private static int warmupSteps;
@@ -79,8 +78,6 @@ public class Main {
         OptionSpec<String> disc_prior_opt = optionParser.accepts("disc-prior",
                 "discretization priors(UNIFORM, EXP, MULTINOMIAL)").withRequiredArg().ofType(String.class)
                 .defaultsTo("EXP");
-        OptionSpec<String> priors_opt = optionParser.accepts("prior",
-                "prior distribution over edges").withRequiredArg().ofType(String.class);
         optionParser.accepts("random-policy", "random  discretization each step");
         optionParser.accepts("random-dag", "DAG");
 
@@ -107,9 +104,6 @@ public class Main {
         if (optionSet.has(log_file)) {
             log = new File(optionSet.valueOf(log_file));
         }
-        if (optionSet.has("priors")) {
-            priorsFile = new File(optionSet.valueOf(priors_opt));
-        }
         if (optionSet.has(disc_lb_opt)) {
             discLB = optionSet.valueOf(disc_lb_opt);
         }
@@ -129,18 +123,6 @@ public class Main {
         }
 
         return true;
-    }
-
-    private static void parsePriors(BayesianNetwork bn) throws FileNotFoundException {
-        int n = bn.size();
-        double[][] priors = new double[n][n];
-        try(Scanner scanner = new Scanner(priorsFile)) {
-            int v = bn.getID(scanner.next());
-            int u = bn.getID(scanner.next());
-            double logprior = scanner.nextDouble();
-            priors[v][u] = logprior;
-        }
-        //bn.set_prior_distribution(new ExplicitPrior(priors));
     }
 
     private static List<Variable> parseGETable(File file) throws FileNotFoundException {
@@ -209,10 +191,6 @@ public class Main {
 
         int n = genes.size();
         BayesianNetwork bn = new BayesianNetwork(genes);
-
-        if (priorsFile != null) {
-            parsePriors(bn);
-        }
 
         if (nOptimizer > 0) {
             Solver solver = new Solver(discSF);
