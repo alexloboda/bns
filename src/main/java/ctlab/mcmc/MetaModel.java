@@ -10,12 +10,12 @@ public class MetaModel {
     private SplittableRandom random;
 
     public MetaModel(List<Model> models, SplittableRandom random) {
-        models = new ArrayList<>(models);
-        models.sort(Comparator.comparingDouble(Model::beta));
+        this.models = new ArrayList<>(models);
+        this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
     }
 
-    public void run(long swapPeriod, long coldChainSteps, double powerBase) {
+    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) {
         long targetSteps = 0;
         while (true) {
             targetSteps += swapPeriod;
@@ -27,7 +27,7 @@ public class MetaModel {
             }
 
             if (targetSteps == coldChainSteps) {
-                return;
+                return models.get(0).edgeList();
             }
 
             int i = random.nextInt(models.size());

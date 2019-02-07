@@ -4,6 +4,7 @@ import ctlab.SegmentTree;
 import ctlab.bn.BayesianNetwork;
 import ctlab.bn.action.Multinomial;
 import ctlab.bn.action.MultinomialFactory;
+import ctlab.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 
 import java.util.*;
@@ -196,6 +197,16 @@ public class Model {
             addEdge(parent, node, mult.getLastLL());
         }
         return steps == limit;
+    }
+
+    public EdgeList edgeList() {
+        EdgeList edges = new EdgeList();
+        for (int u = 0; u < bn.size(); u++) {
+            for (int v: bn.ingoingEdges(u)) {
+                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1.0, 1));
+            }
+        }
+        return edges;
     }
 
     public boolean[][] adjMatrix() {
