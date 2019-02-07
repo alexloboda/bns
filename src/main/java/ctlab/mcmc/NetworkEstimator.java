@@ -8,21 +8,45 @@ import java.util.List;
 import java.util.SplittableRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class NetworkEstimator {
     private EstimatorParams params;
     private SplittableRandom re;
-    private EdgeList result;
+
+    private List<Task> tasks;
 
     public NetworkEstimator(EstimatorParams params, SplittableRandom re) {
         this.params = params;
         this.re = re;
-        result = new EdgeList();
+    }
+
+    public EdgeList resultsFromCompletedTasks() {
+        EdgeList result = new EdgeList();
+        for (Task t: tasks) {
+            synchronized (t) {
+                EdgeList res = t.getResult();
+                if (res != null) {
+                    result.merge(res);
+                }
+            }
+        }
+        return result;
     }
 
     public void run(BayesianNetwork bn) {
         ExecutorService es = Executors.newFixedThreadPool(params.nThreads());
+        tasks = new ArrayList<>();
+        for (int i = 0; i < params.nRuns(); i++) {
+            Task task = new Task(bn);
+            tasks.add(task);
+            es.submit(task);
+        }
+        es.shutdown();
 
+        try {
+            es.awaitTermination(1_000_000, TimeUnit.HOURS);
+        } catch (InterruptedException ignored) {}
     }
 
     private class Task implements Runnable {
@@ -39,11 +63,15 @@ public class NetworkEstimator {
                 models.add(model);
             }
             model = new MetaModel(models, random);
+            result = null;
         }
 
         @Override
         public void run() {
-            result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
+            EdgeList result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
+            synchronized (this) {
+                this.result = result;
+            }
         }
 
         public EdgeList getResult() {

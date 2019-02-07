@@ -2,6 +2,7 @@ package ctlab.mcmc;
 
 public interface EstimatorParams {
     int nThreads();
+    int nRuns();
 
     int chains();
     int numberOfCachedStates();
