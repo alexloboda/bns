@@ -94,7 +94,7 @@ public class SegmentTree {
         public Distribution(int k) {
             double left_sum = get_sum(child(k));
             double right_sum = get_sum(child(k) + 1);
-            double ll = Math.min(lls[k], 0.0);
+            double ll = Math.min(beta * lls[k], 0.0);
             maxLL = Math.max(ll, Math.max(left_sum, right_sum));
             left = NANSafe((float)Math.exp(left_sum - maxLL));
             right = NANSafe((float)Math.exp(right_sum - maxLL));

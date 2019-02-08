@@ -4,19 +4,20 @@ import java.util.SplittableRandom;
 import java.util.function.Function;
 
 public class MultinomialFactory {
-    private final int maxSize;
     private final int batchSize;
     private final short mainCacheSize;
-    private final SplittableRandom re;
+    private SplittableRandom re;
 
-    public MultinomialFactory(int maxSize, int batchSize, int mainCacheSize, SplittableRandom re) {
-        this.maxSize = maxSize;
+    public MultinomialFactory(int batchSize, int mainCacheSize) {
         this.batchSize = batchSize;
         this.mainCacheSize = (short)mainCacheSize;
+    }
+
+    public void setRandomEngine(SplittableRandom re) {
         this.re = re;
     }
 
-    public Multinomial spark(Function<Integer, Double> computeLL, double initialLL, double beta) {
-        return new Multinomial(maxSize, batchSize, beta, mainCacheSize, computeLL, initialLL, re);
+    public Multinomial spark(int n, Function<Integer, Double> computeLL, double initialLL, double beta) {
+        return new Multinomial(n, batchSize, beta, mainCacheSize, computeLL, initialLL, re);
     }
 }

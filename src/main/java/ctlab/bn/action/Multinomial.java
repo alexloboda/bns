@@ -216,8 +216,9 @@ public class Multinomial {
                 if (cache.contains((short)curr)) {
                     continue;
                 }
-                lastLL = computeLL.apply(curr) + initialLL;
-                if (Math.log(re.nextDouble()) < lastLL - batchMaxLL[node]) {
+                lastLL = computeLL.apply(curr);
+                double finalLL = Math.min(beta * lastLL, 0.0) + initialLL;
+                if (Math.log(re.nextDouble()) < finalLL - batchMaxLL[node]) {
                     return (short)curr;
                 }
             }
@@ -264,7 +265,7 @@ public class Multinomial {
         if (loglik == null) {
             loglik = computeLL.apply((int)action);
         }
-        double finalLL = Math.min(loglik, 0.0) + initialLL;
+        double finalLL = Math.min(beta * loglik, 0.0) + initialLL;
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
             Short other = cache.add(action, loglik);

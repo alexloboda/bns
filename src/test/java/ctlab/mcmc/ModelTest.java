@@ -47,7 +47,7 @@ public class ModelTest {
         int models = 100;
 
         for (int i = 0; i < models; i++) {
-            Model model = new Model(bn, new MultinomialFactory(2, 1, 2, sr),
+            Model model = new Model(bn, new MultinomialFactory(1, 2),
                     10, 1.0);
             model.setRandomGenerator(sr);
             model.init(true);

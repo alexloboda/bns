@@ -33,20 +33,21 @@ public class Model {
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
-        permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
+        this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
-        n = bn.size();
+        this.n = bn.size();
         this.bn = bn;
-        this.random = new SplittableRandom();
-        ll = new double[n];
-        distributions = new ArrayList<>();
+        this.ll = new double[n];
+        this.distributions = new ArrayList<>();
         this.multFactory = multFactory;
         this.nCachedStates = nCachedStates;
-        caches = new ArrayList<>();
+        this.caches = new ArrayList<>();
+        setRandomGenerator(new SplittableRandom());
     }
 
     public void setRandomGenerator(SplittableRandom re) {
         random = re;
+        multFactory.setRandomEngine(re);
     }
 
     private void calculateLikelihood() {
@@ -88,7 +89,7 @@ public class Model {
                     return bn.scoreIncluding(v, i) - currLL;
                 }
             };
-            return multFactory.spark(computeLL, -Math.log(n * (n - 1)), beta);
+            return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta);
         };
     }
 

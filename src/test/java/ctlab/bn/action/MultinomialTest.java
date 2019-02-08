@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import static ctlab.Utils.binomialTest;
 
 public class MultinomialTest {
+    public static final double BETA = 0.5;
     private static final int NCHOICES = 20000;
     private static final int NVARIABLES = 10;
     private static final int N_DISABLE_ACTIONS = 100;
@@ -82,13 +83,13 @@ public class MultinomialTest {
         double initialLL = Math.log(1.0 / 9);
         double[] ps = {1.5, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.5, 0.5};
         double[] lls = Arrays.stream(ps).map(Math::log).toArray();
-        ps = Arrays.stream(ps).map(x -> Math.min(x, 1.0)).toArray();
+        ps = Arrays.stream(ps).map(x -> Math.min(Math.pow(x, BETA), 1.0)).toArray();
 
         Function<Integer, Double> calcLL = i -> lls[i];
 
         for (int bs = 1; bs <= NVARIABLES; bs++) {
             for (short cacheSize = 0; cacheSize <= NVARIABLES; cacheSize++) {
-                Multinomial mult = new Multinomial(ps.length, bs, 1.0, cacheSize, calcLL, initialLL, re);
+                Multinomial mult = new Multinomial(ps.length, bs, BETA, cacheSize, calcLL, initialLL, re);
                 testMultinomial(mult, ps);
             }
         }

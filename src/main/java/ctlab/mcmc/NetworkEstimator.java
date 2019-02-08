@@ -57,8 +57,7 @@ public class NetworkEstimator {
             SplittableRandom random = re.split();
             List<Model> models = new ArrayList<>();
             for (int i = 0; i < params.chains(); i++) {
-                MultinomialFactory mults = new MultinomialFactory(bn.size() - 1, params.batchSize(),
-                        params.mainCacheSize(), random);
+                MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
                 Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0 - params.deltaT() * i);
                 models.add(model);
             }
