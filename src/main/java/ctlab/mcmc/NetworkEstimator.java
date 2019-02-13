@@ -67,7 +67,12 @@ public class NetworkEstimator {
 
         @Override
         public void run() {
-            EdgeList result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
+            EdgeList result;
+            try {
+                result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
+            } catch (InterruptedException e) {
+                return;
+            }
             synchronized (this) {
                 this.result = result;
             }

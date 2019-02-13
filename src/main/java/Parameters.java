@@ -1,5 +1,6 @@
 import ctlab.bn.Variable;
 import ctlab.bn.sf.ScoringFunction;
+import ctlab.mcmc.EstimatorParams;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -10,7 +11,7 @@ import java.io.IOException;
 
 import static java.util.Arrays.asList;
 
-class Parameters {
+class Parameters implements EstimatorParams {
     private final ScoringFunction mainSF;
     private final ScoringFunction discSF;
 
@@ -94,7 +95,6 @@ class Parameters {
                 throw new FileNotFoundException("Preranking does not exist");
             }
         }
-
     }
 
     public ScoringFunction mainSF() {
@@ -115,6 +115,42 @@ class Parameters {
 
     public int nThreads() {
         return nThreads;
+    }
+
+    @Override
+    public int nRuns() {
+    }
+
+    @Override
+    public int chains() {
+    }
+
+    @Override
+    public int numberOfCachedStates() {
+    }
+
+    @Override
+    public int batchSize() {
+    }
+
+    @Override
+    public int mainCacheSize() {
+    }
+
+    @Override
+    public long coldChainSteps() {
+    }
+
+    @Override
+    public int powerBase() {
+    }
+
+    @Override
+    public double deltaT() {
+    }
+
+    @Override
+    public long swapPeriod() {
     }
 
     public int defaultNumberOfClasses() {

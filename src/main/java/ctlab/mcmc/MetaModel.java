@@ -15,9 +15,13 @@ public class MetaModel {
         this.random = random;
     }
 
-    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) {
+    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) throws InterruptedException {
         long targetSteps = 0;
         while (true) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
+
             targetSteps += swapPeriod;
             targetSteps = Math.min(targetSteps, coldChainSteps);
 
