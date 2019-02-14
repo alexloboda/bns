@@ -1,6 +1,5 @@
 import ctlab.bn.Variable;
 import ctlab.bn.sf.ScoringFunction;
-import ctlab.mcmc.EstimatorParams;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -11,7 +10,7 @@ import java.io.IOException;
 
 import static java.util.Arrays.asList;
 
-class Parameters implements EstimatorParams {
+class Parameters {
     private final ScoringFunction mainSF;
     private final ScoringFunction discSF;
 
@@ -54,6 +53,7 @@ class Parameters implements EstimatorParams {
                 "SF used in discretization").withRequiredArg().ofType(String.class).defaultsTo("BDE 1");
         OptionSpec<Integer> optimizerStepsOpt = optionParser.accepts("n-optimizer",
                 "Number of optimizer steps").withRequiredArg().ofType(Integer.class).defaultsTo(0);
+
         OptionSpec<String> prerankingOpt = optionParser.accepts("preranking",
                 "Preranking for preprocessing").withRequiredArg().ofType(String.class);
         OptionSpec<Integer> discLBOpt = optionParser.accepts("disc-lb",
@@ -68,6 +68,7 @@ class Parameters implements EstimatorParams {
 
         if (optionSet.has("h")) {
             optionParser.printHelpOn(System.out);
+            System.exit(0);
         }
 
         optionSet = optionParser.parse(args);
@@ -115,42 +116,6 @@ class Parameters implements EstimatorParams {
 
     public int nThreads() {
         return nThreads;
-    }
-
-    @Override
-    public int nRuns() {
-    }
-
-    @Override
-    public int chains() {
-    }
-
-    @Override
-    public int numberOfCachedStates() {
-    }
-
-    @Override
-    public int batchSize() {
-    }
-
-    @Override
-    public int mainCacheSize() {
-    }
-
-    @Override
-    public long coldChainSteps() {
-    }
-
-    @Override
-    public int powerBase() {
-    }
-
-    @Override
-    public double deltaT() {
-    }
-
-    @Override
-    public long swapPeriod() {
     }
 
     public int defaultNumberOfClasses() {
