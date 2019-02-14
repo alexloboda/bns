@@ -1,6 +1,6 @@
-package ctlab.bn.sf;
+package ctlab.mc5.bn.sf;
 
-import ctlab.bn.Variable;
+import ctlab.mc5.bn.Variable;
 
 import java.util.*;
 

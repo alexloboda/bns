@@ -1,4 +1,4 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
 import java.util.ArrayList;
 import java.util.HashMap;

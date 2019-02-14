@@ -1,4 +1,4 @@
-package ctlab.graph;
+package ctlab.mc5.graph;
 
 import org.apache.commons.math3.util.Pair;
 

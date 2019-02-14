@@ -1,10 +1,10 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
-import ctlab.SegmentTree;
-import ctlab.bn.BayesianNetwork;
-import ctlab.bn.action.Multinomial;
-import ctlab.bn.action.MultinomialFactory;
-import ctlab.mcmc.EdgeList.Edge;
+import ctlab.mc5.algo.SegmentTree;
+import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.action.Multinomial;
+import ctlab.mc5.bn.action.MultinomialFactory;
+import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 
 import java.util.*;

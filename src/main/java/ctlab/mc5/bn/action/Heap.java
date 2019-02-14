@@ -1,4 +1,4 @@
-package ctlab.bn.action;
+package ctlab.mc5.bn.action;
 
 import java.util.NoSuchElementException;
 

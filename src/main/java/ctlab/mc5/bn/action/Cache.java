@@ -1,4 +1,4 @@
-package ctlab.bn.action;
+package ctlab.mc5.bn.action;
 
 public interface Cache {
     void disable(short action);

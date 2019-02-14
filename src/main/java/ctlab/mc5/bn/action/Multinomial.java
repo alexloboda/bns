@@ -1,6 +1,6 @@
-package ctlab.bn.action;
+package ctlab.mc5.bn.action;
 
-import ctlab.SegmentTree;
+import ctlab.mc5.algo.SegmentTree;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;

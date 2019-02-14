@@ -1,11 +1,9 @@
-package ctlab.graph;
+package ctlab.mc5.graph;
 
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

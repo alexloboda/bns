@@ -1,4 +1,4 @@
-package ctlab.bn.sf;
+package ctlab.mc5.bn.sf;
 
 import static org.apache.commons.math3.special.Gamma.logGamma;
 

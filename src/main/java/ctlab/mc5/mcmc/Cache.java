@@ -1,6 +1,6 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
-import ctlab.bn.action.Multinomial;
+import ctlab.mc5.bn.action.Multinomial;
 
 import java.util.*;
 import java.util.function.Function;

@@ -1,4 +1,4 @@
-package ctlab.graph;
+package ctlab.mc5.graph;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -1,4 +1,4 @@
-package ctlab.mc5;
+package ctlab.mc5.algo;
 
 import java.util.Arrays;
 import java.util.SplittableRandom;

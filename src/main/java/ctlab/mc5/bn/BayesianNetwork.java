@@ -1,7 +1,7 @@
-package ctlab.bn;
+package ctlab.mc5.bn;
 
-import ctlab.bn.sf.ScoringFunction;
-import ctlab.graph.Graph;
+import ctlab.mc5.bn.sf.ScoringFunction;
+import ctlab.mc5.graph.Graph;
 
 import java.util.*;
 import java.util.function.BiConsumer;

@@ -1,4 +1,4 @@
-package ctlab.bn.prior;
+package ctlab.mc5.bn.prior;
 
 public interface PriorDistribution {
     void insert(int v, int u);

@@ -1,4 +1,4 @@
-package ctlab.bn;
+package ctlab.mc5.bn;
 
 import java.util.ArrayList;
 import java.util.List;

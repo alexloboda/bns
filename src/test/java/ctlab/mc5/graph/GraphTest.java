@@ -1,4 +1,4 @@
-package ctlab.graph;
+package ctlab.mc5.graph;
 
 import org.junit.Assert;
 import org.junit.Test;

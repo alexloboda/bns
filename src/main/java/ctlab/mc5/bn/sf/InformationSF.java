@@ -1,4 +1,4 @@
-package ctlab.bn.sf;
+package ctlab.mc5.bn.sf;
 
 import java.util.*;
 

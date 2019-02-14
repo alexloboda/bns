@@ -1,4 +1,4 @@
-package ctlab.bn.action;
+package ctlab.mc5.bn.action;
 
 import java.util.SplittableRandom;
 import java.util.function.Function;

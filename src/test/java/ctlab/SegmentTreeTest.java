@@ -2,6 +2,7 @@ package ctlab;
 
 import static org.junit.Assert.*;
 
+import ctlab.mc5.algo.SegmentTree;
 import org.junit.Test;
 
 import java.util.SplittableRandom;

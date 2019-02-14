@@ -1,6 +1,6 @@
-package ctlab.bn.sf;
+package ctlab.mc5.bn.sf;
 
-import ctlab.bn.LogFactorial;
+import ctlab.mc5.bn.LogFactorial;
 
 public class K2 extends ScoringFunction {
     private LogFactorial lf;

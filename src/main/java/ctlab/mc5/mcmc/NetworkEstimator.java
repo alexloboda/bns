@@ -1,7 +1,7 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
-import ctlab.bn.BayesianNetwork;
-import ctlab.bn.action.MultinomialFactory;
+import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.action.MultinomialFactory;
 
 import java.util.ArrayList;
 import java.util.List;

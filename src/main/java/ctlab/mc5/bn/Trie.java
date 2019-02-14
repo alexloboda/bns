@@ -1,4 +1,4 @@
-package ctlab.bn;
+package ctlab.mc5.bn;
 
 public class Trie {
     private int n;

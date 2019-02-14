@@ -1,11 +1,11 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
 import ctlab.Utils;
-import ctlab.bn.BayesianNetwork;
-import ctlab.bn.Variable;
-import ctlab.bn.action.MultinomialFactory;
-import ctlab.bn.sf.BDE;
-import ctlab.bn.sf.ScoringFunction;
+import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.Variable;
+import ctlab.mc5.bn.action.MultinomialFactory;
+import ctlab.mc5.bn.sf.BDE;
+import ctlab.mc5.bn.sf.ScoringFunction;
 import org.apache.commons.math3.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;

@@ -1,6 +1,6 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
-import joptsimple.internal.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.util.*;
@@ -44,7 +44,7 @@ public class Logger implements Closeable  {
 
     void card(int[] card) {
         if (pw != null) {
-            vs.put("card", Strings.join(Arrays.stream(card)
+            vs.put("card", StringUtils.join(Arrays.stream(card)
                     .mapToObj(Integer::toString)
                     .skip(1)
                     .limit(limit)

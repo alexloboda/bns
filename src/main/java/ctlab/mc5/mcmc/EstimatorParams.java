@@ -1,4 +1,4 @@
-package ctlab.mcmc;
+package ctlab.mc5.mcmc;
 
 public interface EstimatorParams {
     int nThreads();

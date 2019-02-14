@@ -1,8 +1,8 @@
-package ctlab.bn;
+package ctlab.mc5.bn;
 
-import ctlab.bn.sf.ScoringFunction;
-import ctlab.graph.Graph;
-import joptsimple.internal.Strings;
+import ctlab.mc5.bn.sf.ScoringFunction;
+import ctlab.mc5.graph.Graph;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class Solver {
                 pw.println(i + " " + records.size());
                 for (Record r : records) {
                     pw.print(r.loglik + " " + r.ps.size() + " ");
-                    pw.println(Strings.join(r.ps.stream()
+                    pw.println(StringUtils.join(r.ps.stream()
                             .map(Object::toString)
                             .collect(Collectors.toList()), " "));
                 }
