@@ -1,30 +1,18 @@
 package ctlab.mc5;
 
-import ctlab.mc5.bn.*;
-import ctlab.mc5.graph.Graph;
-import org.apache.commons.io.IOUtils;
+import ctlab.mc5.bn.Variable;
+import ctlab.mc5.bn.sf.ScoringFunction;
+import ctlab.mc5.mcmc.EstimatorParams;
 import picocli.CommandLine;
+import picocli.CommandLine.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
 
+@Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
+        resourceBundle = "ctlab.mc5.Parameters")
 public class Main {
+    @Mixin(name = "Parameters")
     private Parameters params;
-
-    public Main(String[] args) throws IOException {
-        CommandLine cli = new CommandLine(new Parameters());
-        cli.parse(args);
-        if (cli.isUsageHelpRequested()) {
-            cli.usage(System.out);
-            return;
-        } else if (cli.isVersionHelpRequested()) {
-            cli.printVersionHelp(System.out);
-            return;
-        }
-    }
 
     //private List<Variable> parseGETable(File file) throws FileNotFoundException {
     //    List<Variable> res = new ArrayList<>();
@@ -73,12 +61,28 @@ public class Main {
     //}
 
     public static void main(String[] args) {
+        Main app = new Main();
+        CommandLine cmd = new CommandLine(app);
+        cmd.registerConverter(Variable.DiscretizationPrior.class, Variable.DiscretizationPrior::valueOf);
+        cmd.registerConverter(ScoringFunction.class, ScoringFunction::parse);
+        cmd.addMixin("EstimatorParams", EstimatorParams.class);
         try {
-            Main app = new Main(args);
+            cmd.parse(args);
+            if (cmd.isUsageHelpRequested()) {
+                cmd.usage(System.out);
+                return;
+            } else if (cmd.isVersionHelpRequested()) {
+                cmd.printVersionHelp(System.out);
+                return;
+            }
             app.run();
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+        } catch (ParameterException ex) {
+            System.err.println(ex.getMessage());
+            if (!UnmatchedArgumentException.printSuggestions(ex, System.err)) {
+                ex.getCommandLine().usage(System.err);
+            }
+        } catch (Exception ex) {
+            throw new ExecutionException(cmd, "Runtime error: ", ex);
         }
     }
 

@@ -1,1 +1,1 @@
-mc5 tool ${project.version}
+mc5 ${project.version}
