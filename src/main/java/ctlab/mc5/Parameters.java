@@ -9,6 +9,7 @@ import java.io.File;
 interface Parameters {
     @Option(names = "--main-sf", defaultValue = "BDE 1")
     ScoringFunction mainSF();
+
     @Option(names = "--discretization-sf", defaultValue = "BDE 1")
     ScoringFunction discSF();
 
