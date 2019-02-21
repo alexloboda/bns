@@ -6,22 +6,20 @@ import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
 import ctlab.mc5.mcmc.EstimatorParams;
+import ctlab.mc5.mcmc.NetworkEstimator;
 import picocli.CommandLine;
 import picocli.CommandLine.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
         resourceBundle = "ctlab.mc5.Parameters")
 public class Main {
-    public static final String ESTIMATOR_PARAMS = "EstimatorParams";
-    public static final String MAIN_PARAMS = "MainParams";
+    private static final String ESTIMATOR_PARAMS = "EstimatorParams";
+    private static final String MAIN_PARAMS = "MainParams";
 
     private Parameters params;
     private EstimatorParams estimatorParams;
@@ -128,5 +126,7 @@ public class Main {
         }
 
         bn.clearEdges();
+
+        NetworkEstimator estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
     }
 }

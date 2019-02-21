@@ -39,4 +39,7 @@ interface Parameters {
 
     @Option(names = "--disc-ub", defaultValue = "3")
     int discUB();
+
+    @Option(names = "--seed", defaultValue = "42")
+    int seed();
 }
