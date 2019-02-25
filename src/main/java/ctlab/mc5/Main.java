@@ -24,7 +24,6 @@ public class Main {
     private static final String MAIN_PARAMS = "MainParams";
 
     private Parameters params;
-    private EstimatorParams estimatorParams;
     private boolean completed;
     private NetworkEstimator estimator;
     private BayesianNetwork bn;
@@ -113,7 +112,7 @@ public class Main {
         }
     }
 
-    private synchronized void writeResults(Parameters params) {
+    private synchronized void writeResults() {
         if (completed || estimator == null) {
             return;
         }
@@ -139,7 +138,6 @@ public class Main {
 
     private void run(Parameters params, EstimatorParams estimatorParams) throws IOException {
         this.params = params;
-        this.estimatorParams = estimatorParams;
         List<Variable> genes = parseGETable(params.geneExpressionFile());
 
         for (Variable v : genes) {
@@ -166,10 +164,10 @@ public class Main {
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
         estimator.run(bn);
 
-        writeResults(params);
+        writeResults();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeResults(params);
+            writeResults();
         }));
     }
 }
