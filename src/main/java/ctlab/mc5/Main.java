@@ -27,6 +27,7 @@ public class Main {
     private EstimatorParams estimatorParams;
     private boolean completed;
     private NetworkEstimator estimator;
+    private BayesianNetwork bn;
 
     private List<Variable> parseGETable(File file) throws FileNotFoundException {
         List<Variable> res = new ArrayList<>();
@@ -107,7 +108,9 @@ public class Main {
     }
 
     private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
-
+        for (EdgeList.Edge e: edges.edges()) {
+            pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p());
+        }
     }
 
     private synchronized void writeResults(Parameters params) {
@@ -150,7 +153,7 @@ public class Main {
             v.setDiscLimits(lb, ub);
         }
 
-        BayesianNetwork bn = new BayesianNetwork(genes);
+        bn = new BayesianNetwork(genes);
         bn.setScoringFunction(params.mainSF());
 
         if (params.nOptimizer() > 0) {

@@ -1,9 +1,6 @@
 package ctlab.mc5.mcmc;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class EdgeList {
     private List<Edge> edgeList;
@@ -32,6 +29,12 @@ public class EdgeList {
         edgeMap.get(edge.v()).put(edge.u(), edge);
     }
 
+    public List<Edge> edges() {
+        List<Edge> ret = new ArrayList<>(edgeList);
+        Collections.sort(ret);
+        return ret;
+    }
+
     public void merge(EdgeList other) {
         for (Edge e: other.edgeList) {
             Edge local = getEdge(e.v(), e.u());
@@ -47,7 +50,7 @@ public class EdgeList {
         return edgeList.size();
     }
 
-    public static class Edge {
+    public static class Edge implements Comparable<Edge> {
         private int v;
         private int u;
         private double p;
@@ -92,6 +95,11 @@ public class EdgeList {
             }
             Edge e = (Edge)o;
             return this.v == e.v && this.u == e.u;
+        }
+
+        @Override
+        public int compareTo(Edge o) {
+            return Double.compare(p, o.p);
         }
     }
 }
