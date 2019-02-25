@@ -21,7 +21,7 @@ public class NetworkEstimator {
         this.re = re;
     }
 
-    public EdgeList resultsFromCompletedTasks() {
+    public EdgeList resultsFromCompletedTasks(){
         EdgeList result = new EdgeList();
         for (Task t: tasks) {
             synchronized (t) {

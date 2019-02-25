@@ -5,6 +5,7 @@ import ctlab.mc5.bn.Solver;
 import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
+import ctlab.mc5.mcmc.EdgeList;
 import ctlab.mc5.mcmc.EstimatorParams;
 import ctlab.mc5.mcmc.NetworkEstimator;
 import picocli.CommandLine;
@@ -13,6 +14,7 @@ import picocli.CommandLine.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
@@ -23,6 +25,8 @@ public class Main {
 
     private Parameters params;
     private EstimatorParams estimatorParams;
+    private boolean completed;
+    private NetworkEstimator estimator;
 
     private List<Variable> parseGETable(File file) throws FileNotFoundException {
         List<Variable> res = new ArrayList<>();
@@ -102,6 +106,34 @@ public class Main {
         return Math.min(max, Math.max(min, actual));
     }
 
+    private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
+
+    }
+
+    private synchronized void writeResults(Parameters params) {
+        if (completed || estimator == null) {
+            return;
+        }
+        EdgeList results = estimator.resultsFromCompletedTasks();
+        try (PrintWriter pw = new PrintWriter(params.output())) {
+            printResultsToOutput(results, pw);
+        } catch (IOException e) {
+            try {
+                File tmp = File.createTempFile("bn_inference_", "");
+                try (PrintWriter pw = new PrintWriter(tmp)) {
+                    pw.println("Can't write to specified output file. Created temp file " + tmp);
+                    printResultsToOutput(results, pw);
+                }
+            } catch (IOException e1) {
+                try (PrintWriter pw = new PrintWriter(System.out)) {
+                    pw.println("Can't write to specified output file. Failed to write to temp file. Output: ");
+                    printResultsToOutput(results, pw);
+                }
+            }
+        }
+        completed = true;
+    }
+
     private void run(Parameters params, EstimatorParams estimatorParams) throws IOException {
         this.params = params;
         this.estimatorParams = estimatorParams;
@@ -119,6 +151,7 @@ public class Main {
         }
 
         BayesianNetwork bn = new BayesianNetwork(genes);
+        bn.setScoringFunction(params.mainSF());
 
         if (params.nOptimizer() > 0) {
             Solver solver = new Solver(params.discSF());
@@ -127,6 +160,13 @@ public class Main {
 
         bn.clearEdges();
 
-        NetworkEstimator estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+        estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+        estimator.run(bn);
+
+        writeResults(params);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            writeResults(params);
+        }));
     }
 }
