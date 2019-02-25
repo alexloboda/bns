@@ -166,8 +166,6 @@ public class Main {
 
         writeResults();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            writeResults();
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::writeResults));
     }
 }
