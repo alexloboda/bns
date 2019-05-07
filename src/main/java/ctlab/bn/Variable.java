@@ -385,7 +385,7 @@ public class Variable {
             if (buckets[i] == 0) {
                 continue;
             }
-            this.edges.add(edges[curr]);
+            this.edges.add(edges[curr - 1]);
         }
         write_discretization();
     }
