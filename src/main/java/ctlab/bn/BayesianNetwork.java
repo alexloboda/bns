@@ -115,14 +115,14 @@ public class BayesianNetwork {
         Double value = cache.get(ps);
         if (value == null) {
             value = 0.0;
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 100; i++) {
                 variables.get(v).random_policy();
                 for (Variable var: parent_set(v)) {
                     var.random_policy();
                 }
                 value += sf.score(variables.get(v), parent_set(v));
             }
-            value -= Math.log(1000);
+            value -= Math.log(100);
             cache.add(ps, value);
         }
         return value;

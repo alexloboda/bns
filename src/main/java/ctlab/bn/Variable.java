@@ -370,7 +370,7 @@ public class Variable {
 
     public void random_policy() {
         double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::get_disc_edge).toArray();
-        int k = random.nextInt(ub - lb + 1) + lb - 1;
+        int k = random.nextInt(ub - lb + 1) + lb;
         int[] buckets = new int[k];
         for (int i = 0; i < uniq.length; i++) {
             buckets[random.nextInt(k)]++;
