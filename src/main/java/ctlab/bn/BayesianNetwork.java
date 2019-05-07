@@ -114,7 +114,15 @@ public class BayesianNetwork {
         List<Integer> ps = g.ingoing_edges(v);
         Double value = cache.get(ps);
         if (value == null) {
-            value = sf.score(variables.get(v), parent_set(v));
+            value = 0.0;
+            for (int i = 0; i < 1000; i++) {
+                variables.get(v).random_policy();
+                for (Variable var: parent_set(v)) {
+                    var.random_policy();
+                }
+                value += sf.score(variables.get(v), parent_set(v));
+            }
+            value -= Math.log(1000);
             cache.add(ps, value);
         }
         return value;

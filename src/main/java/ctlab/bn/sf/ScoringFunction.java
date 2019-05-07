@@ -6,7 +6,6 @@ import java.util.*;
 
 public abstract class ScoringFunction {
     public double score(Variable v, List<Variable> ps) {
-
         int[] parent_cls = v.map_obs(ps);
 
         List<Variable> vs = new ArrayList<>(ps);
