@@ -109,18 +109,31 @@ public class BayesianNetwork {
         return pd.value();
     }
 
+    private static double likelihoodsSum(double ll1, double ll2) {
+        if (ll1 == Double.NEGATIVE_INFINITY) {
+            return ll2;
+        }
+        if (ll2 == Double.NEGATIVE_INFINITY) {
+            return ll1;
+        }
+        double maxLL = Math.max(ll1, ll2);
+        ll1 -= maxLL;
+        ll2 -= maxLL;
+        return Math.log(Math.exp(ll1) + Math.exp(ll2)) + maxLL;
+    }
+
     public double score(int v, ScoringFunction sf) {
         Cache cache = caches.get(v);
         List<Integer> ps = g.ingoing_edges(v);
         Double value = cache.get(ps);
         if (value == null) {
-            value = 0.0;
+            value = Double.NEGATIVE_INFINITY;
             for (int i = 0; i < 100; i++) {
                 variables.get(v).random_policy();
                 for (Variable var: parent_set(v)) {
                     var.random_policy();
                 }
-                value += sf.score(variables.get(v), parent_set(v));
+                value = likelihoodsSum(value, sf.score(variables.get(v), parent_set(v)));
             }
             value -= Math.log(100);
             cache.add(ps, value);
