@@ -17,12 +17,12 @@ public interface EstimatorParams {
     @Option(names = "--cache-size", defaultValue = "25")
     int mainCacheSize();
 
-    @Option(names = {"-s", "--steps"})
+    @Option(names = {"-s", "--steps"}, defaultValue = "2000")
     long coldChainSteps();
     @Option(names = "--steps-power-base", defaultValue = "2.0")
     double powerBase();
     @Option(names = {"-d", "--temperature-delta"})
     double deltaT();
-    @Option(names = "--swap-period")
+    @Option(names = "--swap-period", defaultValue = "1")
     long swapPeriod();
 }

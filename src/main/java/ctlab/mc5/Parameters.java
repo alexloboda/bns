@@ -19,7 +19,7 @@ interface Parameters {
     @Option(names = {"-g", "--gene-expression-table"}, required = true)
     File geneExpressionFile();
 
-    @Option(names = {"-o", "-ouput"}, required = true)
+    @Option(names = {"-o", "-output"}, required = true)
     File output();
 
     @Option(names = "--initial-classes", defaultValue = "3")

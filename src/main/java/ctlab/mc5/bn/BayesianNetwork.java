@@ -117,13 +117,13 @@ public class BayesianNetwork {
     public double scoreExcluding(int v, int u) {
         List<Integer> ps = g.ingoingEdges(v);
         assert ps.contains(u);
-        ps.remove((Integer)u);
+        ps.remove((Integer) u);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
     public void clearEdges() {
         for (int u = 0; u < size(); u++) {
-            for (int v: new ArrayList<>(ingoingEdges(u))) {
+            for (int v : ingoingEdges(u)) {
                 removeEdge(v, u);
             }
         }
@@ -159,7 +159,7 @@ public class BayesianNetwork {
             }
         }
         int[] cs = new int[observations() + 1];
-        for (Variable v: variables) {
+        for (Variable v : variables) {
             cs[v.cardinality()]++;
         }
         return ret != -1 ? ret : steps_ub;
@@ -173,7 +173,7 @@ public class BayesianNetwork {
         names = names.keySet().stream()
                 .collect(Collectors.toMap(x -> x, x -> inverseMap.get(names.get(x))));
         List<Variable> newList = new ArrayList<>();
-        for (int k: perm) {
+        for (int k : perm) {
             newList.add(variables.get(k));
         }
         variables = newList;

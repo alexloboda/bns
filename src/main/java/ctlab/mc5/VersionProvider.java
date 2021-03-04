@@ -4,6 +4,7 @@ import org.apache.commons.io.IOUtils;
 import picocli.CommandLine;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 class VersionProvider implements CommandLine.IVersionProvider {
 
@@ -11,7 +12,7 @@ class VersionProvider implements CommandLine.IVersionProvider {
         public String[] getVersion() throws Exception {
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
             try (InputStream is = classloader.getResourceAsStream("ctlab/mc5/Version")) {
-                return new String[]{IOUtils.toString(is, "UTF-8")};
+                return new String[]{IOUtils.toString(is, StandardCharsets.UTF_8)};
             }
         }
     }
