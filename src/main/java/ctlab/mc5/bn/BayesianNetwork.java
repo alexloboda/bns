@@ -179,4 +179,26 @@ public class BayesianNetwork {
         variables = newList;
         return perm;
     }
+
+    public boolean canBeVShape(int v, int u) {
+        if (g.edgeExists(v, u)) {
+            /*
+             * if we have another edge (x,u), x != v
+             * then (v,u) and (x,u) make up a V-shape,
+             * breaking equivalence
+             */
+            if (g.inDegree(u) > 1) {
+                return true;
+            }
+            /*
+             * if we have another an edge (x,v),
+             * then if (v,u) reversed (u,v) and (x,v) make up a V-shape,
+             * breaking equivalence
+             */
+            if (g.inDegree(v) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

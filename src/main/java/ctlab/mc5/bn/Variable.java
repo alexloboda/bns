@@ -29,9 +29,16 @@ public class Variable {
         this.ub = ub;
     }
 
+    private String stripName(String name) {
+        if (name.charAt(0) == '\"' && name.charAt(name.length() - 1) == '\"') {
+            return name.substring(1, name.length() - 1);
+        }
+        return name;
+    }
+
     public Variable(String name, List<Double> data, int discClasses, DiscretizationPrior prior) {
         random = ThreadLocalRandom.current();
-        this.name = name;
+        this.name = stripName(name);
         this.data = new ArrayList<>(data);
         lf = new LogFactorial();
 

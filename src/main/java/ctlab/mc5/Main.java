@@ -11,10 +11,7 @@ import ctlab.mc5.mcmc.NetworkEstimator;
 import picocli.CommandLine;
 import picocli.CommandLine.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
@@ -35,7 +32,7 @@ public class Main {
         try (Scanner sc = new Scanner(file)) {
             String firstLine = sc.nextLine();
             Scanner line_sc = new Scanner(firstLine);
-            while(line_sc.hasNext()) {
+            while (line_sc.hasNext()) {
                 names.add(line_sc.next());
             }
 
@@ -62,7 +59,7 @@ public class Main {
     private Graph parseBound(BayesianNetwork bn) throws FileNotFoundException {
         Graph g = new Graph(bn.size());
         try (Scanner scanner = new Scanner(params.preranking())) {
-            while(scanner.hasNext()) {
+            while (scanner.hasNext()) {
                 int v = bn.getID(scanner.next());
                 int u = bn.getID(scanner.next());
                 scanner.next();
@@ -91,7 +88,7 @@ public class Main {
                 return;
             }
             Map<String, Object> mixins = cmd.getMixins();
-            app.run((Parameters)mixins.get(MAIN_PARAMS), (EstimatorParams)mixins.get(ESTIMATOR_PARAMS));
+            app.run((Parameters) mixins.get(MAIN_PARAMS), (EstimatorParams) mixins.get(ESTIMATOR_PARAMS));
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
             if (!UnmatchedArgumentException.printSuggestions(ex, System.err)) {
@@ -107,7 +104,7 @@ public class Main {
     }
 
     private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
-        for (EdgeList.Edge e: edges.edges()) {
+        for (EdgeList.Edge e : edges.edges()) {
             pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p());
         }
     }
@@ -166,5 +163,71 @@ public class Main {
         writeResults();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::writeResults));
+
+        analyzeGS();
+    }
+
+    private void analyzeGS() {
+        if (params.gold() != null) {
+            Set<GeneEdge> edgesGS = new HashSet<>();
+            Set<GeneEdge> edgesMy = new HashSet<>();
+            List<GeneEdge> edgesMyList = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader(params.gold()))) {
+                String str;
+                String[] arr;
+
+                while ((str = br.readLine()) != null) {
+                    arr = str.split("\t");
+                    if (arr.length != 3) {
+                        throw new IllegalStateException();
+                    }
+                    if (Integer.parseInt(arr[2]) == 1) {
+                        edgesGS.add(new GeneEdge(arr[0], arr[1], 0));
+                    }
+                }
+                EdgeList results = estimator.resultsFromCompletedTasks();
+                for (EdgeList.Edge edge : results.edges()) {
+                    GeneEdge mEdge = new GeneEdge(bn.var(edge.v()).getName(), bn.var(edge.u()).getName(), edge.p());
+                    edgesMy.add(mEdge);
+                    edgesMyList.add(mEdge);
+                }
+            } catch (IOException e) {
+                System.out.println("GS file read fail");
+                return;
+            } catch (NumberFormatException e) {
+                System.out.println("Wrong GS format");
+                return;
+            }
+
+            edgesMyList.sort(Comparator.comparing(GeneEdge::getProbability));
+
+            int tp = 0;
+            int fp = 0;
+            int tn = 0;
+            int fn = 0;
+
+            // n rows * n columns - n number of elements, such as a[i][i]
+            int totalEdges = bn.size() * bn.size() - bn.size();
+
+            for (GeneEdge edge : edgesMy) {
+                if (edgesGS.contains(edge)) {
+                    tp++;
+                } else {
+                    fp++;
+                }
+            }
+
+            for (GeneEdge edge : edgesGS) {
+                if (!edgesMy.contains(edge)) {
+                    fn++;
+                }
+            }
+            tn = totalEdges - tp - fp - fn;
+            System.out.println("True  positive: " + tp);
+            System.out.println("False positive: " + fp);
+            System.out.println("True  negative: " + tn);
+            System.out.println("False negative: " + fn);
+        }
+
     }
 }
