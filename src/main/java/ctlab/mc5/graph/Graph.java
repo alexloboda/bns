@@ -2,6 +2,7 @@ package ctlab.mc5.graph;
 
 import org.apache.commons.math3.util.Pair;
 
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -101,10 +102,10 @@ public class Graph {
 
     public List<Integer> ingoingEdges(int v) {
         List<Integer> ingoing = new ArrayList<>(radj.get(v).size());
-        for (Edge e: radj.get(v)) {
+        for (Edge e : radj.get(v)) {
             ingoing.add(e.v);
         }
-       return ingoing;
+        return ingoing;
     }
 
     public List<Integer> outgoingEdges(int v) {
@@ -242,7 +243,7 @@ public class Graph {
             if (noPathSupportCallback != null) {
                 noPathSupportCallback.accept(v, u);
             }
-            for (LinkedList.Entry ref: backRefs) {
+            for (LinkedList.Entry ref : backRefs) {
                 ref.remove();
             }
         }
@@ -275,7 +276,7 @@ public class Graph {
                     break;
                 }
             }
-            for (Subscription s: subscriptions) {
+            for (Subscription s : subscriptions) {
                 s.processDeletion();
             }
         }

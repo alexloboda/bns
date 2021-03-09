@@ -1,9 +1,11 @@
 package ctlab.mc5.bn;
 
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LogFactorial {
+public class LogFactorial implements Serializable {
     private final List<Double> values;
 
     public LogFactorial() {

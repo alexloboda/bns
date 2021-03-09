@@ -2,9 +2,10 @@ package ctlab.mc5.bn.sf;
 
 import ctlab.mc5.bn.Variable;
 
+import java.io.Serializable;
 import java.util.*;
 
-public abstract class ScoringFunction {
+public abstract class ScoringFunction implements Serializable {
     public double score(Variable v, List<Variable> ps) {
 
         int[] parent_cls = v.mapObs(ps);

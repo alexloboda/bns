@@ -1,33 +1,28 @@
 package ctlab.mc5.mcmc;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.SplittableRandom;
 
-public class MetaModel {
-    private List<Model> models;
-    private SplittableRandom random;
+import java.util.*;
 
-    public MetaModel(List<Model> models, SplittableRandom random) {
+public class MetaModel  {
+    private final List<Model> models;
+    private final Random random;
+
+    public MetaModel(List<Model> models) {
         this.models = new ArrayList<>(models);
         this.models.sort(Comparator.comparingDouble(Model::beta));
-        this.random = random;
+        this.random = new Random();
     }
 
-    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) throws InterruptedException {
+    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) {
         long targetSteps = 0;
         while (true) {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedException();
-            }
-
             targetSteps += swapPeriod;
             targetSteps = Math.min(targetSteps, coldChainSteps);
 
             for (int i = 0; i < models.size(); i++) {
-                long currentTarget = (long)(targetSteps / Math.pow(powerBase, i));
-                while (!models.get(i).step(currentTarget)) {}
+                long currentTarget = (long) (targetSteps / Math.pow(powerBase, i));
+                while (!models.get(i).step(currentTarget)) {
+                }
             }
 
             if (targetSteps == coldChainSteps) {

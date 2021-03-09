@@ -2,12 +2,13 @@ package ctlab.mc5.graph;
 
 import org.apache.commons.math3.util.Pair;
 
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-class EulerTourForest {
+class EulerTourForest  {
     private int n;
     private List<Entry> any;
     private Entry anyRoot;
@@ -232,7 +233,7 @@ class EulerTourForest {
         }
     }
 
-    static class Entry {
+    static class Entry  {
         private Entry left;
         private Entry right;
         private Entry parent;

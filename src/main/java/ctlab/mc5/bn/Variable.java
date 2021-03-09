@@ -1,12 +1,14 @@
 package ctlab.mc5.bn;
 
+
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Variable {
+public class Variable implements Serializable {
     private String name;
 
     private List<Double> data;

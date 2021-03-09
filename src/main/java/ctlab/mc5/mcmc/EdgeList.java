@@ -51,6 +51,19 @@ public class EdgeList {
         number_merged++;
     }
 
+    public EdgeList mergeWithRet(EdgeList other) {
+        for (Edge e : other.edgeList) {
+            Edge local = getEdge(e.v(), e.u());
+            if (local == null) {
+                addEdge(e);
+            } else {
+                local.merge(e);
+            }
+        }
+        number_merged++;
+        return this;
+    }
+
     public int size() {
         return edgeList.size();
     }

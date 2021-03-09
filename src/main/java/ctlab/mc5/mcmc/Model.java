@@ -7,12 +7,13 @@ import ctlab.mc5.bn.action.MultinomialFactory;
 import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Model {
+public class Model  {
     private int n;
     private double[] ll;
     private double loglik;
