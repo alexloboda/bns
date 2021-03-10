@@ -1,8 +1,9 @@
 package ctlab.mc5.mcmc;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class EdgeList {
+public class EdgeList implements Serializable {
     private List<Edge> edgeList;
     private Map<Integer, Map<Integer, Edge>> edgeMap;
     private int number_merged = 1;
@@ -68,7 +69,7 @@ public class EdgeList {
         return edgeList.size();
     }
 
-    public static class Edge implements Comparable<Edge> {
+    public static class Edge implements Comparable<Edge>, Serializable {
         private int v;
         private int u;
         private int num;

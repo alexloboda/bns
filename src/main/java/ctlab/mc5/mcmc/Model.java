@@ -188,13 +188,13 @@ public class Model  {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-            if (!bn.pathExists(node, parent)) {
-                boolean vshape = bn.canBeVShape(node, parent);
-                if (!vshape) {
-                    tryInvert(parent, node);
-                    return steps == limit;
-                }
-            }
+//            if (!bn.pathExists(node, parent)) {
+//                boolean vshape = bn.canBeVShape(node, parent);
+//                if (!vshape) {
+//                    tryInvert(parent, node);
+//                    return steps == limit;
+//                }
+//            }
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
@@ -260,7 +260,7 @@ public class Model  {
         for (int u = 0; u < model.bn.size(); u++) {
             Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
             Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-            int finalU = u;
+            final int finalU = u;
             modelEdges.stream()
                     .filter(otherModelEdges::contains)
                     .forEach(v -> {

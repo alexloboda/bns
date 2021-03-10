@@ -3,7 +3,7 @@ package ctlab.mc5.mcmc;
 
 import java.util.*;
 
-public class MetaModel  {
+public class MetaModel {
     private final List<Model> models;
     private final Random random;
 

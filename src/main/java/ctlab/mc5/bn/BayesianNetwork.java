@@ -8,7 +8,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class BayesianNetwork  {
+public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
     private ScoringFunction sf;

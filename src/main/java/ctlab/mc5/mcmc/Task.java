@@ -8,9 +8,9 @@ import java.util.List;
 
 public class Task {
     private final MetaModel model;
-    long swapPeriod;
-    long coldChainSteps;
-    double powerBase;
+    private final long swapPeriod;
+    private final long coldChainSteps;
+    private final double powerBase;
 
     public Task(BayesianNetwork bn,
                 int chains,

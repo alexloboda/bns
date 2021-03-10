@@ -6,6 +6,7 @@ import ctlab.mc5.mcmc.EstimatorParams;
 import ctlab.mc5.mcmc.Task;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.*;
+import org.apache.spark.api.java.function.Function;
 import picocli.CommandLine;
 
 import java.util.Arrays;
@@ -154,21 +155,8 @@ public class SparkMain {
             v.setDiscLimits(lb, ub);
         }
 
-//        bn = new BayesianNetwork(genes, params.mainSF());
-
-//        if (params.nOptimizer() > 0) {
-//            Solver solver = new Solver(params.discSF());
-//            solver.solve(bn, parseBound(bn), params.nOptimizer());
-//        }
-//
-//        bn.clearEdges();
-
-//        estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
-
-
-//        estimator.run(bn);
-
-        SparkConf sparkConf = new SparkConf().setMaster("local[1]").setAppName("Word Counter");
+        SparkConf sparkConf = new SparkConf().setMaster("spark://maxg5:7077").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"});
+//        SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"});
         JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
         List<Integer> runned = new ArrayList<>();
         for (int i = 0; i < estimatorParams.nRuns(); ++i) {
@@ -177,17 +165,18 @@ public class SparkMain {
         final ScoringFunction sf = params.mainSF();
 
 
-        int chains = estimatorParams.chains();
-        int batchSize = estimatorParams.batchSize();
-        int mainCacheSize = estimatorParams.mainCacheSize();
-        int numberOfCachedStates = estimatorParams.numberOfCachedStates();
-        double deltaT = estimatorParams.deltaT();
-        long swapPeriod = estimatorParams.swapPeriod();
-        long coldChainSteps = estimatorParams.coldChainSteps();
-        double powerBase = estimatorParams.powerBase();
+        final int chains = estimatorParams.chains();
+        final int batchSize = estimatorParams.batchSize();
+        final int mainCacheSize = estimatorParams.mainCacheSize();
+        final int numberOfCachedStates = estimatorParams.numberOfCachedStates();
+        final double deltaT = estimatorParams.deltaT();
+        final long swapPeriod = estimatorParams.swapPeriod();
+        final long coldChainSteps = estimatorParams.coldChainSteps();
+        final double powerBase = estimatorParams.powerBase();
 
-
+        bn = new BayesianNetwork(genes, sf);
         JavaRDD<Integer> RddInt = sparkContext.parallelize(runned);
+
         JavaRDD<Task> RddTasks = RddInt.map(integer -> new Task(new BayesianNetwork(genes, sf),
                 chains,
                 batchSize,

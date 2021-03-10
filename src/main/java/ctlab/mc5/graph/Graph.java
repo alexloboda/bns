@@ -312,7 +312,7 @@ public class Graph {
         }
     }
 
-    public class Edge {
+    public static class Edge {
         private int v;
         private int u;
         private int pos;
