@@ -13,7 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Model  {
+public class Model {
     private int n;
     private double[] ll;
     private double loglik;
@@ -256,33 +256,46 @@ public class Model  {
         updateDistribution(u);
     }
 
-    public static void swapNetworks(Model model, Model other) {
-        for (int u = 0; u < model.bn.size(); u++) {
-            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
-            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-            final int finalU = u;
-            modelEdges.stream()
-                    .filter(otherModelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.removeEdge(v, finalU);
-                        other.bn.addEdge(v, finalU);
-                    });
-            otherModelEdges.stream()
-                    .filter(modelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.addEdge(v, finalU);
-                        other.bn.removeEdge(v, finalU);
-                    });
-            double ll = model.ll[u];
-            model.ll[u] = other.ll[u];
-            other.ll[u] = ll;
+    static class ModelWrapper {
+        Model md1;
 
-            model.updateDistribution(u);
-            other.updateDistribution(u);
+        ModelWrapper(Model md) {
+            md1 = md;
         }
-        double ll = model.loglik;
-        model.loglik = other.loglik;
-        other.loglik = ll;
+    }
+
+    public static void swapNetworks(List<Model> model, int i, int j) {
+        assert i != j;
+        Model md = model.get(i);
+        model.set(i, model.get(j));
+        model.set(j, md);
+//        return;
+//        for (int u = 0; u < model.bn.size(); u++) {
+//            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
+//            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
+//            final int finalU = u;
+//            modelEdges.stream()
+//                    .filter(o -> !otherModelEdges.contains(o))
+//                    .forEach(v -> {
+//                        model.bn.removeEdge(v, finalU);
+//                        other.bn.addEdge(v, finalU);
+//                    });
+//            otherModelEdges.stream()
+//                    .filter(o -> !modelEdges.contains(o))
+//                    .forEach(v -> {
+//                        model.bn.addEdge(v, finalU);
+//                        other.bn.removeEdge(v, finalU);
+//                    });
+//            double ll = model.ll[u];
+//            model.ll[u] = other.ll[u];
+//            other.ll[u] = ll;
+//
+//            model.updateDistribution(u);
+//            other.updateDistribution(u);
+//        }
+//        double ll = model.loglik;
+//        model.loglik = other.loglik;
+//        other.loglik = ll;
     }
 
     public double beta() {

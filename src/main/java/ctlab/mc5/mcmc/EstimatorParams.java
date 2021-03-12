@@ -5,7 +5,7 @@ import picocli.CommandLine.Option;
 public interface EstimatorParams {
     @Option(names = {"-m", "--threads"}, defaultValue = "1")
     int nThreads();
-    @Option(names = {"-r", "--runs"}, defaultValue = "16")
+    @Option(names = {"-r", "--runs"}, defaultValue = "100")
     int nRuns();
 
     @Option(names = {"-c", "--chains"}, defaultValue = "5")
@@ -17,7 +17,7 @@ public interface EstimatorParams {
     @Option(names = "--cache-size", defaultValue = "25")
     int mainCacheSize();
 
-    @Option(names = {"-s", "--steps"}, defaultValue = "2000")
+    @Option(names = {"-s", "--steps"}, defaultValue = "40000")
     long coldChainSteps();
     @Option(names = "--steps-power-base", defaultValue = "2.0")
     double powerBase();

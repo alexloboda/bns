@@ -155,7 +155,7 @@ public class SparkMain {
             v.setDiscLimits(lb, ub);
         }
 
-        SparkConf sparkConf = new SparkConf().setMaster("spark://maxg5:7077").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"});
+        SparkConf sparkConf = new SparkConf().setMaster("spark://maxg5:7077").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"}).set("spark.driver.host","10.10.10.109");
 //        SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"});
         JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
         List<Integer> runned = new ArrayList<>();
