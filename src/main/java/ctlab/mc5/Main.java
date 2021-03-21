@@ -151,8 +151,7 @@ public class Main {
             v.setDiscLimits(lb, ub);
         }
 
-        bn = new BayesianNetwork(genes);
-        bn.setScoringFunction(params.mainSF());
+        bn = new BayesianNetwork(genes, params.mainSF());
 
         if (params.nOptimizer() > 0) {
             Solver solver = new Solver(params.discSF());
