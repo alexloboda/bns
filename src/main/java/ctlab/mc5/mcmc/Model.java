@@ -6,6 +6,7 @@ import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
 import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
@@ -30,6 +31,9 @@ public class Model {
     private SplittableRandom random;
 
     private List<Integer> permutation;
+    private boolean reversedState = false;
+    private int reverseFrom;
+    private int reverseTo;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -72,7 +76,7 @@ public class Model {
 
     private void processPathElimination(int v, int u) {
         u = u > v ? u - 1 : u;
-        distributions.get(v).reEnableAction((short)u);
+        distributions.get(v).reEnableAction((short) u);
         transitions.set(v, distributions.get(v).logLikelihood());
     }
 
@@ -96,7 +100,7 @@ public class Model {
     public String toString() {
         StringBuilder s = new StringBuilder();
         for (int u = 0; u < n; u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 s.append(v).append("->").append(u).append(" ");
             }
         }
@@ -106,7 +110,7 @@ public class Model {
     public void printDebugInfo() {
         System.out.println("Current log-likelihood " + loglik);
         for (int u = 0; u < n; u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 System.out.print(v + "->" + u + " ");
             }
         }
@@ -168,7 +172,7 @@ public class Model {
             jump = gd.getNumericalMean();
         }
         jump += 1.0;
-        if (random.nextDouble() < jump - (int)jump) {
+        if (random.nextDouble() < jump - (int) jump) {
             jump += 1.0;
         }
         if (steps + jump > limit) {
@@ -176,9 +180,28 @@ public class Model {
         }
         steps += jump;
 
+        if (reversedState) {
+            reversedState = false;
+            if (!bn.pathExists(reverseFrom, reverseTo)) {
+                Multinomial mult = distributions.get(reverseFrom);
+                Short res;
+                if (reverseTo >= reverseFrom) {
+                    res = mult.tryAnyAction(reverseTo - 1);
+                } else {
+                    res = mult.tryAnyAction(reverseTo);
+
+                }
+                if (res != null) {
+                    addEdge(reverseTo, reverseFrom, mult.getLastLL());
+                }
+            }
+            return steps == limit;
+        }
+
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
-        Short parent = mult.randomAction();
+        Pair<Short, Boolean> parentPair = mult.randomActionBias(0.5, bn, node);
+        Short parent = parentPair.getFirst();
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
             return steps == limit;
@@ -188,9 +211,14 @@ public class Model {
         }
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
+            reversedState = parentPair.getSecond();
+            if (reversedState) {
+                reverseFrom = parent;
+                reverseTo = node;
+            }
         } else {
             if (bn.pathExists(node, parent)) {
-                mult.disableAction((short)(parent > node ? parent - 1 : parent), mult.getLastLL());
+                mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
@@ -203,7 +231,7 @@ public class Model {
     public EdgeList edgeList() {
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1.0, 1));
             }
         }
@@ -213,7 +241,7 @@ public class Model {
     public boolean[][] adjMatrix() {
         boolean[][] m = new boolean[n][n];
         for (int u = 0; u < bn.size(); u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 m[permutation.get(v)][permutation.get(u)] = true;
             }
         }

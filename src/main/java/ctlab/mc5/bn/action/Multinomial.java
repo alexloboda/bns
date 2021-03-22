@@ -1,6 +1,7 @@
 package ctlab.mc5.bn.action;
 
 import ctlab.mc5.algo.SegmentTree;
+import ctlab.mc5.bn.BayesianNetwork;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
@@ -92,7 +93,7 @@ public class Multinomial {
 
     public void deactivate() {
         List<Short> toDisable = new ArrayList<>(disabledActions.keySet());
-        for (Short action: toDisable) {
+        for (Short action : toDisable) {
             reEnableAction(action);
         }
         disabledActions = new LinkedHashMap<>();
@@ -126,7 +127,7 @@ public class Multinomial {
                        double initialLL, SplittableRandom re) {
         n = maxSize;
         this.beta = beta;
-        this.mainCacheSize = (short)mainCacheSize;
+        this.mainCacheSize = (short) mainCacheSize;
         this.batchesNum = maxSize / batchSize;
         this.batchSize = batchSize;
         if (maxSize % batchSize > 0) {
@@ -165,18 +166,44 @@ public class Multinomial {
                 .map(x -> new Pair<>(x.getKey(), x.getValue()))
                 .collect(Collectors.toList());
 
-        for (Pair<Short, Double> action: disabled) {
+        for (Pair<Short, Double> action : disabled) {
             disableAction(action.getFirst(), action.getSecond());
         }
     }
 
-    private Short tryAction(int pos) {
+    private Short tryAction(int pos, boolean check) {
         lastLL = computeLL.apply(pos);
+        if (!check) {
+            return (short)pos;
+        }
         double ll = beta * lastLL;
         if (Math.log(re.nextDouble()) < ll) {
-            return (short)pos;
+            return (short) pos;
         } else {
             return null;
+        }
+    }
+
+    private Short tryResolvedAction(int curr, boolean check) {
+        lastLL = computeLL.apply(curr);
+        if (!check) {
+            return (short)curr;
+        }
+        double finalLL = Math.min(beta * lastLL, 0.0) + initialLL;
+        if (Math.log(re.nextDouble()) < finalLL - batchMaxLL[curr / batchSize]) {
+            return (short) curr;
+        }
+        return null;
+    }
+
+    public Short tryAnyAction(int curr) {
+        if (!initialized) {
+            return tryAction(curr, true);
+        }
+        if (batchResolved.get(curr / batchSize)) {
+            return tryResolvedAction(curr, true);
+        } else {
+            return tryAction(curr, true);
         }
     }
 
@@ -184,13 +211,10 @@ public class Multinomial {
         hits++;
         if (!initialized) {
             short pos;
-            while (true) {
-                pos = (short)re.nextInt(n);
-                if (!disabledActions.containsKey(pos)) {
-                    break;
-                }
-            }
-            Short result = tryAction(pos);
+            do {
+                pos = (short) re.nextInt(n);
+            } while (disabledActions.containsKey(pos));
+            Short result = tryAction(pos, false);
             if (hits > (batchSize + mainCacheSize) / 2) {
                 init();
             }
@@ -207,37 +231,117 @@ public class Multinomial {
             int bs = batchSize(node);
             while (true) {
                 int curr;
-                while (true) {
+                do {
                     curr = re.nextInt(bs) + node * batchSize;
-                    if (!disabledActions.containsKey((short)curr)) {
-                        break;
-                    }
-                }
-                if (cache.contains((short)curr)) {
+                } while (disabledActions.containsKey((short) curr));
+                if (cache.contains((short) curr)) {
                     continue;
                 }
                 lastLL = computeLL.apply(curr);
                 double finalLL = Math.min(beta * lastLL, 0.0) + initialLL;
                 if (Math.log(re.nextDouble()) < finalLL - batchMaxLL[node]) {
-                    return (short)curr;
+                    return (short) curr;
                 }
             }
         } else {
             batchHits[node]++;
             int pos;
-            while (true) {
+            do {
                 pos = batchSize * node + re.nextInt(batchSize(node));
-                if (!disabledActions.containsKey((short)pos)) {
-                    break;
-                }
-            }
+            } while (disabledActions.containsKey((short) pos));
 
-            Short result = tryAction(pos);
+            Short result = tryAction(pos, false);
             if (batchHits[node] > batchSize(node) / 2) {
                 resolveBatch(node);
             }
 
             return result;
+        }
+    }
+
+    public Pair<Short, Boolean> randomActionBias(double reverseBias, BayesianNetwork bn, int to) {
+        hits++;
+        if (!initialized) {
+            short pos;
+            do {
+                pos = (short) re.nextInt(n);
+            } while (disabledActions.containsKey(pos));
+            Short result = tryAction(pos, false);
+            if (hits > (batchSize + mainCacheSize) / 2) {
+                init();
+            }
+            double randVal = Math.log(re.nextDouble());
+            if (bn.edgeExists(pos, to)) {
+                if (randVal < beta * lastLL) {
+                    return new Pair<>((short) pos, false);
+                }
+                if (randVal < beta * lastLL * reverseBias) {
+                    return new Pair<>((short) pos, true);
+                }
+            }
+            if (randVal < beta * lastLL) {
+                return new Pair<>(result, false);
+            } else {
+                return new Pair<>(null, false);
+            }
+        }
+
+        int node = actions.randomChoice(re);
+        if (node == batchesNum) {
+            Short result = cache.randomAction();
+            lastLL = cache.getLastLL();
+            return new Pair<>(result, false);
+        }
+        if (batchResolved.get(node)) {
+            int bs = batchSize(node);
+            while (true) {
+                int curr;
+                do {
+                    curr = re.nextInt(bs) + node * batchSize;
+                } while (disabledActions.containsKey((short) curr));
+                if (cache.contains((short) curr)) {
+                    continue;
+                }
+                lastLL = computeLL.apply(curr);
+                double finalLL = initialLL;
+                double randVal = Math.log(re.nextDouble());
+                if (bn.edgeExists(curr, to)) {
+                    if (randVal < finalLL + Math.min(beta * lastLL, 0.0) - batchMaxLL[node]) {
+                        return new Pair<>((short) curr, false);
+                    }
+                    if (randVal < finalLL + Math.min(beta * lastLL, 0.0) * reverseBias - batchMaxLL[node]) {
+                        return new Pair<>((short) curr, true);
+                    }
+                }
+                if (randVal < finalLL - batchMaxLL[node]) {
+                    return new Pair<>((short) curr, false);
+                }
+            }
+        } else {
+            batchHits[node]++;
+            int pos;
+            do {
+                pos = batchSize * node + re.nextInt(batchSize(node));
+            } while (disabledActions.containsKey((short) pos));
+
+            Short result = tryAction(pos, false);
+            if (batchHits[node] > batchSize(node) / 2) {
+                resolveBatch(node);
+            }
+            double randVal = Math.log(re.nextDouble());
+            if (bn.edgeExists(pos, to)) {
+                if (randVal < beta * lastLL) {
+                    return new Pair<>((short) pos, false);
+                }
+                if (randVal < beta * lastLL * reverseBias) {
+                    return new Pair<>((short) pos, true);
+                }
+            }
+            if (randVal < beta * lastLL) {
+                return new Pair<>(result, false);
+            } else {
+                return new Pair<>(null, false);
+            }
         }
     }
 
@@ -249,9 +353,9 @@ public class Multinomial {
         if (action == null || disabledActions.containsKey(action)) {
             return;
         }
-        double finalLL = Math.min(beta * computeLL.apply((int)action), 0.0) + initialLL;
+        double finalLL = Math.min(beta * computeLL.apply((int) action), 0.0) + initialLL;
         int b = batch(action);
-        batchMaxLL[b] = Math.max(batchMaxLL[b], (float)finalLL);
+        batchMaxLL[b] = Math.max(batchMaxLL[b], (float) finalLL);
         actions.set(b, likelihoodsSum(actions.get(b), finalLL));
     }
 
@@ -263,7 +367,7 @@ public class Multinomial {
         double batchLL = Double.NEGATIVE_INFINITY;
 
         if (loglik == null) {
-            loglik = computeLL.apply((int)action);
+            loglik = computeLL.apply((int) action);
         }
         double finalLL = Math.min(beta * loglik, 0.0) + initialLL;
 
@@ -277,7 +381,7 @@ public class Multinomial {
                 }
             }
         } else {
-            batchMaxLL[b] = (float)Math.max(finalLL, batchMaxLL[b]);
+            batchMaxLL[b] = (float) Math.max(finalLL, batchMaxLL[b]);
             batchLL = likelihoodsSum(batchLL, finalLL);
         }
         return batchLL;
@@ -286,7 +390,7 @@ public class Multinomial {
     private void resolveBatch(int b) {
         double batchLL = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < batchSize(b); i++) {
-            short action = (short)(i + batchSize * b);
+            short action = (short) (i + batchSize * b);
             batchLL = likelihoodsSum(batchLL, resolveAction(action, null));
         }
         actions.set(b, batchLL);
@@ -308,12 +412,12 @@ public class Multinomial {
         cache.printDebugInfo(u);
         System.out.println("Regular:");
         for (int i = 0; i < n; i++) {
-            if (cache.contains((short)i)) {
+            if (cache.contains((short) i)) {
                 continue;
             }
             int v = i >= u ? i + 1 : i;
             System.out.print(v + "->" + u + ": ");
-            if (disabledActions.containsKey(i)) {
+            if (disabledActions.containsKey((short) i)) {
                 System.out.println("disabled");
                 return;
             }

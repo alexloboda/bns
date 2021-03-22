@@ -51,7 +51,8 @@ public class ModelTest {
                     10, 1.0);
             model.setRandomGenerator(sr);
             model.init(true);
-            while (!model.step(10_000_000)) {}
+            while (!model.step(100)) {
+            }
 
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
@@ -64,7 +65,7 @@ public class ModelTest {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (i == j){
+                if (i == j) {
                     continue;
                 }
                 Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-3);
