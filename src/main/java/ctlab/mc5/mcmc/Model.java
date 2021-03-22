@@ -256,46 +256,11 @@ public class Model {
         updateDistribution(u);
     }
 
-    static class ModelWrapper {
-        Model md1;
-
-        ModelWrapper(Model md) {
-            md1 = md;
-        }
-    }
-
     public static void swapNetworks(List<Model> model, int i, int j) {
         assert i != j;
         Model md = model.get(i);
         model.set(i, model.get(j));
         model.set(j, md);
-//        return;
-//        for (int u = 0; u < model.bn.size(); u++) {
-//            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
-//            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-//            final int finalU = u;
-//            modelEdges.stream()
-//                    .filter(o -> !otherModelEdges.contains(o))
-//                    .forEach(v -> {
-//                        model.bn.removeEdge(v, finalU);
-//                        other.bn.addEdge(v, finalU);
-//                    });
-//            otherModelEdges.stream()
-//                    .filter(o -> !modelEdges.contains(o))
-//                    .forEach(v -> {
-//                        model.bn.addEdge(v, finalU);
-//                        other.bn.removeEdge(v, finalU);
-//                    });
-//            double ll = model.ll[u];
-//            model.ll[u] = other.ll[u];
-//            other.ll[u] = ll;
-//
-//            model.updateDistribution(u);
-//            other.updateDistribution(u);
-//        }
-//        double ll = model.loglik;
-//        model.loglik = other.loglik;
-//        other.loglik = ll;
     }
 
     public double beta() {
