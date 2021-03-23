@@ -1,30 +1,29 @@
 package ctlab.mc5;
 
-import ctlab.mc5.bn.Variable;
-import ctlab.mc5.bn.sf.ScoringFunction;
-import ctlab.mc5.mcmc.EstimatorParams;
-import ctlab.mc5.mcmc.Task;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.*;
-import org.apache.spark.api.java.function.Function;
-import picocli.CommandLine;
-
-import java.util.Arrays;
-import java.util.Map;
-
 import ctlab.mc5.bn.BayesianNetwork;
-import ctlab.mc5.bn.Solver;
 import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
 import ctlab.mc5.mcmc.EdgeList;
 import ctlab.mc5.mcmc.EstimatorParams;
-import ctlab.mc5.mcmc.NetworkEstimator;
+import ctlab.mc5.mcmc.Task;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import picocli.CommandLine;
-import picocli.CommandLine.*;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.ExecutionException;
+import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.UnmatchedArgumentException;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
         resourceBundle = "ctlab.mc5.Parameters")
@@ -33,7 +32,6 @@ public class SparkMain {
     private static final String MAIN_PARAMS = "MainParams";
 
     private Parameters params;
-    private boolean completed;
     private BayesianNetwork bn;
 
     private List<Variable> parseGETable(File file) throws FileNotFoundException {
@@ -137,7 +135,6 @@ public class SparkMain {
                 }
             }
         }
-        completed = true;
     }
 
     private void run(Parameters params, EstimatorParams estimatorParams) throws IOException {
@@ -155,8 +152,7 @@ public class SparkMain {
             v.setDiscLimits(lb, ub);
         }
 
-        SparkConf sparkConf = new SparkConf().setMaster("spark://maxg5:7077").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"}).set("spark.driver.host","10.10.10.109");
-//        SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("Word Counter").setJars(new String[]{"/home/maxlundin/Documents/bns/target/artifacts/grn_jar/grn.jar"});
+        SparkConf sparkConf = new SparkConf().setMaster(params.sparkMaster()).setAppName("BNS").setJars(new String[]{params.libsDir() + "/grn.jar"});
         JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
         List<Integer> runned = new ArrayList<>();
         for (int i = 0; i < estimatorParams.nRuns(); ++i) {
@@ -190,9 +186,5 @@ public class SparkMain {
 
         EdgeList resultData = RDDedges.reduce(EdgeList::mergeWithRet);
         writeResults(resultData);
-
-//        Runtime.getRuntime().addShutdownHook(new Thread(this::writeResults));
-
-//        analyzeGS();
     }
 }

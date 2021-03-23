@@ -19,6 +19,12 @@ interface Parameters {
     @Option(names = {"-g", "--gene-expression-table"}, required = true)
     File geneExpressionFile();
 
+    @Option(names = {"-master"}, required = true)
+    String sparkMaster();
+
+    @Option(names = {"-libs"}, defaultValue = ".")
+    String libsDir();
+
     @Option(names = {"-o", "-output"}, required = true)
     File output();
 
