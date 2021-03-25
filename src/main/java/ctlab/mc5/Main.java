@@ -35,7 +35,7 @@ public class Main {
         try (Scanner sc = new Scanner(file)) {
             String firstLine = sc.nextLine();
             Scanner line_sc = new Scanner(firstLine);
-            while(line_sc.hasNext()) {
+            while (line_sc.hasNext()) {
                 names.add(line_sc.next());
             }
 
@@ -62,7 +62,7 @@ public class Main {
     private Graph parseBound(BayesianNetwork bn) throws FileNotFoundException {
         Graph g = new Graph(bn.size());
         try (Scanner scanner = new Scanner(params.preranking())) {
-            while(scanner.hasNext()) {
+            while (scanner.hasNext()) {
                 int v = bn.getID(scanner.next());
                 int u = bn.getID(scanner.next());
                 scanner.next();
@@ -91,7 +91,7 @@ public class Main {
                 return;
             }
             Map<String, Object> mixins = cmd.getMixins();
-            app.run((Parameters)mixins.get(MAIN_PARAMS), (EstimatorParams)mixins.get(ESTIMATOR_PARAMS));
+            app.run((Parameters) mixins.get(MAIN_PARAMS), (EstimatorParams) mixins.get(ESTIMATOR_PARAMS));
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
             if (!UnmatchedArgumentException.printSuggestions(ex, System.err)) {
@@ -107,16 +107,16 @@ public class Main {
     }
 
     private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
-        for (EdgeList.Edge e: edges.edges()) {
+        for (EdgeList.Edge e : edges.edges()) {
             pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p());
         }
     }
 
-    private synchronized void writeResults() {
+    private synchronized void writeResults(EdgeList results) {
         if (completed || estimator == null) {
             return;
         }
-        EdgeList results = estimator.resultsFromCompletedTasks();
+//        EdgeList results = estimator.resultsFromCompletedTasks();
         try (PrintWriter pw = new PrintWriter(params.output())) {
             printResultsToOutput(results, pw);
         } catch (IOException e) {
@@ -163,8 +163,39 @@ public class Main {
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
         estimator.run(bn);
 
-        writeResults();
+        EdgeList results = estimator.resultsFromCompletedTasks();
+        Map<Variable, Integer> freq = new HashMap<>();
+        for (EdgeList.Edge e : results.edges()) {
+            Variable from = bn.var(e.u());
+            if (freq.containsKey(from)) {
+                freq.replace(from, freq.get(from) + 1);
+            } else {
+                freq.put(from, 1);
+            }
+        }
+        System.gc();
+        {
+            List<Variable> regulatoryGenes = new ArrayList<>();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::writeResults));
+            for (Map.Entry<Variable, Integer> vals : freq.entrySet()) {
+                if (vals.getValue() > 1) {
+                    regulatoryGenes.add(vals.getKey());
+                }
+            }
+            BayesianNetwork bnMainGenes = new BayesianNetwork(regulatoryGenes, params.mainSF());
+            NetworkEstimator estimatorMainGenes = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+            estimatorMainGenes.run(bnMainGenes);
+            EdgeList resultOverall = estimatorMainGenes.resultsFromCompletedTasks();
+            for (EdgeList.Edge e : results.edges()) {
+                Variable from = bn.var(e.u());
+                Variable to = bn.var(e.v());
+                if (!(freq.get(from) > 1 && freq.get(to) > 1)) {
+                    resultOverall.addEdge(e);
+                }
+            }
+            writeResults(resultOverall);
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> writeResults(estimator.resultsFromCompletedTasks())));
     }
 }

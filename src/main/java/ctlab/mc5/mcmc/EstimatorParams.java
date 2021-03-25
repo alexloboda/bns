@@ -5,7 +5,7 @@ import picocli.CommandLine.Option;
 public interface EstimatorParams {
     @Option(names = {"-m", "--threads"}, defaultValue = "1")
     int nThreads();
-    @Option(names = {"-r", "--runs"}, defaultValue = "100000")
+    @Option(names = {"-r", "--runs"}, defaultValue = "1000")
     int nRuns();
 
     @Option(names = {"-c", "--chains"}, defaultValue = "5")
