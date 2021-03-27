@@ -169,6 +169,26 @@ public class Main {
 
     private void analyzeGS() {
         if (params.gold() != null) {
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder("python3", "analyze.py", params.output().getAbsolutePath(), params.gold().getAbsolutePath());
+                processBuilder.redirectErrorStream(true);
+
+                Process process = processBuilder.start();
+                BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                while (true) {
+                    String str = br.readLine();
+                    if (str == null) {
+                        break;
+                    }
+                    System.out.println(str);
+                }
+
+                int exitCode = process.waitFor();
+                System.out.println("Python finished with: " + exitCode);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
             Set<GeneEdge> edgesGS = new HashSet<>();
             Set<GeneEdge> edgesMy = new HashSet<>();
             List<GeneEdge> edgesMyList = new ArrayList<>();

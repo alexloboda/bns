@@ -187,13 +187,13 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-            if (!bn.pathExists(node, parent)) {
-                boolean vshape = bn.canBeVShape(node, parent);
-                if (!vshape) {
-                    tryInvert(parent, node);
-                    return steps == limit;
-                }
-            }
+//            if (!bn.pathExists(node, parent)) {
+//                boolean vshape = bn.canBeVShape(node, parent);
+//                if (!vshape) {
+//                    tryInvert(parent, node);
+//                    return steps == limit;
+//                }
+//            }
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
