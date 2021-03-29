@@ -29,9 +29,9 @@ public class Main {
         List<Variable> res = new ArrayList<>();
         List<String> names = new ArrayList<>();
         List<List<Double>> data = new ArrayList<>();
-        try (Scanner sc = new Scanner(file)) {
+        try (Scanner sc = new Scanner(file).useLocale(Locale.US);) {
             String firstLine = sc.nextLine();
-            Scanner line_sc = new Scanner(firstLine);
+            Scanner line_sc = new Scanner(firstLine).useLocale(Locale.US);;
             while (line_sc.hasNext()) {
                 names.add(line_sc.next());
             }
@@ -40,7 +40,6 @@ public class Main {
             for (int i = 0; i < n; i++) {
                 data.add(new ArrayList<>());
             }
-
             while (sc.hasNext()) {
                 for (int i = 0; i < n; i++) {
                     data.get(i).add(sc.nextDouble());
