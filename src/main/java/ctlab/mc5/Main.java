@@ -133,7 +133,24 @@ public class Main {
         completed = true;
     }
 
+    private void printParameters(Parameters params, EstimatorParams estimatorParams) {
+        System.out.println("Parameters:");
+        System.out.println("geneExpressionFile = " + params.geneExpressionFile().getPath());
+        System.out.println("gold = " + params.gold().getPath());
+        System.out.println("threads = " + estimatorParams.nThreads());
+        System.out.println("runs = " + estimatorParams.nRuns());
+        System.out.println("chains = " + estimatorParams.chains());
+        System.out.println("cached-states = " + estimatorParams.numberOfCachedStates());
+        System.out.println("batch-size = " + estimatorParams.batchSize());
+        System.out.println("cache-size = " + estimatorParams.mainCacheSize());
+        System.out.println("steps = " + estimatorParams.coldChainSteps());
+        System.out.println("steps-power-base = " + estimatorParams.powerBase());
+        System.out.println("temperature-delta = " + estimatorParams.deltaT());
+        System.out.println("swap-period = " + estimatorParams.swapPeriod());
+    }
+
     private void run(Parameters params, EstimatorParams estimatorParams) throws IOException {
+        printParameters(params, estimatorParams);
         this.params = params;
         List<Variable> genes = parseGETable(params.geneExpressionFile());
 
