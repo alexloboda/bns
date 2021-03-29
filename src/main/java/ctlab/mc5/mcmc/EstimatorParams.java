@@ -19,10 +19,10 @@ public interface EstimatorParams {
 
     @Option(names = {"-s", "--steps"}, defaultValue = "2000000")
     long coldChainSteps();
-    @Option(names = "--steps-power-base", defaultValue = "2.0")
+    @Option(names = "--steps-power-base", defaultValue = "1.0")
     double powerBase();
     @Option(names = {"-d", "--temperature-delta"})
     double deltaT();
-    @Option(names = "--swap-period", defaultValue = "1")
+    @Option(names = "--swap-period", defaultValue = "1300")
     long swapPeriod();
 }
