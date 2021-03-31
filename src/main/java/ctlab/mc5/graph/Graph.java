@@ -12,6 +12,7 @@ public class Graph {
     private List<List<Edge>> radj;
     private Edge[][] edges;
     private int[][] subscriptions;
+    private int edgeCount;
 
     private List<Map<Integer, DynamicGraph.EdgeToken>> tokens;
     private DynamicGraph dgraph;
@@ -30,6 +31,7 @@ public class Graph {
         }
         edges = new Edge[n][n];
         subscriptions = new int[n][n];
+        edgeCount = 0;
     }
 
     public void setCallback(BiConsumer<Integer, Integer> callback) {
@@ -43,6 +45,7 @@ public class Graph {
                 addEdge(v, u);
             }
         }
+        edgeCount = g.edgeCount;
     }
 
     private Pair<Integer, Integer> step(Queue<Integer> q, int[] vis, boolean[] player, int[] parent) {
@@ -193,6 +196,7 @@ public class Graph {
         }
         assert v < u;
         tokens.get(v).put(u, token);
+        edgeCount++;
     }
 
     public void removeEdge(int v, int u) {
@@ -215,7 +219,13 @@ public class Graph {
         }
         DynamicGraph.EdgeToken token = tokens.get(v).remove(u);
         assert token != null;
+        assert edgeCount != 0;
         dgraph.remove(token);
+        edgeCount--;
+    }
+
+    public int getEdgeCount() {
+        return edgeCount;
     }
 
     public int inDegree(int v) {

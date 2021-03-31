@@ -8,6 +8,8 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ctlab.mc5.bn.action.Multinomial.likelihoodsSum;
+
 public class BayesianNetwork {
     private List<Variable> variables;
     private Graph g;
@@ -58,6 +60,10 @@ public class BayesianNetwork {
 
     public void removeEdge(int v, int u) {
         g.removeEdge(v, u);
+    }
+
+    public int getEdgeCount() {
+        return g.getEdgeCount();
     }
 
     private List<Variable> parentSet(int v) {
@@ -119,6 +125,17 @@ public class BayesianNetwork {
         assert ps.contains(u);
         ps.remove((Integer) u);
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+    }
+
+    public double scoreReverse(int v, int u) {
+        List<Integer> ps = g.ingoingEdges(v);
+        assert ps.contains(u);
+        ps.remove((Integer) u);
+        double remove = sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+        List<Integer> ps1 = g.ingoingEdges(u);
+        assert !ps1.contains(v);
+        ps1.add((Integer) v);
+        return likelihoodsSum(remove, sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList())));
     }
 
     public void clearEdges() {

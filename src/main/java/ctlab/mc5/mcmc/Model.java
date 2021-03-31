@@ -23,8 +23,8 @@ public class Model {
     private List<Cache> caches;
     private int nCachedStates;
 
-    private List<Multinomial> distributions;
-    private MultinomialFactory multFactory;
+    private final List<Multinomial> distributions;
+    private final MultinomialFactory multFactory;
     private SegmentTree transitions;
 
     private BayesianNetwork bn;
@@ -93,7 +93,7 @@ public class Model {
                     return bn.scoreIncluding(v, i) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta);
+            return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta, bn, v);
         };
     }
 
@@ -163,10 +163,33 @@ public class Model {
     }
 
     public boolean step(long limit) {
-        double ll = transitions.likelihood();
-        assert ll < 0.1;
+        double trll = transitions.likelihood();
+        assert trll < 0.1;
         double jump = 0.0;
-        double likelihood = Math.exp(ll);
+        if (random.nextDouble() < ((double)bn.getEdgeCount()) / 3 / n) {
+            int v = random.nextInt(n);
+            List<Integer> edges = bn.ingoingEdges(v);
+            if (edges.size() == 0) {
+                steps++;
+                return steps == limit;
+            }
+            int u = random.nextInt(edges.size());
+            if (bn.edgeExists(u, v)) {
+                bn.removeEdge(u, v);
+                if (!bn.pathExists(u, v)) {
+                    bn.addEdge(u, v);
+                    double scorerem = bn.scoreExcluding(u, v);
+                    double scoreadd = bn.scoreIncluding(v, u);
+                    if (scoreadd > scorerem) {
+                        removeEdge(u, v, scorerem);
+                        removeEdge(v, u, scoreadd);
+                    }
+                    return ++steps == limit;
+
+                }
+            }
+        }
+        double likelihood = Math.exp(trll);
         if (likelihood < 1.0) {
             GeometricDistribution gd = new GeometricDistribution(likelihood);
             jump = gd.getNumericalMean();
@@ -180,28 +203,26 @@ public class Model {
         }
         steps += jump;
 
-        if (reversedState) {
-            reversedState = false;
-            if (!bn.pathExists(reverseFrom, reverseTo)) {
-                Multinomial mult = distributions.get(reverseFrom);
-                Short res;
-                if (reverseTo >= reverseFrom) {
-                    res = mult.tryAnyAction(reverseTo - 1);
-                } else {
-                    res = mult.tryAnyAction(reverseTo);
-
-                }
-                if (res != null) {
-                    addEdge(reverseTo, reverseFrom, mult.getLastLL());
-                }
-            }
-            return steps == limit;
-        }
+//        if (reversedState) {
+//            reversedState = false;
+//            if (!bn.pathExists(reverseFrom, reverseTo)) {
+//                Multinomial mult = distributions.get(reverseFrom);
+//                Short res;
+//                if (reverseTo >= reverseFrom) {
+//                    res = mult.tryAnyAction(reverseTo - 1);
+//                } else {
+//                    res = mult.tryAnyAction(reverseTo);
+//                }
+//                if (res != null) {
+//                    addEdge(reverseTo, reverseFrom, mult.getLastLL());
+//                }
+//            }
+//            return steps == limit;
+//        }
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
-        Pair<Short, Boolean> parentPair = mult.randomActionBias(0.5, bn, node);
-        Short parent = parentPair.getFirst();
+        Short parent = mult.randomAction();
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
             return steps == limit;
@@ -211,11 +232,6 @@ public class Model {
         }
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
-            reversedState = parentPair.getSecond();
-            if (reversedState) {
-                reverseFrom = parent;
-                reverseTo = node;
-            }
         } else {
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
