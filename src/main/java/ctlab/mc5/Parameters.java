@@ -42,4 +42,7 @@ interface Parameters {
 
     @Option(names = "--seed", defaultValue = "42")
     int seed();
+
+    @Option(names = {"-gs", "-golden-standard"})
+    File gold();
 }

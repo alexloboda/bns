@@ -63,10 +63,10 @@ public class Multinomial {
             }
             int b = batch(action);
             if (batchResolved.get(b)) {
-                double finalLL = Math.min(beta * ll, 0.0) + initialLL;
+                double finalLL = Math.min(beta * ll, 0.0) + initialLL; // can only be addition
                 actions.set(b, likelihoodSubtract(actions.get(b), finalLL));
             } else {
-                actions.set(b, likelihoodSubtract(actions.get(b), initialLL));
+                actions.set(b, likelihoodSubtract(actions.get(b), initialLL)); // can only be addition
             }
         }
     }
@@ -97,7 +97,7 @@ public class Multinomial {
                 actions.set(b, batchLL);
                 refreshCacheNode();
             } else {
-                actions.set(b, likelihoodsSum(actions.get(b), initialLL));
+                actions.set(b, likelihoodsSum(actions.get(b), initialLL)); // we add only removed edges
             }
         }
     }
@@ -111,7 +111,7 @@ public class Multinomial {
         assert logLikelihood() < 0.1;
     }
 
-    public static double likelihoodsSum(double ll1, double ll2) {
+    private static double likelihoodsSum(double ll1, double ll2) {
         if (ll1 == Double.NEGATIVE_INFINITY) {
             return ll2;
         }
@@ -146,7 +146,7 @@ public class Multinomial {
         }
         this.computeLL = computeLL;
         this.initialLL = initialLL;
-        this.initialLLDel = initialLL / 2;
+        this.initialLLDel = initialLL - Math.log(2);
         this.re = re;
         this.disabledActions = new LinkedHashMap<>();
         this.bn = bn;
@@ -155,7 +155,8 @@ public class Multinomial {
 
     public double logLikelihood() {
         if (!initialized) {
-            return Math.log(n - disabledActions.size()) + initialLL;
+            int edges = bn.ingoingEdges(v).size();
+            return Math.log(Math.exp(Math.log(n - disabledActions.size() - edges) + initialLL) + edges * Math.exp(initialLLDel));
         } else {
             return actions.likelihood();
         }

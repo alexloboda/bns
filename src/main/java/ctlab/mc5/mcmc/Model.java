@@ -166,28 +166,33 @@ public class Model {
         double trll = transitions.likelihood();
         assert trll < 0.1;
         double jump = 0.0;
-        if (random.nextDouble() < ((double)bn.getEdgeCount()) / 3 / n) {
+        if (random.nextDouble() > 0.75) {
             int v = random.nextInt(n);
             List<Integer> edges = bn.ingoingEdges(v);
             if (edges.size() == 0) {
                 steps++;
                 return steps == limit;
             }
-            int u = random.nextInt(edges.size());
+            int u = edges.get(random.nextInt(edges.size()));
+            if (u == v) {
+                throw new RuntimeException("WHAT&&");
+            }
             if (bn.edgeExists(u, v)) {
                 bn.removeEdge(u, v);
                 if (!bn.pathExists(u, v)) {
+                    double scoreadd = bn.scoreIncluding(u, v) - ll[u];
                     bn.addEdge(u, v);
-                    double scorerem = bn.scoreExcluding(u, v);
-                    double scoreadd = bn.scoreIncluding(v, u);
+                    double scorerem = bn.scoreExcluding(v, u) - ll[v];
                     if (scoreadd > scorerem) {
                         removeEdge(u, v, scorerem);
-                        removeEdge(v, u, scoreadd);
+                        addEdge(v, u, scoreadd);
                     }
                     return ++steps == limit;
-
+                } else {
+                    bn.addEdge(u, v);
                 }
             }
+            return ++steps == limit;
         }
         double likelihood = Math.exp(trll);
         if (likelihood < 1.0) {
@@ -203,23 +208,6 @@ public class Model {
         }
         steps += jump;
 
-//        if (reversedState) {
-//            reversedState = false;
-//            if (!bn.pathExists(reverseFrom, reverseTo)) {
-//                Multinomial mult = distributions.get(reverseFrom);
-//                Short res;
-//                if (reverseTo >= reverseFrom) {
-//                    res = mult.tryAnyAction(reverseTo - 1);
-//                } else {
-//                    res = mult.tryAnyAction(reverseTo);
-//                }
-//                if (res != null) {
-//                    addEdge(reverseTo, reverseFrom, mult.getLastLL());
-//                }
-//            }
-//            return steps == limit;
-//        }
-
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction();
@@ -231,6 +219,13 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
+//            if (!bn.pathExists(node, parent)) {
+//                boolean vshape = bn.canBeVShape(node, parent);
+//                if (!vshape) {
+//                    tryInvert(parent, node);
+//                    return steps == limit;
+//                }
+//            }
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
@@ -244,11 +239,16 @@ public class Model {
         return steps == limit;
     }
 
+    private void tryInvert(int v, int u) {
+        removeEdge(v, u, 0);
+        addEdge(u, v, 0);
+    }
+
     public EdgeList edgeList() {
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
             for (int v : bn.ingoingEdges(u)) {
-                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1.0, 1));
+                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1, 1));
             }
         }
         return edges;
@@ -287,33 +287,11 @@ public class Model {
         updateDistribution(u);
     }
 
-    public static void swapNetworks(Model model, Model other) {
-        for (int u = 0; u < model.bn.size(); u++) {
-            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
-            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-            int finalU = u;
-            modelEdges.stream()
-                    .filter(otherModelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.removeEdge(v, finalU);
-                        other.bn.addEdge(v, finalU);
-                    });
-            otherModelEdges.stream()
-                    .filter(modelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.addEdge(v, finalU);
-                        other.bn.removeEdge(v, finalU);
-                    });
-            double ll = model.ll[u];
-            model.ll[u] = other.ll[u];
-            other.ll[u] = ll;
-
-            model.updateDistribution(u);
-            other.updateDistribution(u);
-        }
-        double ll = model.loglik;
-        model.loglik = other.loglik;
-        other.loglik = ll;
+    public static void swapNetworks(List<Model> model, int i, int j) {
+        assert i != j;
+        Model md = model.get(i);
+        model.set(i, model.get(j));
+        model.set(j, md);
     }
 
     public double beta() {
