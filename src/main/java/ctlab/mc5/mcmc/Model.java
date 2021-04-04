@@ -32,8 +32,8 @@ public class Model {
 
     private List<Integer> permutation;
     private boolean reversedState = false;
-    private int reverseFrom;
-    private int reverseTo;
+    private final double initLL;
+    private final double initLLDel;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -46,6 +46,8 @@ public class Model {
         this.multFactory = multFactory;
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
+        this.initLL = -Math.log(n * (n - 1));
+        this.initLLDel = initLL - Math.log(2);
         setRandomGenerator(new SplittableRandom());
     }
 
@@ -93,7 +95,7 @@ public class Model {
                     return bn.scoreIncluding(v, i) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta, bn, v);
+            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, v);
         };
     }
 
@@ -164,9 +166,31 @@ public class Model {
 
     public boolean step(long limit) {
         double trll = transitions.likelihood();
-        assert trll < 0.1;
+        double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
+//        System.out.println(trll + " " + rmll);
+
+
+        double all_ll = Multinomial.likelihoodsSum(trll, rmll);
+//        assert all_ll < 0.1;
+//        all_ll = trll;
         double jump = 0.0;
-        if (random.nextDouble() > 0.75) {
+        double likelihood = Math.exp(all_ll);
+        if (likelihood < 1.0) {
+            GeometricDistribution gd = new GeometricDistribution(likelihood);
+            jump = gd.getNumericalMean();
+        }
+        jump += 1.0;
+        if (random.nextDouble() < jump - (int) jump) {
+            jump += 1.0;
+        }
+        if (steps + jump > limit) {
+            return true;
+        }
+        steps += jump;
+
+        double proportions = Math.exp(rmll - all_ll);
+
+        if (random.nextDouble() < proportions) {
             int v = random.nextInt(n);
             List<Integer> edges = bn.ingoingEdges(v);
             if (edges.size() == 0) {
@@ -194,19 +218,6 @@ public class Model {
             }
             return ++steps == limit;
         }
-        double likelihood = Math.exp(trll);
-        if (likelihood < 1.0) {
-            GeometricDistribution gd = new GeometricDistribution(likelihood);
-            jump = gd.getNumericalMean();
-        }
-        jump += 1.0;
-        if (random.nextDouble() < jump - (int) jump) {
-            jump += 1.0;
-        }
-        if (steps + jump > limit) {
-            return true;
-        }
-        steps += jump;
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
@@ -219,13 +230,6 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-//            if (!bn.pathExists(node, parent)) {
-//                boolean vshape = bn.canBeVShape(node, parent);
-//                if (!vshape) {
-//                    tryInvert(parent, node);
-//                    return steps == limit;
-//                }
-//            }
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {

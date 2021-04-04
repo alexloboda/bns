@@ -125,17 +125,6 @@ public class BayesianNetwork {
         return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
-//    public double scoreReverse(int v, int u) {
-//        List<Integer> ps = g.ingoingEdges(v);
-//        assert ps.contains(u);
-//        ps.remove((Integer) u);
-//        double remove = sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
-//        List<Integer> ps1 = g.ingoingEdges(u);
-//        assert !ps1.contains(v);
-//        ps1.add((Integer) v);
-//        return likelihoodsSum(remove, sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList())));
-//    }
-
     public void clearEdges() {
         for (int u = 0; u < size(); u++) {
             for (int v : ingoingEdges(u)) {

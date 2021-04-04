@@ -111,7 +111,7 @@ public class Multinomial {
         assert logLikelihood() < 0.1;
     }
 
-    private static double likelihoodsSum(double ll1, double ll2) {
+    public static double likelihoodsSum(double ll1, double ll2) {
         if (ll1 == Double.NEGATIVE_INFINITY) {
             return ll2;
         }
@@ -156,14 +156,14 @@ public class Multinomial {
     public double logLikelihood() {
         if (!initialized) {
             int edges = bn.ingoingEdges(v).size();
-            return Math.log(Math.exp(Math.log(n - disabledActions.size() - edges) + initialLL) + edges * Math.exp(initialLLDel));
+            return likelihoodsSum(Math.log(n - disabledActions.size() - edges) + initialLL, edges + initialLLDel);
         } else {
             return actions.likelihood();
         }
     }
 
     private void refreshCacheNode() {
-        actions.set(batchesNum, cache.loglikelihood() + initialLL);
+        actions.set(batchesNum, likelihoodsSum(cache.loglikelihoodAdd() + initialLL, cache.loglikelihoodRem() + initialLLDel));
     }
 
     private void init() {
@@ -177,12 +177,9 @@ public class Multinomial {
         initialized = true;
         batchMaxLL = new float[batchesNum];
         Arrays.fill(batchMaxLL, Float.NEGATIVE_INFINITY);
-        List<Pair<Short, Double>> disabled = disabledActions.entrySet().stream()
-                .map(x -> new Pair<>(x.getKey(), x.getValue()))
-                .collect(Collectors.toList());
 
-        for (Pair<Short, Double> action : disabled) {
-            disableAction(action.getFirst(), action.getSecond());
+        for (Map.Entry<Short, Double> action : disabledActions.entrySet()) {
+            disableAction(action.getKey(), action.getValue());
         }
     }
 
@@ -274,93 +271,6 @@ public class Multinomial {
         }
     }
 
-//
-//    public Pair<Short, Boolean> randomActionBias(double reverseBias, BayesianNetwork bn, int to) {
-//        hits++;
-//        if (!initialized) {
-//            short pos;
-//            do {
-//                pos = (short) re.nextInt(n);
-//            } while (disabledActions.containsKey(pos));
-//            Short result = tryAction(pos, false);
-//            if (hits > (batchSize + mainCacheSize) / 2) {
-//                init();
-//            }
-//            double randVal = Math.log(re.nextDouble());
-//            if (bn.edgeExists(pos, to)) {
-//                if (randVal < beta * lastLL) {
-//                    return new Pair<>((short) pos, false);
-//                }
-//                if (randVal < beta * lastLL * reverseBias) {
-//                    return new Pair<>((short) pos, true);
-//                }
-//            }
-//            if (randVal < beta * lastLL) {
-//                return new Pair<>(result, false);
-//            } else {
-//                return new Pair<>(null, false);
-//            }
-//        }
-//
-//        int node = actions.randomChoice(re);
-//        if (node == batchesNum) {
-//            Short result = cache.randomAction();
-//            lastLL = cache.getLastLL();
-//            return new Pair<>(result, false);
-//        }
-//        if (batchResolved.get(node)) {
-//            int bs = batchSize(node);
-//            while (true) {
-//                int curr;
-//                do {
-//                    curr = re.nextInt(bs) + node * batchSize;
-//                } while (disabledActions.containsKey((short) curr));
-//                if (cache.contains((short) curr)) {
-//                    continue;
-//                }
-//                lastLL = computeLL.apply(curr);
-//                double finalLL = initialLL;
-//                double randVal = Math.log(re.nextDouble());
-//                if (bn.edgeExists(curr, to)) {
-//                    if (randVal < finalLL + Math.min(beta * lastLL, 0.0) - batchMaxLL[node]) {
-//                        return new Pair<>((short) curr, false);
-//                    }
-//                    if (randVal < finalLL + Math.min(beta * lastLL, 0.0) * reverseBias - batchMaxLL[node]) {
-//                        return new Pair<>((short) curr, true);
-//                    }
-//                }
-//                if (randVal < finalLL - batchMaxLL[node]) {
-//                    return new Pair<>((short) curr, false);
-//                }
-//            }
-//        } else {
-//            batchHits[node]++;
-//            int pos;
-//            do {
-//                pos = batchSize * node + re.nextInt(batchSize(node));
-//            } while (disabledActions.containsKey((short) pos));
-//
-//            Short result = tryAction(pos, false);
-//            if (batchHits[node] > batchSize(node) / 2) {
-//                resolveBatch(node);
-//            }
-//            double randVal = Math.log(re.nextDouble());
-//            if (bn.edgeExists(pos, to)) {
-//                if (randVal < beta * lastLL) {
-//                    return new Pair<>((short) pos, false);
-//                }
-//                if (randVal < beta * lastLL * reverseBias) {
-//                    return new Pair<>((short) pos, true);
-//                }
-//            }
-//            if (randVal < beta * lastLL) {
-//                return new Pair<>(result, false);
-//            } else {
-//                return new Pair<>(null, false);
-//            }
-//        }
-//    }
-
     private int batch(int action) {
         return action / batchSize;
     }
@@ -388,7 +298,7 @@ public class Multinomial {
         double finalLL = Math.min(beta * loglik, 0.0) + initLL(action);
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
-            Short other = cache.add(action, loglik);
+            Short other = cache.add(action, bn.edgeExists(v, action), loglik);
             if (other != null) {
                 if (batch(other) == b) {
                     batchLL = likelihoodsSum(resolveAction(other, null), batchLL);
