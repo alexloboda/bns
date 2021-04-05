@@ -167,12 +167,10 @@ public class Model {
     public boolean step(long limit) {
         double trll = transitions.likelihood();
         double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
-//        System.out.println(trll + " " + rmll);
 
-
+        System.out.println("aaa");
         double all_ll = Multinomial.likelihoodsSum(trll, rmll);
-//        assert all_ll < 0.1;
-//        all_ll = trll;
+        assert all_ll <= 0.01;
         double jump = 0.0;
         double likelihood = Math.exp(all_ll);
         if (likelihood < 1.0) {
@@ -190,34 +188,34 @@ public class Model {
 
         double proportions = Math.exp(rmll - all_ll);
 
-        if (random.nextDouble() < proportions) {
-            int v = random.nextInt(n);
-            List<Integer> edges = bn.ingoingEdges(v);
-            if (edges.size() == 0) {
-                steps++;
-                return steps == limit;
-            }
-            int u = edges.get(random.nextInt(edges.size()));
-            if (u == v) {
-                throw new RuntimeException("WHAT&&");
-            }
-            if (bn.edgeExists(u, v)) {
-                bn.removeEdge(u, v);
-                if (!bn.pathExists(u, v)) {
-                    double scoreadd = bn.scoreIncluding(u, v) - ll[u];
-                    bn.addEdge(u, v);
-                    double scorerem = bn.scoreExcluding(v, u) - ll[v];
-                    if (scoreadd > scorerem) {
-                        removeEdge(u, v, scorerem);
-                        addEdge(v, u, scoreadd);
-                    }
-                    return ++steps == limit;
-                } else {
-                    bn.addEdge(u, v);
-                }
-            }
-            return ++steps == limit;
-        }
+//        if (random.nextDouble() < proportions) {
+//            int v = random.nextInt(n);
+//            List<Integer> edges = bn.ingoingEdges(v);
+//            if (edges.size() == 0) {
+//                steps++;
+//                return steps == limit;
+//            }
+//            int u = edges.get(random.nextInt(edges.size()));
+//            if (u == v) {
+//                throw new RuntimeException("WHAT&&");
+//            }
+//            if (bn.edgeExists(u, v)) {
+//                bn.removeEdge(u, v);
+//                if (!bn.pathExists(u, v)) {
+//                    double scoreadd = bn.scoreIncluding(u, v) - ll[u];
+//                    bn.addEdge(u, v);
+//                    double scorerem = bn.scoreExcluding(v, u) - ll[v];
+//                    if (scoreadd > scorerem) {
+//                        removeEdge(u, v, scorerem);
+//                        addEdge(v, u, scoreadd);
+//                    }
+//                    return ++steps == limit;
+//                } else {
+//                    bn.addEdge(u, v);
+//                }
+//            }
+//            return ++steps == limit;
+//        }
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
@@ -237,7 +235,6 @@ public class Model {
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
-
             addEdge(parent, node, mult.getLastLL());
         }
         return steps == limit;
@@ -291,11 +288,33 @@ public class Model {
         updateDistribution(u);
     }
 
-    public static void swapNetworks(List<Model> model, int i, int j) {
-        assert i != j;
-        Model md = model.get(i);
-        model.set(i, model.get(j));
-        model.set(j, md);
+    public static void swapNetworks(Model model, Model other) {
+        for (int u = 0; u < model.bn.size(); u++) {
+            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
+            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
+            int finalU = u;
+            modelEdges.stream()
+                    .filter(x -> !otherModelEdges.contains(x))
+                    .forEach(v -> {
+                        model.bn.removeEdge(v, finalU);
+                        other.bn.addEdge(v, finalU);
+                    });
+            otherModelEdges.stream()
+                    .filter(x -> !modelEdges.contains(x))
+                    .forEach(v -> {
+                        model.bn.addEdge(v, finalU);
+                        other.bn.removeEdge(v, finalU);
+                    });
+            double ll = model.ll[u];
+            model.ll[u] = other.ll[u];
+            other.ll[u] = ll;
+
+            model.updateDistribution(u);
+            other.updateDistribution(u);
+        }
+        double ll = model.loglik;
+        model.loglik = other.loglik;
+        other.loglik = ll;
     }
 
     public double beta() {

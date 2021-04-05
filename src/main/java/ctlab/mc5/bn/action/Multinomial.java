@@ -2,11 +2,9 @@ package ctlab.mc5.bn.action;
 
 import ctlab.mc5.algo.SegmentTree;
 import ctlab.mc5.bn.BayesianNetwork;
-import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class Multinomial {
     public static final double EPS = 1e-8;
@@ -38,7 +36,9 @@ public class Multinomial {
     private final int v;
 
     private double initLL(int action) {
-        if (bn.edgeExists(v, action)) {
+        if (action >= v)
+            action++;
+        if (bn.edgeExists(action, v)) {
             return initialLLDel;
         } else {
             return initialLL;
@@ -156,7 +156,7 @@ public class Multinomial {
     public double logLikelihood() {
         if (!initialized) {
             int edges = bn.ingoingEdges(v).size();
-            return likelihoodsSum(Math.log(n - disabledActions.size() - edges) + initialLL, edges + initialLLDel);
+            return likelihoodsSum(Math.log(n - disabledActions.size() - edges) + initialLL, Math.log(edges) + initialLLDel);
         } else {
             return actions.likelihood();
         }
@@ -172,13 +172,22 @@ public class Multinomial {
         cache = new HashTableCache(mainCacheSize, re, beta);
         batchHits = new short[batchesNum];
         for (int i = 0; i < batchesNum; i++) {
-            actions.set(i, (initialLL + Math.log(batchSize(i))));
+            double curLL = Double.NEGATIVE_INFINITY;
+            for (int j = 0; j < batchSize(i); ++j) {
+                curLL = likelihoodsSum(curLL, initLL(i * batchSize + j));
+            }
+            actions.set(i, curLL);
         }
         initialized = true;
         batchMaxLL = new float[batchesNum];
         Arrays.fill(batchMaxLL, Float.NEGATIVE_INFINITY);
 
         for (Map.Entry<Short, Double> action : disabledActions.entrySet()) {
+            if (action.getKey() >= v) {
+                assert !bn.edgeExists(action.getKey() + 1, v);
+            } else {
+                assert !bn.edgeExists(action.getKey(), v);
+            }
             disableAction(action.getKey(), action.getValue());
         }
     }
@@ -298,7 +307,12 @@ public class Multinomial {
         double finalLL = Math.min(beta * loglik, 0.0) + initLL(action);
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
-            Short other = cache.add(action, bn.edgeExists(v, action), loglik);
+            Short other;
+            if (action >= v) {
+                other = cache.add(action, bn.edgeExists(v, action + 1), loglik);
+            } else {
+                other = cache.add(action, bn.edgeExists(v, action), loglik);
+            }
             if (other != null) {
                 if (batch(other) == b) {
                     batchLL = likelihoodsSum(resolveAction(other, null), batchLL);

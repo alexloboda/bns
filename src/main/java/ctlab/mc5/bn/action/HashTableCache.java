@@ -6,6 +6,8 @@ import java.util.BitSet;
 import java.util.Random;
 import java.util.SplittableRandom;
 
+import static ctlab.mc5.bn.action.Multinomial.likelihoodsSum;
+
 public class HashTableCache implements Cache {
     private SegmentTree addActions;
     private SegmentTree remActions;
@@ -56,7 +58,7 @@ public class HashTableCache implements Cache {
         if (topActions == null) {
             return Float.NEGATIVE_INFINITY;
         }
-        return Multinomial.likelihoodsSum(addActions.likelihood(), remActions.likelihood());
+        return likelihoodsSum(addActions.likelihood(), remActions.likelihood());
     }
 
     @Override
@@ -77,26 +79,19 @@ public class HashTableCache implements Cache {
 
     @Override
     public Short randomAction() {
-        short node1 = (short) remActions.randomChoice(re);
-        double ll1 = remActions.get(node1);
-        short node2 = (short) addActions.randomChoice(re);
-        double ll2 = addActions.get(node2);
+
+        double remTotalLL = remActions.likelihood();
+        double addTotalLL = addActions.likelihood();
+
+        double cumulLL = likelihoodsSum(remTotalLL, addTotalLL);
+
         short node;
-        if (Double.isInfinite(ll1)) {
-            ll = ll2;
-            node = node2;
-        } else if (Double.isInfinite(ll2)) {
-            ll = ll1;
-            node = node1;
+        if (re.nextDouble() < Math.exp(remTotalLL - cumulLL)) {
+            node = (short) remActions.randomChoice(re);
+            ll = remActions.get(node);
         } else {
-            Random rand = new Random();
-            if (rand.nextDouble() < 1. / 3) {
-                ll = ll2;
-                node = node2;
-            } else {
-                ll = ll1;
-                node = node1;
-            }
+            node = (short) addActions.randomChoice(re);
+            ll = addActions.get(node);
         }
         return topActions[node];
     }
