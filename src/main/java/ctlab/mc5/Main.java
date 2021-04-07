@@ -63,11 +63,11 @@ public class Main {
         Graph g = new Graph(bn.size());
         try (Scanner scanner = new Scanner(params.preranking())) {
             while(scanner.hasNext()) {
-                int v = bn.getID(scanner.next());
-                int u = bn.getID(scanner.next());
+                int from = bn.getID(scanner.next());
+                int to = bn.getID(scanner.next());
                 scanner.next();
-                if (g.inDegree(u) < params.prerankingLimit()) {
-                    g.addEdge(v, u);
+                if (g.inDegree(to) < params.prerankingLimit()) {
+                    g.addEdge(from, to);
                 }
             }
         }

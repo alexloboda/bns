@@ -84,9 +84,9 @@ public class Model {
                     ++i;
                 }
                 if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(v, i) - currLL;
+                    return bn.scoreExcluding(i, v) - currLL;
                 } else {
-                    return bn.scoreIncluding(v, i) - currLL;
+                    return bn.scoreIncluding(i, v) - currLL;
                 }
             };
             return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta);
