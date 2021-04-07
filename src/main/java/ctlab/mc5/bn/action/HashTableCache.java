@@ -119,12 +119,12 @@ public class HashTableCache implements Cache {
             topActionNodes.remove(topActions[pos]);
         }
         topActions[pos] = action;
-        if (type) {
+        if (!type) {
             addActions.set(pos, ll);
         } else {
             remActions.set(pos, ll);
         }
-        addRemBitset.set(pos, type);
+        addRemBitset.set(pos, !type);
         topActionNodes.put(action, pos);
         topActionsMin.add(pos, ll);
         return ret;

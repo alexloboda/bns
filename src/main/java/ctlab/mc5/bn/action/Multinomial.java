@@ -309,9 +309,9 @@ public class Multinomial {
         if (!cache.isFull() || loglik > cache.min() + EPS) {
             Short other;
             if (action >= v) {
-                other = cache.add(action, bn.edgeExists(v, action + 1), loglik);
+                other = cache.add(action, bn.edgeExists( action + 1, v), loglik);
             } else {
-                other = cache.add(action, bn.edgeExists(v, action), loglik);
+                other = cache.add(action, bn.edgeExists(action, v), loglik);
             }
             if (other != null) {
                 if (batch(other) == b) {

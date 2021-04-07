@@ -168,7 +168,6 @@ public class Model {
         double trll = transitions.likelihood();
         double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
 
-        System.out.println("aaa");
         double all_ll = Multinomial.likelihoodsSum(trll, rmll);
         assert all_ll <= 0.01;
         double jump = 0.0;
