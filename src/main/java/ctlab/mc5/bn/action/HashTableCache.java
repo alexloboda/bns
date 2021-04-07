@@ -119,7 +119,6 @@ public class HashTableCache implements Cache {
             topActionNodes.remove(topActions[pos]);
         }
         topActions[pos] = action;
-//        type = true;
         if (type) {
             addActions.set(pos, ll);
         } else {

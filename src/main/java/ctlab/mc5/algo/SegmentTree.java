@@ -39,9 +39,6 @@ public class SegmentTree {
     }
 
     public void set(int k, double ll) {
-//        if (k == 1) {
-//            System.out.println(Arrays.toString(Thread.currentThread().getStackTrace()));
-//        }
         if (Double.isNaN(ll)) {
             throw new IllegalArgumentException();
         }
