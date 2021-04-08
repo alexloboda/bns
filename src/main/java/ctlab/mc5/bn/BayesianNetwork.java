@@ -52,16 +52,16 @@ public class BayesianNetwork {
         sf = bn.sf;
     }
 
-    public void addEdge(int v, int u) {
-        g.addEdge(v, u);
+    public void addEdge(int from, int to) {
+        g.addEdge(from, to);
     }
 
-    public void removeEdge(int v, int u) {
-        g.removeEdge(v, u);
+    public void removeEdge(int from, int to) {
+        g.removeEdge(from, to);
     }
 
-    private List<Variable> parentSet(int v) {
-        return g.ingoingEdges(v).stream()
+    private List<Variable> parentSet(int to) {
+        return g.ingoingEdges(to).stream()
                 .map(x -> variables.get(x))
                 .collect(Collectors.toList());
     }
@@ -103,28 +103,28 @@ public class BayesianNetwork {
         return variables.get(v);
     }
 
-    public double score(int v) {
-        return sf.score(variables.get(v), parentSet(v));
+    public double score(int to) {
+        return sf.score(variables.get(to), parentSet(to));
     }
 
-    public double scoreIncluding(int v, int u) {
-        List<Integer> ps = g.ingoingEdges(v);
-        assert !ps.contains(u);
-        ps.add(u);
-        return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+    public double scoreIncluding(int from, int to) {
+        List<Integer> ps = g.ingoingEdges(to);
+        assert !ps.contains(from);
+        ps.add(from);
+        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
-    public double scoreExcluding(int v, int u) {
-        List<Integer> ps = g.ingoingEdges(v);
-        assert ps.contains(u);
-        ps.remove((Integer) u);
-        return sf.score(variables.get(v), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+    public double scoreExcluding(int from, int to) {
+        List<Integer> ps = g.ingoingEdges(to);
+        assert ps.contains(from);
+        ps.remove((Integer) from); // removing the element with this value ps.remove(from) is illegal
+        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
     }
 
     public void clearEdges() {
-        for (int u = 0; u < size(); u++) {
-            for (int v : ingoingEdges(u)) {
-                removeEdge(v, u);
+        for (int to = 0; to < size(); to++) {
+            for (int from : ingoingEdges(to)) {
+                removeEdge(from, to);
             }
         }
     }
@@ -133,16 +133,16 @@ public class BayesianNetwork {
         return variables.size();
     }
 
-    public boolean edgeExists(int v, int u) {
-        return g.edgeExists(v, u);
+    public boolean edgeExists(int from, int to) {
+        return g.edgeExists(from, to);
     }
 
-    public boolean pathExists(int v, int u) {
-        return g.pathExists(v, u);
+    public boolean pathExists(int from, int to) {
+        return g.pathExists(from, to);
     }
 
-    public List<Integer> ingoingEdges(int v) {
-        return g.ingoingEdges(v);
+    public List<Integer> ingoingEdges(int to) {
+        return g.ingoingEdges(to);
     }
 
     int discretize(int steps_ub) {
