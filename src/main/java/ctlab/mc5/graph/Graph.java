@@ -196,6 +196,7 @@ public class Graph {
         }
         assert from < to;
         tokens.get(from).put(to, token);
+        edgeCount++;
     }
 
     public void removeEdge(int from, int to) {

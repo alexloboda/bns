@@ -95,7 +95,7 @@ public class Model {
                     return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, v);
+            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, to_node);
         };
     }
 
@@ -173,8 +173,8 @@ public class Model {
         double jump = 0.0;
         double likelihood = Math.exp(all_ll);
         if (likelihood < 1.0) {
-            GeometricDistribution gd = new GeometricDistribution(likelihood);
-            jump = gd.getNumericalMean();
+//            GeometricDistribution gd = new GeometricDistribution(likelihood); // takes 22% of all time just to do what is below
+            jump = (1 - likelihood) / likelihood; // geometric distribution
         }
         jump += 1.0;
         if (random.nextDouble() < jump - (int) jump) {
@@ -202,19 +202,19 @@ public class Model {
                 bn.removeEdge(from, to);
                 if (!bn.pathExists(from, to)) {
                     double origLL = bn.score(to);
-                    double scoreReversed = bn.scoreIncluding(from, to); // add reversed
-                    if (random.nextDouble() < Math.exp(scoreReversed - origLL)) {
-                        bn.addEdge(from, to);
-                        reverseEdge(from, to);
+                    double scoreReversed = bn.scoreIncluding(to, from); // add reversed
+                    bn.addEdge(from, to);
+                    if (random.nextDouble() < Math.min(Math.exp(scoreReversed - origLL) / 2, 1.)) {
+                        double scoreRemoved = bn.scoreExcluding(from, to) - ll[to];
+                        removeEdge(from, to, scoreRemoved);
+                        addEdge(to, from, scoreReversed - ll[from]);
                     }
-                        removeEdge(from, to, scorerem);
-//                        addEdge(to, from, scoreadd);
-                    return ++steps == limit;
+                    return steps == limit;
                 } else {
                     bn.addEdge(from, to);
                 }
             }
-            return ++steps == limit;
+            return steps == limit;
         }
 
         int node = transitions.randomChoice(random);
@@ -286,14 +286,6 @@ public class Model {
         ll[to] += actionLL;
         loglik += actionLL;
         updateDistribution(to);
-    }
-
-    private void reverseEdge(int v, int u, double actionLL) {
-        bn.removeEdge(v, u);
-        bn.addEdge(v, u);
-        ll[u] += actionLL;
-        loglik += actionLL;
-        updateDistribution(u);
     }
 
     public static void swapNetworks(Model model, Model other) {

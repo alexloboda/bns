@@ -108,21 +108,21 @@ public class BayesianNetwork {
     }
 
     public double score(int to) {
-        return sf.score(variables.get(to), parentSet(to));
+        return sf.score(variables.get(to), parentSet(to), variables.size());
     }
 
     public double scoreIncluding(int from, int to) {
         List<Integer> ps = g.ingoingEdges(to);
         assert !ps.contains(from);
         ps.add(from);
-        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()), variables.size());
     }
 
     public double scoreExcluding(int from, int to) {
         List<Integer> ps = g.ingoingEdges(to);
         assert ps.contains(from);
         ps.remove((Integer) from); // removing the element with this value ps.remove(from) is illegal
-        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()));
+        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()), variables.size());
     }
 
     public void clearEdges() {

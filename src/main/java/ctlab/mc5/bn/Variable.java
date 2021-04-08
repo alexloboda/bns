@@ -90,7 +90,7 @@ public class Variable {
                 double p = 1.0 / defaultDiscClasses;
                 double[] values = new double[n];
                 for (int k = 1; k < n + 1; k++) {
-                    values[k - 1] = lf.value(k) + lf.value(n - k) -lf.value(n);
+                    values[k - 1] = lf.value(k) + lf.value(n - k) - lf.value(n);
                     values[k - 1] -= k * Math.log(p) + (n - k) * Math.log(1 - p);
                 }
                 func = (u, v) -> values[v - u + 1];
@@ -201,7 +201,7 @@ public class Variable {
 
     public Collection<Integer> cardinalities() {
         Map<Integer, Integer> cs = new TreeMap<>();
-        for (int d: discrete) {
+        for (int d : discrete) {
             cs.putIfAbsent(d, 0);
             cs.put(d, cs.get(d) + 1);
         }
@@ -284,13 +284,59 @@ public class Variable {
         Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
             selector.reuse();
-            for (Variable p: vs) {
+            for (Variable p : vs) {
                 selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
 
             result[i] = selector.get();
         }
         return result;
+    }
+
+    public int[] mapObsNoMem(List<Variable> ps, int[] arrOut, int[] arrTmp) {
+        int m = obsNum();
+        int ps_size = ps.size();
+        for (int i = 0; i < ps_size; i++) {
+            arrTmp[i] = ps.get(i).cardinality();
+        }
+        arrTmp[ps_size] = 1;
+
+        Trie t = new Trie(arrTmp);
+
+        Trie.Selector selector = t.selector();
+        for (int i = 0; i < m; i++) {
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+            }
+
+            arrOut[i] = selector.get();
+        }
+        return arrOut;
+    }
+
+    public int[] mapObsNoMemAnd(List<Variable> ps, Variable extra, int[] arrOut, int[] arrTmp) {
+        int m = obsNum();
+        int ps_size = ps.size();
+        for (int i = 0; i < ps_size; i++) {
+            arrTmp[i] = ps.get(i).cardinality();
+        }
+        arrTmp[ps_size] = extra.cardinality();
+        arrTmp[ps_size + 1] = 1;
+
+        Trie t = new Trie(arrTmp);
+
+        Trie.Selector selector = t.selector();
+        for (int i = 0; i < m; i++) {
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+            }
+            selector.choose(extra.discreteValue(orderedObs[i]) - 1);
+
+            arrOut[i] = selector.get();
+        }
+        return arrOut;
     }
 
     private double[][] parentsTerm(List<Variable> ps) {
@@ -347,7 +393,7 @@ public class Variable {
         }
         edges = new ArrayList<>();
         for (int i = 0; i < num_edges; i++) {
-            int pos = (int)Math.round(Math.floor(uniq.length * ((double)i + 1) / num_classes));
+            int pos = (int) Math.round(Math.floor(uniq.length * ((double) i + 1) / num_classes));
             edges.add((data.get(getUniq(pos)) + data.get(getUniq(pos + 1))) / 2);
         }
         writeDiscretization();
