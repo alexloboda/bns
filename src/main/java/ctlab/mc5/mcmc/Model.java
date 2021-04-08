@@ -90,9 +90,9 @@ public class Model {
                     ++i;
                 }
                 if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(v, i) - currLL;
+                    return bn.scoreExcluding(i, v) - currLL;
                 } else {
-                    return bn.scoreIncluding(v, i) - currLL;
+                    return bn.scoreIncluding(i, v) - currLL;
                 }
             };
             return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, v);
@@ -187,34 +187,35 @@ public class Model {
 
         double proportions = Math.exp(rmll - all_ll);
 
-//        if (random.nextDouble() < proportions) {
-//            int v = random.nextInt(n);
-//            List<Integer> edges = bn.ingoingEdges(v);
-//            if (edges.size() == 0) {
-//                steps++;
-//                return steps == limit;
-//            }
-//            int u = edges.get(random.nextInt(edges.size()));
-//            if (u == v) {
-//                throw new RuntimeException("WHAT&&");
-//            }
-//            if (bn.edgeExists(u, v)) {
-//                bn.removeEdge(u, v);
-//                if (!bn.pathExists(u, v)) {
-//                    double scoreadd = bn.scoreIncluding(u, v) - ll[u];
-//                    bn.addEdge(u, v);
-//                    double scorerem = bn.scoreExcluding(v, u) - ll[v];
-//                    if (scoreadd > scorerem) {
-//                        removeEdge(u, v, scorerem);
-//                        addEdge(v, u, scoreadd);
-//                    }
-//                    return ++steps == limit;
-//                } else {
-//                    bn.addEdge(u, v);
-//                }
-//            }
-//            return ++steps == limit;
-//        }
+        if (random.nextDouble() < proportions) {
+            int to = random.nextInt(n);
+            List<Integer> edges = bn.ingoingEdges(to);
+            if (edges.size() == 0) {
+                steps++;
+                return steps == limit;
+            }
+            int from = edges.get(random.nextInt(edges.size()));
+
+            assert from != to;
+
+            if (bn.edgeExists(from, to)) {
+                bn.removeEdge(from, to);
+                if (!bn.pathExists(from, to)) {
+                    double origLL = bn.score(to);
+                    double scoreReversed = bn.scoreIncluding(from, to); // add reversed
+                    if (random.nextDouble() < Math.exp(scoreReversed - origLL)) {
+                        bn.addEdge(from, to);
+                        reverseEdge(from, to);
+                    }
+                        removeEdge(from, to, scorerem);
+//                        addEdge(to, from, scoreadd);
+                    return ++steps == limit;
+                } else {
+                    bn.addEdge(from, to);
+                }
+            }
+            return ++steps == limit;
+        }
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
@@ -282,6 +283,14 @@ public class Model {
 
     private void removeEdge(int v, int u, double actionLL) {
         bn.removeEdge(v, u);
+        ll[u] += actionLL;
+        loglik += actionLL;
+        updateDistribution(u);
+    }
+
+    private void reverseEdge(int v, int u, double actionLL) {
+        bn.removeEdge(v, u);
+        bn.addEdge(v, u);
         ll[u] += actionLL;
         loglik += actionLL;
         updateDistribution(u);

@@ -40,9 +40,9 @@ public class Graph {
 
     public Graph(Graph g) {
         this(g.size());
-        for (int v = 0; v < g.size(); v++) {
-            for (int u : g.outgoingEdges(v)) {
-                addEdge(v, u);
+        for (int from = 0; from < g.size(); from++) {
+            for (int to : g.outgoingEdges(from)) {
+                addEdge(from, to);
             }
         }
         edgeCount = g.edgeCount;
@@ -53,7 +53,7 @@ public class Graph {
         q.poll();
         List<Edge> nei = player[v] ? adj.get(v) : radj.get(v);
         for (Edge e : nei) {
-            int u = player[v] ? e.u : e.v;
+            int u = player[v] ? e.to : e.from;
             if (vis[u] == 0) {
                 vis[u] = vis[v] + 1;
                 player[u] = player[v];
@@ -102,20 +102,20 @@ public class Graph {
         return time;
     }
 
-    public List<Integer> ingoingEdges(int v) {
-        List<Integer> ingoing = new ArrayList<>(radj.get(v).size());
-        for (Edge e: radj.get(v)) {
-            ingoing.add(e.v);
+    public List<Integer> ingoingEdges(int to) {
+        List<Integer> ingoing = new ArrayList<>(radj.get(to).size());
+        for (Edge e: radj.get(to)) {
+            ingoing.add(e.from);
         }
        return ingoing;
     }
 
-    public List<Integer> outgoingEdges(int v) {
-        return adj.get(v).stream().map(e -> e.u).collect(Collectors.toList());
+    public List<Integer> outgoingEdges(int from) {
+        return adj.get(from).stream().map(e -> e.to).collect(Collectors.toList());
     }
 
-    public int outDegree(int v) {
-        return adj.get(v).size();
+    public int outDegree(int from) {
+        return adj.get(from).size();
     }
 
     private void processPath(Pair<Integer, Integer> meet, int first, int last, int[] parent) {
@@ -139,11 +139,11 @@ public class Graph {
         }
     }
 
-    public boolean pathExists(int v, int u) {
-        if (!dgraph.isConnected(v, u)) {
+    public boolean pathExists(int from, int to) {
+        if (!dgraph.isConnected(from, to)) {
             return false;
         }
-        if (subscriptions[v][u] > 0) {
+        if (subscriptions[from][to] > 0) {
             return true;
         }
         // men meet in the middle
@@ -152,15 +152,15 @@ public class Graph {
         boolean[] player = new boolean[adj.size()];
         Queue<Integer> direct = new ArrayDeque<>();
         Queue<Integer> back = new ArrayDeque<>();
-        direct.add(v);
-        back.add(u);
-        vis[v] = 1;
-        vis[u] = 1;
-        player[v] = true;
+        direct.add(from);
+        back.add(to);
+        vis[from] = 1;
+        vis[to] = 1;
+        player[from] = true;
         for (int i = 0; i < adj.size() / 2; i++) {
             Pair<Integer, Integer> directResult = step(direct, vis, player, parent);
             if (directResult != null) {
-                processPath(directResult, v, u, parent);
+                processPath(directResult, from, to, parent);
                 return true;
             }
             if (direct.isEmpty()) {
@@ -168,7 +168,7 @@ public class Graph {
             }
             Pair<Integer, Integer> backResult = step(back, vis, player, parent);
             if (backResult != null) {
-                processPath(backResult, v, u, parent);
+                processPath(backResult, from, to, parent);
                 return true;
             }
             if (back.isEmpty()) {
@@ -178,46 +178,45 @@ public class Graph {
         return false;
     }
 
-    public boolean edgeExists(int v, int u) {
-        return edges[v][u] != null;
+    public boolean edgeExists(int from, int to) {
+        return edges[from][to] != null;
     }
 
-    public void addEdge(int v, int u) {
-        edges[v][u] = new Edge(v, u, adj.get(v).size(), radj.get(u).size());
-        adj.get(v).add(edges[v][u]);
-        radj.get(u).add(edges[v][u]);
-        DynamicGraph.EdgeToken token = dgraph.add(v, u);
+    public void addEdge(int from, int to) {
+        edges[from][to] = new Edge(from, to, adj.get(from).size(), radj.get(to).size());
+        adj.get(from).add(edges[from][to]);
+        radj.get(to).add(edges[from][to]);
+        DynamicGraph.EdgeToken token = dgraph.add(from, to);
         assert token != null;
 
-        if (u < v) {
-            int t = u;
-            u = v;
-            v = t;
+        if (to < from) {
+            int t = to;
+            to = from;
+            from = t;
         }
-        assert v < u;
-        tokens.get(v).put(u, token);
-        edgeCount++;
+        assert from < to;
+        tokens.get(from).put(to, token);
     }
 
-    public void removeEdge(int v, int u) {
-        Edge e = edges[v][u];
+    public void removeEdge(int from, int to) {
+        Edge e = edges[from][to];
         e.unsubscribe();
-        List<Edge> nei = adj.get(v);
-        List<Edge> rnei = radj.get(u);
+        List<Edge> nei = adj.get(from);
+        List<Edge> rnei = radj.get(to);
         Collections.swap(nei, e.pos, nei.size() - 1);
         Collections.swap(rnei, e.rpos, rnei.size() - 1);
         nei.get(e.pos).pos = e.pos;
         rnei.get(e.rpos).rpos = e.rpos;
         nei.remove(nei.size() - 1);
         rnei.remove(rnei.size() - 1);
-        edges[v][u] = null;
+        edges[from][to] = null;
 
-        if (u < v) {
-            int t = u;
-            u = v;
-            v = t;
+        if (to < from) {
+            int t = to;
+            to = from;
+            from = t;
         }
-        DynamicGraph.EdgeToken token = tokens.get(v).remove(u);
+        DynamicGraph.EdgeToken token = tokens.get(from).remove(to);
         assert token != null;
         assert edgeCount != 0;
         dgraph.remove(token);
@@ -228,8 +227,8 @@ public class Graph {
         return edgeCount;
     }
 
-    public int inDegree(int v) {
-        return radj.get(v).size();
+    public int inDegree(int to) {
+        return radj.get(to).size();
     }
 
     private class Subscription {
@@ -278,13 +277,10 @@ public class Graph {
                 return;
             }
             Entry curr = head;
-            while (true) {
+            do {
                 subscriptions.add(curr.subscription());
                 curr = curr.right;
-                if (curr == head) {
-                    break;
-                }
-            }
+            } while (curr != head);
             for (Subscription s: subscriptions) {
                 s.processDeletion();
             }
@@ -322,15 +318,15 @@ public class Graph {
     }
 
     public class Edge {
-        private int v;
-        private int u;
+        private int from;
+        private int to;
         private int pos;
         private int rpos;
         private LinkedList subscriptions;
 
-        Edge(int v, int u, int pos, int rpos) {
-            this.v = v;
-            this.u = u;
+        Edge(int from, int to, int pos, int rpos) {
+            this.from = from;
+            this.to = to;
             this.pos = pos;
             this.rpos = rpos;
             subscriptions = new LinkedList();
