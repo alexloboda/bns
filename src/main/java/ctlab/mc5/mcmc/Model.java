@@ -76,17 +76,17 @@ public class Model {
         transitions.set(v, distributions.get(v).logLikelihood());
     }
 
-    private Function<List<Integer>, Multinomial> multinomials(int v) {
+    private Function<List<Integer>, Multinomial> multinomials(int to_node) {
         return ps -> {
-            double currLL = ll[v];
+            double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
-                if (i >= v) {
+                if (i >= to_node) {
                     ++i;
                 }
-                if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(i, v) - currLL;
+                if (bn.edgeExists(i, to_node)) {
+                    return bn.scoreExcluding(i, to_node) - currLL;
                 } else {
-                    return bn.scoreIncluding(i, v) - currLL;
+                    return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
             return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta);
@@ -220,52 +220,52 @@ public class Model {
         return m;
     }
 
-    private void updateDistribution(int u) {
-        distributions.get(u).deactivate();
-        List<Integer> parentSet = bn.ingoingEdges(u);
+    private void updateDistribution(int to) {
+        distributions.get(to).deactivate();
+        List<Integer> parentSet = bn.ingoingEdges(to);
         Collections.sort(parentSet);
-        Multinomial mult = caches.get(u).request(parentSet);
-        distributions.set(u, mult);
-        transitions.set(u, mult.logLikelihood());
+        Multinomial mult = caches.get(to).request(parentSet);
+        distributions.set(to, mult);
+        transitions.set(to, mult.logLikelihood());
     }
 
-    private void addEdge(int v, int u, double actionLL) {
-        bn.addEdge(v, u);
-        ll[u] += actionLL;
+    private void addEdge(int from, int to, double actionLL) {
+        bn.addEdge(from, to);
+        ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(u);
+        updateDistribution(to);
     }
 
-    private void removeEdge(int v, int u, double actionLL) {
-        bn.removeEdge(v, u);
-        ll[u] += actionLL;
+    private void removeEdge(int from, int to, double actionLL) {
+        bn.removeEdge(from, to);
+        ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(u);
+        updateDistribution(to);
     }
 
     public static void swapNetworks(Model model, Model other) {
-        for (int u = 0; u < model.bn.size(); u++) {
-            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
-            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-            int finalU = u;
+        for (int to = 0; to < model.bn.size(); to++) {
+            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(to));
+            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(to));
+            int finalU = to;
             modelEdges.stream()
                     .filter(otherModelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.removeEdge(v, finalU);
-                        other.bn.addEdge(v, finalU);
+                    .forEach(from -> {
+                        model.bn.removeEdge(from, finalU);
+                        other.bn.addEdge(from, finalU);
                     });
             otherModelEdges.stream()
                     .filter(modelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.addEdge(v, finalU);
-                        other.bn.removeEdge(v, finalU);
+                    .forEach(from -> {
+                        model.bn.addEdge(from, finalU);
+                        other.bn.removeEdge(from, finalU);
                     });
-            double ll = model.ll[u];
-            model.ll[u] = other.ll[u];
-            other.ll[u] = ll;
+            double ll = model.ll[to];
+            model.ll[to] = other.ll[to];
+            other.ll[to] = ll;
 
-            model.updateDistribution(u);
-            other.updateDistribution(u);
+            model.updateDistribution(to);
+            other.updateDistribution(to);
         }
         double ll = model.loglik;
         model.loglik = other.loglik;
