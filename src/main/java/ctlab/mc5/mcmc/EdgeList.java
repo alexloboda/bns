@@ -5,10 +5,12 @@ import java.util.*;
 public class EdgeList {
     private List<Edge> edgeList;
     private Map<Integer, Map<Integer, Edge>> edgeMap;
+    private int number_merged = 1;
 
     public EdgeList() {
         edgeList = new ArrayList<>();
         edgeMap = new HashMap<>();
+        number_merged = 0;
     }
 
     public Edge getEdge(int from, int to) {
@@ -22,7 +24,9 @@ public class EdgeList {
         if (getEdge(edge.v(), edge.u()) != null) {
             throw new IllegalArgumentException();
         }
-        edgeList.add(edge);
+        Edge mEdge = new Edge(edge);
+        mEdge.num += number_merged;
+        edgeList.add(mEdge);
         if (!edgeMap.containsKey(edge.v())) {
             edgeMap.put(edge.v(), new HashMap<>());
         }
@@ -36,7 +40,7 @@ public class EdgeList {
     }
 
     public void merge(EdgeList other) {
-        for (Edge e: other.edgeList) {
+        for (Edge e : other.edgeList) {
             Edge local = getEdge(e.v(), e.u());
             if (local == null) {
                 addEdge(e);
@@ -44,6 +48,7 @@ public class EdgeList {
                 local.merge(e);
             }
         }
+        number_merged++;
     }
 
     public int size() {
@@ -53,23 +58,29 @@ public class EdgeList {
     public static class Edge implements Comparable<Edge> {
         private int v;
         private int u;
-        private double p;
+        private int num;
         private double k;
 
-        public Edge(int v, int u, double p, double k) {
+        public Edge(int v, int u, int num, double k) {
             this.v = v;
             this.u = u;
-            this.p = p;
+            this.num = num;
             this.k = k;
+        }
+
+        public Edge(Edge other) {
+            this.v = other.v;
+            this.u = other.u;
+            this.num = other.num;
+            this.k = other.k;
         }
 
         public void merge(Edge other) {
             if (!equals(other)) {
                 throw new IllegalArgumentException();
             }
-            double sumK = k + other.k;
-            p = (k / sumK) * p + (other.k / sumK) * other.p;
-            k = sumK;
+            k += other.k;
+            num += other.num;
         }
 
         public int v() {
@@ -81,7 +92,7 @@ public class EdgeList {
         }
 
         public double p() {
-            return p;
+            return k / num;
         }
 
         public double k() {
@@ -93,13 +104,13 @@ public class EdgeList {
             if (o.getClass() != Edge.class) {
                 return false;
             }
-            Edge e = (Edge)o;
+            Edge e = (Edge) o;
             return this.v == e.v && this.u == e.u;
         }
 
         @Override
         public int compareTo(Edge o) {
-            return Double.compare(p, o.p);
+            return Double.compare(k / num, o.k / o.num);
         }
     }
 }

@@ -6,6 +6,7 @@ import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
 import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
@@ -22,14 +23,17 @@ public class Model {
     private List<Cache> caches;
     private int nCachedStates;
 
-    private List<Multinomial> distributions;
-    private MultinomialFactory multFactory;
+    private final List<Multinomial> distributions;
+    private final MultinomialFactory multFactory;
     private SegmentTree transitions;
 
     private BayesianNetwork bn;
     private SplittableRandom random;
 
     private List<Integer> permutation;
+    private boolean reversedState = false;
+    private final double initLL;
+    private final double initLLDel;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -42,6 +46,8 @@ public class Model {
         this.multFactory = multFactory;
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
+        this.initLL = -Math.log(n * (n - 1));
+        this.initLLDel = initLL - Math.log(2);
         setRandomGenerator(new SplittableRandom());
     }
 
@@ -72,31 +78,31 @@ public class Model {
 
     private void processPathElimination(int v, int u) {
         u = u > v ? u - 1 : u;
-        distributions.get(v).reEnableAction((short)u);
+        distributions.get(v).reEnableAction((short) u);
         transitions.set(v, distributions.get(v).logLikelihood());
     }
 
-    private Function<List<Integer>, Multinomial> multinomials(int v) {
+    private Function<List<Integer>, Multinomial> multinomials(int to_node) {
         return ps -> {
-            double currLL = ll[v];
+            double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
-                if (i >= v) {
+                if (i >= to_node) {
                     ++i;
                 }
-                if (bn.edgeExists(i, v)) {
-                    return bn.scoreExcluding(v, i) - currLL;
+                if (bn.edgeExists(i, to_node)) {
+                    return bn.scoreExcluding(i, to_node) - currLL;
                 } else {
-                    return bn.scoreIncluding(v, i) - currLL;
+                    return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, -Math.log(n * (n - 1)), beta);
+            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, to_node);
         };
     }
 
     public String toString() {
         StringBuilder s = new StringBuilder();
         for (int u = 0; u < n; u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 s.append(v).append("->").append(u).append(" ");
             }
         }
@@ -106,7 +112,7 @@ public class Model {
     public void printDebugInfo() {
         System.out.println("Current log-likelihood " + loglik);
         for (int u = 0; u < n; u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 System.out.print(v + "->" + u + " ");
             }
         }
@@ -159,22 +165,57 @@ public class Model {
     }
 
     public boolean step(long limit) {
-        double ll = transitions.likelihood();
-        assert ll < 0.1;
+        double trll = transitions.likelihood();
+        double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
+
+        double all_ll = Multinomial.likelihoodsSum(trll, rmll);
+        assert all_ll <= 0.01;
         double jump = 0.0;
-        double likelihood = Math.exp(ll);
+        double likelihood = Math.exp(all_ll);
         if (likelihood < 1.0) {
-            GeometricDistribution gd = new GeometricDistribution(likelihood);
-            jump = gd.getNumericalMean();
+//            GeometricDistribution gd = new GeometricDistribution(likelihood); // takes 22% of all time just to do what is below
+            jump = (1 - likelihood) / likelihood; // geometric distribution
         }
         jump += 1.0;
-        if (random.nextDouble() < jump - (int)jump) {
+        if (random.nextDouble() < jump - (int) jump) {
             jump += 1.0;
         }
         if (steps + jump > limit) {
             return true;
         }
         steps += jump;
+
+        double proportions = Math.exp(rmll - all_ll);
+
+        if (random.nextDouble() < proportions) {
+            int to = random.nextInt(n);
+            List<Integer> edges = bn.ingoingEdges(to);
+            if (edges.size() == 0) {
+                steps++;
+                return steps == limit;
+            }
+            int from = edges.get(random.nextInt(edges.size()));
+
+            assert from != to;
+
+            if (bn.edgeExists(from, to)) {
+                bn.removeEdge(from, to);
+                if (!bn.pathExists(from, to)) {
+                    double origLL = bn.score(to);
+                    double scoreReversed = bn.scoreIncluding(to, from); // add reversed
+                    bn.addEdge(from, to);
+                    if (random.nextDouble() < Math.min(Math.exp(scoreReversed - origLL) / 2, 1.)) {
+                        double scoreRemoved = bn.scoreExcluding(from, to) - ll[to];
+                        removeEdge(from, to, scoreRemoved);
+                        addEdge(to, from, scoreReversed - ll[from]);
+                    }
+                    return steps == limit;
+                } else {
+                    bn.addEdge(from, to);
+                }
+            }
+            return steps == limit;
+        }
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
@@ -190,21 +231,25 @@ public class Model {
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
-                mult.disableAction((short)(parent > node ? parent - 1 : parent), mult.getLastLL());
+                mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
-
             addEdge(parent, node, mult.getLastLL());
         }
         return steps == limit;
     }
 
+    private void tryInvert(int v, int u) {
+        removeEdge(v, u, 0);
+        addEdge(u, v, 0);
+    }
+
     public EdgeList edgeList() {
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
-            for (int v: bn.ingoingEdges(u)) {
-                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1.0, 1));
+            for (int v : bn.ingoingEdges(u)) {
+                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1, 1));
             }
         }
         return edges;
@@ -213,59 +258,59 @@ public class Model {
     public boolean[][] adjMatrix() {
         boolean[][] m = new boolean[n][n];
         for (int u = 0; u < bn.size(); u++) {
-            for (int v: bn.ingoingEdges(u)) {
+            for (int v : bn.ingoingEdges(u)) {
                 m[permutation.get(v)][permutation.get(u)] = true;
             }
         }
         return m;
     }
 
-    private void updateDistribution(int u) {
-        distributions.get(u).deactivate();
-        List<Integer> parentSet = bn.ingoingEdges(u);
+    private void updateDistribution(int to) {
+        distributions.get(to).deactivate();
+        List<Integer> parentSet = bn.ingoingEdges(to);
         Collections.sort(parentSet);
-        Multinomial mult = caches.get(u).request(parentSet);
-        distributions.set(u, mult);
-        transitions.set(u, mult.logLikelihood());
+        Multinomial mult = caches.get(to).request(parentSet);
+        distributions.set(to, mult);
+        transitions.set(to, mult.logLikelihood());
     }
 
-    private void addEdge(int v, int u, double actionLL) {
-        bn.addEdge(v, u);
-        ll[u] += actionLL;
+    private void addEdge(int from, int to, double actionLL) {
+        bn.addEdge(from, to);
+        ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(u);
+        updateDistribution(to);
     }
 
-    private void removeEdge(int v, int u, double actionLL) {
-        bn.removeEdge(v, u);
-        ll[u] += actionLL;
+    private void removeEdge(int from, int to, double actionLL) {
+        bn.removeEdge(from, to);
+        ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(u);
+        updateDistribution(to);
     }
 
     public static void swapNetworks(Model model, Model other) {
-        for (int u = 0; u < model.bn.size(); u++) {
-            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(u));
-            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(u));
-            int finalU = u;
+        for (int to = 0; to < model.bn.size(); to++) {
+            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(to));
+            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(to));
+            int finalU = to;
             modelEdges.stream()
-                    .filter(otherModelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.removeEdge(v, finalU);
-                        other.bn.addEdge(v, finalU);
+                    .filter(x -> !otherModelEdges.contains(x))
+                    .forEach(from -> {
+                        model.bn.removeEdge(from, finalU);
+                        other.bn.addEdge(from, finalU);
                     });
             otherModelEdges.stream()
-                    .filter(modelEdges::contains)
-                    .forEach(v -> {
-                        model.bn.addEdge(v, finalU);
-                        other.bn.removeEdge(v, finalU);
+                    .filter(x -> !modelEdges.contains(x))
+                    .forEach(from -> {
+                        model.bn.addEdge(from, finalU);
+                        other.bn.removeEdge(from, finalU);
                     });
-            double ll = model.ll[u];
-            model.ll[u] = other.ll[u];
-            other.ll[u] = ll;
+            double ll = model.ll[to];
+            model.ll[to] = other.ll[to];
+            other.ll[to] = ll;
 
-            model.updateDistribution(u);
-            other.updateDistribution(u);
+            model.updateDistribution(to);
+            other.updateDistribution(to);
         }
         double ll = model.loglik;
         model.loglik = other.loglik;

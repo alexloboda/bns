@@ -73,6 +73,11 @@ public class NetworkEstimator {
                 result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
             } catch (InterruptedException e) {
                 return;
+            } catch (Error | Exception e) {
+                System.err.println("Exception occurred: ");
+                System.err.println(e);
+                e.printStackTrace();
+                return;
             }
             synchronized (this) {
                 this.result = result;

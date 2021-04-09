@@ -89,7 +89,7 @@ public class MultinomialTest {
 
         for (int bs = 1; bs <= NVARIABLES; bs++) {
             for (short cacheSize = 0; cacheSize <= NVARIABLES; cacheSize++) {
-                Multinomial mult = new Multinomial(ps.length, bs, BETA, cacheSize, calcLL, initialLL, re);
+                Multinomial mult = new Multinomial(ps.length, bs, BETA, cacheSize, calcLL, initialLL, re, null, -1);
                 testMultinomial(mult, ps);
             }
         }
@@ -99,7 +99,7 @@ public class MultinomialTest {
     public void disableActionsTest() {
         SplittableRandom re = new SplittableRandom(42);
 
-        Multinomial multinomial = new Multinomial(NVARIABLES, 3, 1.0,  2, calcLL, initialLL, re);
+        Multinomial multinomial = new Multinomial(NVARIABLES, 3, 1.0,  2, calcLL, initialLL, re, null, -1);
 
         for (int i = 0; i < N_DISABLE_ACTIONS; i++) {
             short var = (short)re.nextInt(NVARIABLES);
@@ -139,7 +139,7 @@ public class MultinomialTest {
 
             for (int j = 0; j < NCHOICES; j++) {
                 Multinomial mult = new Multinomial(N_VARIABLES_COMPLEX, 4, 1.0,2, calcLL,
-                                                   Math.log(1.0 / N_VARIABLES_COMPLEX), re);
+                                                   Math.log(1.0 / N_VARIABLES_COMPLEX), re, null, -1);
                 resetStructures();
                 for (int k = 0; k < steps; k++) {
                     for (int l = 0; l < ACTIONS_COMPLEX; l++) {

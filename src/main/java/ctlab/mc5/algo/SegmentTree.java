@@ -46,7 +46,7 @@ public class SegmentTree {
         if (k >= sum.length) {
             k = parent(k);
         }
-        while(true) {
+        while (true) {
             Distribution d = new Distribution(k);
             sum[k] = d.maxLL + Math.log(d.sum);
             if (k == 0) {
@@ -66,7 +66,7 @@ public class SegmentTree {
 
     public int randomChoice(SplittableRandom re) {
         int k = 0;
-        while(true) {
+        while (true) {
             if (k > n) {
                 return parent(k);
             }
@@ -96,9 +96,9 @@ public class SegmentTree {
             double right_sum = get_sum(child(k) + 1);
             double ll = Math.min(beta * lls[k], 0.0);
             maxLL = Math.max(ll, Math.max(left_sum, right_sum));
-            left = NANSafe((float)Math.exp(left_sum - maxLL));
-            right = NANSafe((float)Math.exp(right_sum - maxLL));
-            current = NANSafe((float)Math.exp(ll - maxLL));
+            left = NANSafe((float) Math.exp(left_sum - maxLL));
+            right = NANSafe((float) Math.exp(right_sum - maxLL));
+            current = NANSafe((float) Math.exp(ll - maxLL));
             sum = left + right + current;
             left /= sum;
             right /= sum;
