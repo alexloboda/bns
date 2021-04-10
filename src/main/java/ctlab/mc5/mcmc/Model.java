@@ -164,6 +164,42 @@ public class Model {
         }
     }
 
+    private boolean reverse(long limit) {
+        int to = random.nextInt(n);
+        List<Integer> edges = bn.ingoingEdges(to);
+        if (edges.size() == 0) {
+            steps++;
+            return steps == limit;
+        }
+        int from = edges.get(random.nextInt(edges.size()));
+
+        assert from != to;
+
+        if (bn.edgeExists(from, to)) {
+            double scoreF = bn.score(from);
+            double scoreT = bn.score(to);
+            double systemLL = Multinomial.likelihoodsSum(scoreF, scoreT);
+            bn.removeEdge(from, to);
+            if (!bn.pathExists(from, to)) {
+                bn.addEdge(to, from);
+                double scoreFRev = bn.score(from);
+                double scoreTRev = bn.score(to);
+                double systemLLRev = Multinomial.likelihoodsSum(scoreFRev, scoreTRev);
+                bn.removeEdge(to, from);
+                bn.addEdge(from, to);
+                if (random.nextDouble() < Math.exp(systemLLRev - systemLL) / 2) {
+                    double scoreRemoved = bn.scoreExcluding(from, to) - ll[to];
+                    removeEdge(from, to, scoreRemoved);
+                    addEdge(to, from, scoreFRev - ll[from]);
+                }
+                return steps == limit;
+            } else {
+                bn.addEdge(from, to);
+            }
+        }
+        return steps == limit;
+    }
+
     public boolean step(long limit) {
         double trll = transitions.likelihood();
         double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
@@ -188,33 +224,7 @@ public class Model {
         double proportions = Math.exp(rmll - all_ll);
 
         if (random.nextDouble() < proportions) {
-            int to = random.nextInt(n);
-            List<Integer> edges = bn.ingoingEdges(to);
-            if (edges.size() == 0) {
-                steps++;
-                return steps == limit;
-            }
-            int from = edges.get(random.nextInt(edges.size()));
-
-            assert from != to;
-
-            if (bn.edgeExists(from, to)) {
-                bn.removeEdge(from, to);
-                if (!bn.pathExists(from, to)) {
-                    double origLL = bn.score(to);
-                    double scoreReversed = bn.scoreIncluding(to, from); // add reversed
-                    bn.addEdge(from, to);
-                    if (random.nextDouble() < Math.min(Math.exp(scoreReversed - origLL) / 2, 1.)) {
-                        double scoreRemoved = bn.scoreExcluding(from, to) - ll[to];
-                        removeEdge(from, to, scoreRemoved);
-                        addEdge(to, from, scoreReversed - ll[from]);
-                    }
-                    return steps == limit;
-                } else {
-                    bn.addEdge(from, to);
-                }
-            }
-            return steps == limit;
+            return reverse(limit);
         }
 
         int node = transitions.randomChoice(random);

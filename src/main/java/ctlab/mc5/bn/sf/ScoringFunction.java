@@ -1,32 +1,80 @@
 package ctlab.mc5.bn.sf;
 
 import ctlab.mc5.bn.Variable;
+import ctlab.mc5.bn.action.Cache;
+import ctlab.mc5.bn.action.HashTable;
+import ctlab.mc5.bn.action.HashTableCache;
 
 import java.util.*;
 
 public abstract class ScoringFunction {
 
+    static class LRUCache {
+        Map<Variable, Map<List<Variable>, Double>> map = new HashMap<>();
+
+        boolean contains(Variable v, List<Variable> parents) {
+            if (map.containsKey(v)) {
+                return map.get(v).containsKey(parents);
+            }
+            return false;
+        }
+
+        void add(Variable v, List<Variable> parents, double res) {
+            if (map.containsKey(v)) {
+                map.get(v).put(parents, res);
+            } else {
+                map.put(v, new HashMap<>(Map.of(parents, res)));
+            }
+        }
+
+        Double get(Variable v, List<Variable> parents) {
+            return map.get(v).get(parents);
+        }
+
+    }
+
     int[] array1;
     int[] array2;
     int[] array3;
     boolean init = false;
+    LRUCache ht;
 
     void init(int n, int len) {
         if (init) return;
         init = true;
-        array1 = new int[len + 1];
-        array2 = new int[len + 1];
-        array3 = new int[n + 1];
+        array1 = new int[len];
+        array2 = new int[len];
+        array3 = new int[n + 2];
+        ht = new LRUCache();
     }
 
     public double score(Variable v, List<Variable> ps, int n) {
         init(n, v.obsNum());
+
+        if (ht.contains(v, ps)) {
+            return ht.get(v, ps);
+        }
+
         int[] parent_cls = v.mapObsNoMem(ps, array1, array3);
 
         int[] all_cls = v.mapObsNoMemAnd(ps, v, array2, array3);
 
-        return score(parent_cls, all_cls, v.cardinality());
+        double val =  score(parent_cls, all_cls, v.cardinality());
+        ht.add(v, ps, val);
+        return val;
     }
+
+//    public double score(Variable v, List<Variable> ps, int n) {
+//
+//        int[] parent_cls = v.mapObs(ps);
+//
+//        List<Variable> vs = new ArrayList<>(ps);
+//        vs.add(v);
+//
+//        int[] all_cls = v.mapObs(vs);
+//
+//        return score(parent_cls, all_cls, v.cardinality());
+//    }
 
     abstract double score(int[] parent_cls, int[] all_cls, int cardinality);
 
