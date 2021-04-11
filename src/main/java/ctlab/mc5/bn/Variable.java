@@ -271,7 +271,6 @@ public class Variable {
     public int[] mapObs(List<Variable> ps) {
         int m = obsNum();
         int[] result = new int[m];
-        Variable[] vs = ps.toArray(new Variable[0]);
         int ps_size = ps.size();
         int[] cds = new int[ps_size + 1];
         for (int i = 0; i < ps_size; i++) {
@@ -284,9 +283,35 @@ public class Variable {
         Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
             selector.reuse();
-            for (Variable p : vs) {
+            for (Variable p : ps) {
                 selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
+
+            result[i] = selector.get();
+        }
+        return result;
+    }
+
+    public int[] mapObsAnd(List<Variable> ps) {
+        int m = obsNum();
+        int[] result = new int[m];
+        int ps_size = ps.size();
+        int[] cds = new int[ps_size + 1 + 1];
+        for (int i = 0; i < ps_size; i++) {
+            cds[i] = ps.get(i).cardinality();
+        }
+        cds[ps_size] = this.cardinality();
+        cds[ps_size + 1] = 1;
+
+        Trie t = new Trie(cds);
+
+        Trie.Selector selector = t.selector();
+        for (int i = 0; i < m; i++) {
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+            }
+            selector.choose(this.discreteValue(orderedObs[i]) - 1);
 
             result[i] = selector.get();
         }

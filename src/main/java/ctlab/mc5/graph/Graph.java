@@ -118,6 +118,10 @@ public class Graph {
         return adj.get(from).size();
     }
 
+    public boolean isSubscribed(int first, int last) {
+        return subscriptions[first][last] != 0;
+    }
+
     private void processPath(Pair<Integer, Integer> meet, int first, int last, int[] parent) {
         Subscription subscription = new Subscription(first, last);
         ++subscriptions[first][last];
@@ -139,13 +143,7 @@ public class Graph {
         }
     }
 
-    public boolean pathExists(int from, int to) {
-        if (!dgraph.isConnected(from, to)) {
-            return false;
-        }
-        if (subscriptions[from][to] > 0) {
-            return true;
-        }
+    public boolean meetAtTheMiddle(int from, int to) {
         // men meet in the middle
         int[] vis = new int[adj.size()];
         int[] parent = new int[adj.size()];
@@ -176,6 +174,16 @@ public class Graph {
             }
         }
         return false;
+    }
+
+    public boolean pathExists(int from, int to) {
+        if (!dgraph.isConnected(from, to)) {
+            return false;
+        }
+        if (subscriptions[from][to] > 0) {
+            return true;
+        }
+        return meetAtTheMiddle(from, to);
     }
 
     public boolean edgeExists(int from, int to) {

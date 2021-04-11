@@ -192,39 +192,13 @@ public class Multinomial {
         }
     }
 
-    private Short tryAction(int pos, boolean check) {
+    private Short tryAction(int pos) {
         lastLL = computeLL.apply(pos);
-        if (!check) {
-            return (short) pos;
-        }
         double ll = beta * lastLL;
         if (Math.log(re.nextDouble()) < ll) {
             return (short) pos;
         } else {
             return null;
-        }
-    }
-
-    private Short tryResolvedAction(int curr, boolean check) {
-        lastLL = computeLL.apply(curr);
-        if (!check) {
-            return (short) curr;
-        }
-        double finalLL = Math.min(beta * lastLL, 0.0) + initLL(curr);
-        if (Math.log(re.nextDouble()) < finalLL - batchMaxLL[curr / batchSize]) {
-            return (short) curr;
-        }
-        return null;
-    }
-
-    public Short tryAnyAction(int curr) {
-        if (!initialized) {
-            return tryAction(curr, true);
-        }
-        if (batchResolved.get(curr / batchSize)) {
-            return tryResolvedAction(curr, true);
-        } else {
-            return tryAction(curr, true);
         }
     }
 
@@ -235,7 +209,7 @@ public class Multinomial {
             do {
                 pos = (short) re.nextInt(n);
             } while (disabledActions.containsKey(pos));
-            Short result = tryAction(pos, false);
+            Short result = tryAction(pos);
             if (hits > (batchSize + mainCacheSize) / 2) {
                 init();
             }
@@ -271,7 +245,7 @@ public class Multinomial {
                 pos = batchSize * node + re.nextInt(batchSize(node));
             } while (disabledActions.containsKey((short) pos));
 
-            Short result = tryAction(pos, false);
+            Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
                 resolveBatch(node);
             }

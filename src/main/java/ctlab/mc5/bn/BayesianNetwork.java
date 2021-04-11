@@ -34,6 +34,10 @@ public class BayesianNetwork {
         this.sf = sf;
     }
 
+    public ScoringFunction getScoringFunction() {
+        return sf;
+    }
+
     public int getID(String name) {
         return names.get(name);
     }
@@ -52,6 +56,10 @@ public class BayesianNetwork {
         sf = bn.sf;
     }
 
+    public boolean isSubscribed(int from , int to) {
+        return g.isSubscribed(from, to);
+    }
+
     public void addEdge(int from, int to) {
         g.addEdge(from, to);
     }
@@ -64,7 +72,7 @@ public class BayesianNetwork {
         return g.getEdgeCount();
     }
 
-    private List<Variable> parentSet(int to) {
+    public List<Variable> parentSet(int to) {
         return g.ingoingEdges(to).stream()
                 .map(x -> variables.get(x))
                 .collect(Collectors.toList());
@@ -143,6 +151,10 @@ public class BayesianNetwork {
 
     public boolean pathExists(int from, int to) {
         return g.pathExists(from, to);
+    }
+
+    public boolean pathRawGraph(int from, int to) {
+        return g.meetAtTheMiddle(from, to);
     }
 
     public List<Integer> ingoingEdges(int to) {

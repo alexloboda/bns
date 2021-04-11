@@ -2,6 +2,7 @@ package ctlab.mc5.mcmc;
 
 import ctlab.mc5.algo.SegmentTree;
 import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
 import ctlab.mc5.mcmc.EdgeList.Edge;
@@ -167,8 +168,8 @@ public class Model {
     private boolean reverse(long limit) {
         int to = random.nextInt(n);
         List<Integer> edges = bn.ingoingEdges(to);
+        steps++;
         if (edges.size() == 0) {
-            steps++;
             return steps == limit;
         }
         int from = edges.get(random.nextInt(edges.size()));
@@ -176,21 +177,30 @@ public class Model {
         assert from != to;
 
         if (bn.edgeExists(from, to)) {
-            double scoreF = bn.score(from);
-            double scoreT = bn.score(to);
-            double systemLL = Multinomial.likelihoodsSum(scoreF, scoreT);
+            if (bn.isSubscribed(from, to)) {
+                return steps == limit;
+            }
+            List<Variable> parentFrom = bn.parentSet(from);
+            List<Variable> parentTo = bn.parentSet(to);
+            Variable fromVar = bn.var(from);
+            Variable toVar = bn.var(to);
+            double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+            double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+            double systemLL = scoreF + scoreT;
             bn.removeEdge(from, to);
-            if (!bn.pathExists(from, to)) {
+            if (!bn.pathRawGraph(from, to)) {
                 bn.addEdge(to, from);
-                double scoreFRev = bn.score(from);
-                double scoreTRev = bn.score(to);
-                double systemLLRev = Multinomial.likelihoodsSum(scoreFRev, scoreTRev);
-                bn.removeEdge(to, from);
-                bn.addEdge(from, to);
-                if (random.nextDouble() < Math.exp(systemLLRev - systemLL) / 2) {
-                    double scoreRemoved = bn.scoreExcluding(from, to) - ll[to];
-                    removeEdge(from, to, scoreRemoved);
-                    addEdge(to, from, scoreFRev - ll[from]);
+                parentTo.remove(fromVar);
+                parentFrom.add(toVar);
+                double scoreFRev = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+                double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+                double systemLLRev = scoreFRev + scoreTRev;
+                if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
+                    updateLL(to, scoreTRev - ll[to]);
+                    updateLL(from, scoreFRev - ll[from]);
+                } else {
+                    bn.removeEdge(to, from);
+                    bn.addEdge(from, to);
                 }
                 return steps == limit;
             } else {
@@ -298,22 +308,28 @@ public class Model {
         updateDistribution(to);
     }
 
+    private void updateLL(int to, double actionLL) {
+        ll[to] += actionLL;
+        loglik += actionLL;
+        updateDistribution(to);
+    }
+
     public static void swapNetworks(Model model, Model other) {
         for (int to = 0; to < model.bn.size(); to++) {
             Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(to));
             Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(to));
-            int finalU = to;
+            final int finalTo = to;
             modelEdges.stream()
                     .filter(x -> !otherModelEdges.contains(x))
                     .forEach(from -> {
-                        model.bn.removeEdge(from, finalU);
-                        other.bn.addEdge(from, finalU);
+                        model.bn.removeEdge(from, finalTo);
+                        other.bn.addEdge(from, finalTo);
                     });
             otherModelEdges.stream()
                     .filter(x -> !modelEdges.contains(x))
                     .forEach(from -> {
-                        model.bn.addEdge(from, finalU);
-                        other.bn.removeEdge(from, finalU);
+                        model.bn.addEdge(from, finalTo);
+                        other.bn.removeEdge(from, finalTo);
                     });
             double ll = model.ll[to];
             model.ll[to] = other.ll[to];

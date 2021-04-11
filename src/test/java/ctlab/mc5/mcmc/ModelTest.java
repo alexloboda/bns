@@ -51,7 +51,7 @@ public class ModelTest {
                     10, 1.0);
             model.setRandomGenerator(sr);
             model.init(true);
-            while (!model.step(100000)) {}
+            while (!model.step(10000)) {}
 
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
