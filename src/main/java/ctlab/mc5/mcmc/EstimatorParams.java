@@ -14,7 +14,7 @@ public interface EstimatorParams {
     int numberOfCachedStates();
     @Option(names = "--batch-size", defaultValue = "100")
     int batchSize();
-    @Option(names = "--cache-size", defaultValue = "25")
+    @Option(names = "--cache-size", defaultValue = "10")
     int mainCacheSize();
     @Option(names = {"-s", "--steps"}, defaultValue = "2000")
     long coldChainSteps();
@@ -22,6 +22,6 @@ public interface EstimatorParams {
     double powerBase();
     @Option(names = {"-d", "--temperature-delta"})
     double deltaT();
-    @Option(names = "--swap-period", defaultValue = "1300")
+    @Option(names = "--swap-period", defaultValue = "10000")
     long swapPeriod();
 }

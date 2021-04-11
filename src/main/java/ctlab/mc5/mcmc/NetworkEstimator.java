@@ -23,7 +23,7 @@ public class NetworkEstimator {
 
     public EdgeList resultsFromCompletedTasks(){
         EdgeList result = new EdgeList();
-        for (Task t: tasks) {
+        for (final Task t: tasks) {
             synchronized (t) {
                 EdgeList res = t.getResult();
                 if (res != null) {

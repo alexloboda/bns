@@ -230,26 +230,39 @@ public class Model {
             return true;
         }
         steps += jump;
+//        System.err.println("jump " + jump);
 
         double proportions = Math.exp(rmll - all_ll);
 
+//        System.err.println("iter");
         if (random.nextDouble() < proportions) {
+//            System.err.println("rev");
             return reverse(limit);
         }
+//        System.err.println("iter1");
 
         int node = transitions.randomChoice(random);
+//        System.err.println("rand");
         Multinomial mult = distributions.get(node);
+//        System.err.println("dist");
         Short parent = mult.randomAction();
+//        System.err.println("randact");
         transitions.set(node, mult.logLikelihood());
+//        System.err.println("logll");
         if (parent == null) {
+//            System.err.println("null");
             return steps == limit;
         }
+//        System.err.println("iter2");
+
         if (parent >= node) {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
+//            System.err.println("del");
             removeEdge(parent, node, mult.getLastLL());
         } else {
+//            System.err.println("add");
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
@@ -257,6 +270,8 @@ public class Model {
             }
             addEdge(parent, node, mult.getLastLL());
         }
+//        System.err.println("ite3");
+
         return steps == limit;
     }
 

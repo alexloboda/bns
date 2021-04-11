@@ -27,7 +27,7 @@ public class Solver {
         this.bound = bound;
         this.bn = bayesianNetwork;
         for (int i = 0; i < steps; i++) {
-            System.err.println("step");
+//            System.err.println("step");
             solverStep();
             bayesianNetwork.discretize(100);
 

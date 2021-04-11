@@ -207,6 +207,7 @@ public class Multinomial {
         if (!initialized) {
             short pos;
             do {
+//                System.err.println("aaa1");
                 pos = (short) re.nextInt(n);
             } while (disabledActions.containsKey(pos));
             Short result = tryAction(pos);
@@ -224,29 +225,40 @@ public class Multinomial {
         }
         if (batchResolved.get(node)) {
             int bs = batchSize(node);
+            int iters = 0;
             while (true) {
+                if (iters == 100) {
+                    return null;
+                }
+//                System.err.println("aaa2");
                 int curr;
                 do {
                     curr = re.nextInt(bs) + node * batchSize;
                 } while (disabledActions.containsKey((short) curr));
                 if (cache.contains((short) curr)) {
+//                    System.err.println("contains");
                     continue;
                 }
                 lastLL = computeLL.apply(curr);
                 double finalLL = Math.min(beta * lastLL, 0.0) + initLL(curr);
-                if (Math.log(re.nextDouble()) < finalLL - batchMaxLL[node]) {
+                double randVal = re.nextDouble();
+                if (Math.log(randVal) < finalLL - batchMaxLL[node]) {
                     return (short) curr;
                 }
+                ++iters;
+//                System.err.println("No ac " + (finalLL - batchMaxLL[node]) + " " + randVal + " " + Math.log(randVal));
             }
         } else {
             batchHits[node]++;
             int pos;
             do {
+//                System.err.println("aaa3");
                 pos = batchSize * node + re.nextInt(batchSize(node));
             } while (disabledActions.containsKey((short) pos));
 
             Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
+//                System.err.println("Resolve batch");
                 resolveBatch(node);
             }
 

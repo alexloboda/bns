@@ -19,7 +19,7 @@ public abstract class ScoringFunction {
             }
         }
 
-        synchronized void add(Variable v, Set<Variable> parents, double res) {
+        void add(Variable v, Set<Variable> parents, double res) {
             synchronized (map) {
                 if (map.containsKey(v)) {
                     map.get(v).put(new HashSet<>(parents), res);
@@ -66,6 +66,5 @@ public abstract class ScoringFunction {
             default:
                 throw new IllegalArgumentException("Unknown scoring function: " + parts[0]);
         }
-
     }
 }
