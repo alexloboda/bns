@@ -34,21 +34,21 @@ public class MetaModel {
                 return models.get(0).edgeList();
             }
 
-            int i = random.nextInt(models.size());
-            int j = random.nextInt(models.size() - 1);
-            if (j >= i) {
-                ++j;
-            }
+//            int i = random.nextInt(models.size());
+//            int j = random.nextInt(models.size() - 1);
+//            if (j >= i) {
+//                ++j;
+//            }
+//
+//            double iLL = models.get(i).logLikelihood();
+//            double jLL = models.get(j).logLikelihood();
+//            double iBeta = models.get(i).beta();
+//            double jBeta = models.get(j).beta();
 
-            double iLL = models.get(i).logLikelihood();
-            double jLL = models.get(j).logLikelihood();
-            double iBeta = models.get(i).beta();
-            double jBeta = models.get(j).beta();
-
-            double acceptLL = iBeta * (jLL - iLL) + jBeta * (iLL - jLL);
-            if (Math.log(random.nextDouble()) < acceptLL) {
-                Model.swapNetworks(models.get(i), models.get(j));
-            }
+//            double acceptLL = iBeta * (jLL - iLL) + jBeta * (iLL - jLL);
+//            if (Math.log(random.nextDouble()) < acceptLL) {
+//                Model.swapNetworks(models.get(i), models.get(j));
+//            }
         }
     }
 }

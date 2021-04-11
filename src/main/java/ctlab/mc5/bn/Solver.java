@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Solver {
@@ -42,7 +43,7 @@ public class Solver {
             for (int i = 0; i < bn.size(); i++) {
                 List<Record> records = new ArrayList<>();
                 List<Integer> vars = new ArrayList<>();
-                double ub = sf.score(bn.var(i), new ArrayList<>(), bn.size());
+                double ub = sf.score(bn.var(i), Set.of(), bn.size());
                 records.add(new Record(ub));
                 rec(i, 0, vars, records);
 
@@ -96,7 +97,7 @@ public class Solver {
         }
         if (bound.edgeExists(j, i)) {
             vars.add(j);
-            double score = sf.score(bn.var(i), vars.stream().map(x -> bn.var(x)).collect(Collectors.toList()), bn.size());
+            double score = sf.score(bn.var(i), vars.stream().map(x -> bn.var(x)).collect(Collectors.toSet()), bn.size());
             Record r = new Record(score);
             vars.forEach(r::addParent);
             rs.add(r);

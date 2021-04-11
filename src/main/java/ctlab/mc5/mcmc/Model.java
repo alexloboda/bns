@@ -180,8 +180,8 @@ public class Model {
             if (bn.isSubscribed(from, to)) {
                 return steps == limit;
             }
-            List<Variable> parentFrom = bn.parentSet(from);
-            List<Variable> parentTo = bn.parentSet(to);
+            Set<Variable> parentFrom = bn.parentSet(from);
+            Set<Variable> parentTo = bn.parentSet(to);
             Variable fromVar = bn.var(from);
             Variable toVar = bn.var(to);
             double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());

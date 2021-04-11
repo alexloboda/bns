@@ -1,9 +1,6 @@
 package ctlab.mc5.bn.sf;
 
 import ctlab.mc5.bn.Variable;
-import ctlab.mc5.bn.action.Cache;
-import ctlab.mc5.bn.action.HashTable;
-import ctlab.mc5.bn.action.HashTableCache;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,25 +8,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ScoringFunction {
 
     static class LRUCache {
-        Map<Variable, Map<List<Variable>, Double>> map = new ConcurrentHashMap<>();
+        final Map<Variable, Map<Set<Variable>, Double>> map = new HashMap<>();
 
-        boolean contains(Variable v, List<Variable> parents) {
-            if (map.containsKey(v)) {
-                return map.get(v).containsKey(parents);
-            }
-            return false;
-        }
-
-        void add(Variable v, List<Variable> parents, double res) {
-            if (map.containsKey(v)) {
-                map.get(v).put(parents, res);
-            } else {
-                map.put(v, new ConcurrentHashMap<>(Map.of(parents, res)));
+        Double get(Variable v, Set<Variable> parents) {
+            synchronized (map) {
+                if (map.containsKey(v)) {
+                    return map.get(v).get(parents);
+                }
+                return null;
             }
         }
 
-        Double get(Variable v, List<Variable> parents) {
-            return map.get(v).get(parents);
+        synchronized void add(Variable v, Set<Variable> parents, double res) {
+            synchronized (map) {
+                if (map.containsKey(v)) {
+                    map.get(v).put(new HashSet<>(parents), res);
+                } else {
+                    map.put(v, new HashMap<>(Map.of(new HashSet<>(parents), res)));
+                }
+            }
         }
     }
 
@@ -39,9 +36,10 @@ public abstract class ScoringFunction {
         ht = new LRUCache();
     }
 
-    public double score(Variable v, List<Variable> ps, int n) {
-        if (ht.contains(v, ps)) {
-            return ht.get(v, ps);
+    public double score(Variable v, Set<Variable> ps, int n) {
+        Double resCache = ht.get(v, ps);
+        if (resCache != null) {
+            return resCache;
         }
 
         int[] parent_cls = v.mapObs(ps);

@@ -4,6 +4,7 @@ import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -13,6 +14,8 @@ public class BayesianNetwork {
     private Graph g;
     private ScoringFunction sf;
     private Map<String, Integer> names;
+    private IngoingCache cache;
+
 
     public BayesianNetwork(List<Variable> variables) {
         this(variables, null);
@@ -28,6 +31,7 @@ public class BayesianNetwork {
             names.put(this.variables.get(i).getName(), i);
         }
         this.sf = sf;
+        this.cache = new IngoingCache();
     }
 
     public void setScoringFunction(ScoringFunction sf) {
@@ -54,35 +58,72 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
         sf = bn.sf;
+        cache = new IngoingCache(bn.cache);
     }
 
-    public boolean isSubscribed(int from , int to) {
+    static class IngoingCache {
+        Map<Integer, LinkedHashSet<Variable>> map;
+
+        IngoingCache() {
+            map = new ConcurrentHashMap<>();
+        }
+
+        IngoingCache(IngoingCache cache) {
+            map = new ConcurrentHashMap<>();
+            map.putAll(cache.map);
+            for (Map.Entry<Integer, LinkedHashSet<Variable>> elem : cache.map.entrySet()) {
+                map.put(elem.getKey(), new LinkedHashSet<>(elem.getValue()));
+            }
+        }
+
+        void add(int to, Variable v) {
+            if (!map.containsKey(to)) {
+                map.put(to, new LinkedHashSet<>());
+            }
+            assert !map.get(to).contains(v);
+            map.get(to).add(v);
+        }
+
+        void rem(int to, Variable v) {
+            assert map.containsKey(to);
+            map.get(to).remove(v);
+        }
+
+        Set<Variable> get(int to) {
+            if (!map.containsKey(to)) {
+                map.put(to, new LinkedHashSet<>());
+            }
+            return map.get(to);
+        }
+    }
+
+    public boolean isSubscribed(int from, int to) {
         return g.isSubscribed(from, to);
     }
 
     public void addEdge(int from, int to) {
         g.addEdge(from, to);
+        cache.add(to, var(from));
     }
 
     public void removeEdge(int from, int to) {
         g.removeEdge(from, to);
+        cache.rem(to, var(from));
     }
 
     public int getEdgeCount() {
         return g.getEdgeCount();
     }
 
-    public List<Variable> parentSet(int to) {
-        return g.ingoingEdges(to).stream()
-                .map(x -> variables.get(x))
-                .collect(Collectors.toList());
+    public Set<Variable> parentSet(int to) {
+        return cache.get(to);
     }
 
     private void discretizationStep() {
         List<Integer> order = g.topSort();
         for (int v : order) {
             Variable var = variables.get(v);
-            List<Variable> ps = parentSet(v);
+            Set<Variable> ps = parentSet(v);
             List<Variable> cs = g.outgoingEdges(v).stream()
                     .map(x -> variables.get(x))
                     .collect(Collectors.toList());
@@ -93,7 +134,7 @@ public class BayesianNetwork {
                             .filter(y -> !y.equals(var))
                             .collect(Collectors.toList()))
                     .collect(Collectors.toList());
-            var.discretize(ps, cs, ss);
+            var.discretize(new ArrayList<>(ps), cs, ss);
         }
     }
 
@@ -120,17 +161,22 @@ public class BayesianNetwork {
     }
 
     public double scoreIncluding(int from, int to) {
-        List<Integer> ps = g.ingoingEdges(to);
-        assert !ps.contains(from);
-        ps.add(from);
-        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()), variables.size());
+        Set<Variable> parents = cache.get(to);
+        assert !parents.contains(var(from));
+
+        parents.add(var(from));
+        double val = sf.score(variables.get(to), parents, variables.size());
+        parents.remove(var(from));
+        return val;
     }
 
     public double scoreExcluding(int from, int to) {
-        List<Integer> ps = g.ingoingEdges(to);
-        assert ps.contains(from);
-        ps.remove((Integer) from); // removing the element with this value ps.remove(from) is illegal
-        return sf.score(variables.get(to), ps.stream().map(x -> variables.get(x)).collect(Collectors.toList()), variables.size());
+        Set<Variable> parents = cache.get(to);
+        assert parents.contains(var(from));
+        parents.remove(var(from));
+        double val = sf.score(variables.get(to), parents, variables.size());
+        parents.add(var(from));
+        return val;
     }
 
     public void clearEdges() {
@@ -155,6 +201,10 @@ public class BayesianNetwork {
 
     public boolean pathRawGraph(int from, int to) {
         return g.meetAtTheMiddle(from, to);
+    }
+
+    public int getDegree(int to) {
+        return cache.get(to).size();
     }
 
     public List<Integer> ingoingEdges(int to) {
@@ -194,27 +244,5 @@ public class BayesianNetwork {
         }
         variables = newList;
         return perm;
-    }
-
-    public boolean canBeVShape(int v, int u) {
-        if (g.edgeExists(v, u)) {
-            /*
-             * if we have another edge (x,u), x != v
-             * then (v,u) and (x,u) make up a V-shape,
-             * breaking equivalence
-             */
-            if (g.inDegree(u) > 1) {
-                return true;
-            }
-            /*
-             * if we have another an edge (x,v),
-             * then if (v,u) reversed (u,v) and (x,v) make up a V-shape,
-             * breaking equivalence
-             */
-            if (g.inDegree(v) > 0) {
-                return true;
-            }
-        }
-        return false;
     }
 }

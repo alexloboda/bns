@@ -239,8 +239,8 @@ public class Variable {
         List<Variable> spouse_and_child = new ArrayList<>(ss);
         spouse_and_child.add(child);
 
-        int[] spouse_child_mapping = mapObs(spouse_and_child);
-        int[] spouse_mapping = mapObs(ss);
+        int[] spouse_child_mapping = mapObs(new LinkedHashSet<>(spouse_and_child));
+        int[] spouse_mapping = mapObs(new LinkedHashSet<>(ss));
 
         int num_sc_classes = numberOfClasses(spouse_child_mapping);
         int num_spouse_classes = numberOfClasses(spouse_mapping);
@@ -268,13 +268,15 @@ public class Variable {
         }
     }
 
-    public int[] mapObs(List<Variable> ps) {
+    public int[] mapObs(Set<Variable> ps) {
         int m = obsNum();
         int[] result = new int[m];
         int ps_size = ps.size();
         int[] cds = new int[ps_size + 1];
-        for (int i = 0; i < ps_size; i++) {
-            cds[i] = ps.get(i).cardinality();
+        int i1 = 0;
+        for (Variable p : ps) {
+            cds[i1] = p.cardinality();
+            i1++;
         }
         cds[ps_size] = 1;
 
@@ -292,13 +294,15 @@ public class Variable {
         return result;
     }
 
-    public int[] mapObsAnd(List<Variable> ps) {
+    public int[] mapObsAnd(Set<Variable> ps) {
         int m = obsNum();
         int[] result = new int[m];
         int ps_size = ps.size();
         int[] cds = new int[ps_size + 1 + 1];
-        for (int i = 0; i < ps_size; i++) {
-            cds[i] = ps.get(i).cardinality();
+        int i1 = 0 ;
+        for (Variable p : ps) {
+            cds[i1] = p.cardinality();
+            i1++;
         }
         cds[ps_size] = this.cardinality();
         cds[ps_size + 1] = 1;
@@ -316,28 +320,6 @@ public class Variable {
             result[i] = selector.get();
         }
         return result;
-    }
-
-    public int[] mapObsNoMem(List<Variable> ps, int[] arrOut, int[] arrTmp) {
-        int m = obsNum();
-        int ps_size = ps.size();
-        for (int i = 0; i < ps_size; i++) {
-            arrTmp[i] = ps.get(i).cardinality();
-        }
-        arrTmp[ps_size] = 1;
-
-        Trie t = new Trie(arrTmp);
-
-        Trie.Selector selector = t.selector();
-        for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
-            }
-
-            arrOut[i] = selector.get();
-        }
-        return arrOut;
     }
 
     public int[] mapObsNoMemAnd(List<Variable> ps, Variable extra, int[] arrOut, int[] arrTmp) {
@@ -369,7 +351,7 @@ public class Variable {
         double[][] result = new double[n][n];
         double[] combinations = new double[n];
 
-        int[] mapped_obs = mapObs(ps);
+        int[] mapped_obs = mapObs(new LinkedHashSet<>(ps));
         int num_classes = Arrays.stream(mapped_obs)
                 .max()
                 .getAsInt() + 1;
@@ -436,10 +418,6 @@ public class Variable {
         return discrete[obs];
     }
 
-    boolean equals(Variable v) {
-        return v != null && name.equals(v.name);
-    }
-
     public List<Double> discretizationEdges() {
         return Collections.unmodifiableList(edges);
     }
@@ -453,6 +431,19 @@ public class Variable {
         Collections.sort(idx);
         this.edges = idx.stream().map(x -> edges[x]).collect(Collectors.toList());
         writeDiscretization();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Variable variable = (Variable) o;
+        return name.equals(variable.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 
     public enum DiscretizationPrior {

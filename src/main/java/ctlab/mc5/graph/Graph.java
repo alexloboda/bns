@@ -1,8 +1,10 @@
 package ctlab.mc5.graph;
 
+import ctlab.mc5.bn.Variable;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -191,6 +193,7 @@ public class Graph {
     }
 
     public void addEdge(int from, int to) {
+        assert edges[from][to] == null;
         edges[from][to] = new Edge(from, to, adj.get(from).size(), radj.get(to).size());
         adj.get(from).add(edges[from][to]);
         radj.get(to).add(edges[from][to]);

@@ -155,7 +155,7 @@ public class Multinomial {
 
     public double logLikelihood() {
         if (!initialized) {
-            int edges = bn.ingoingEdges(v).size();
+            int edges = bn.getDegree(v);
             return likelihoodsSum(Math.log(n - disabledActions.size() - edges) + initialLL, Math.log(edges) + initialLLDel);
         } else {
             return actions.likelihood();
