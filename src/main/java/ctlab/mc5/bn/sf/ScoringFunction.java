@@ -24,7 +24,9 @@ public abstract class ScoringFunction {
                 if (map.containsKey(v)) {
                     map.get(v).put(new HashSet<>(parents), res);
                 } else {
-                    map.put(v, new HashMap<>(Map.of(new HashSet<>(parents), res)));
+                    Map<Set<Variable>, Double> mapik = new HashMap<>();
+                    mapik.put(new HashSet<>(parents), res);
+                    map.put(v, mapik);
                 }
             }
         }

@@ -8,10 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Solver {
@@ -43,7 +40,7 @@ public class Solver {
             for (int i = 0; i < bn.size(); i++) {
                 List<Record> records = new ArrayList<>();
                 List<Integer> vars = new ArrayList<>();
-                double ub = sf.score(bn.var(i), Set.of(), bn.size());
+                double ub = sf.score(bn.var(i), new LinkedHashSet<>(), bn.size());
                 records.add(new Record(ub));
                 rec(i, 0, vars, records);
 
