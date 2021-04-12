@@ -31,7 +31,8 @@ public class BayesianNetwork {
             names.put(this.variables.get(i).getName(), i);
         }
         this.sf = sf;
-        this.cache = new IngoingCache();
+        sf.init(g.size());
+        this.cache = new IngoingCache(g.size());
     }
 
     public void setScoringFunction(ScoringFunction sf) {
@@ -58,33 +59,37 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
         sf = bn.sf;
-        cache = new IngoingCache();
+        cache = new IngoingCache(bn.cache);
     }
 
     static class IngoingCache {
-        Map<Integer, LinkedHashSet<Variable>> map;
+        ArrayList<LinkedHashSet<Variable>> map;
 
-        IngoingCache() {
-            map = new HashMap<>();
+        IngoingCache(int n) {
+            map = new ArrayList<>();
+            for (int i = 0; i < n; ++i) {
+                map.add(new LinkedHashSet<>());
+            }
+        }
+
+        IngoingCache(IngoingCache other) {
+            map = new ArrayList<>();
+            for (int i = 0; i < other.map.size(); ++i) {
+                map.add(new LinkedHashSet<>(other.map.get(i)));
+            }
         }
 
         void add(int to, Variable v) {
-            if (!map.containsKey(to)) {
-                map.put(to, new LinkedHashSet<>());
-            }
             assert !map.get(to).contains(v);
             map.get(to).add(v);
         }
 
         void rem(int to, Variable v) {
-            assert map.containsKey(to);
+            assert map.get(to).contains(v);
             map.get(to).remove(v);
         }
 
         Set<Variable> get(int to) {
-            if (!map.containsKey(to)) {
-                map.put(to, new LinkedHashSet<>());
-            }
             return map.get(to);
         }
     }
@@ -151,7 +156,7 @@ public class BayesianNetwork {
     public double score(int to) {
 //        Set<Variable> setik = g.ingoingEdges(to).stream().map(this::var).collect(Collectors.toCollection(LinkedHashSet::new));
 //        assert(setik.equals(parentSet(to)));
-        return sf.score(variables.get(to), parentSet(to), variables.size());
+        return sf.score(var(to), parentSet(to), variables.size());
     }
 
     public double scoreIncluding(int from, int to) {
@@ -159,7 +164,7 @@ public class BayesianNetwork {
         assert !parents.contains(var(from));
 
         parents.add(var(from));
-        double val = sf.score(variables.get(to), parents, variables.size());
+        double val = sf.score(var(to), parents, variables.size());
         parents.remove(var(from));
         return val;
     }
@@ -168,7 +173,7 @@ public class BayesianNetwork {
         Set<Variable> parents = cache.get(to);
         assert parents.contains(var(from));
         parents.remove(var(from));
-        double val = sf.score(variables.get(to), parents, variables.size());
+        double val = sf.score(var(to), parents, variables.size());
         parents.add(var(from));
         return val;
     }

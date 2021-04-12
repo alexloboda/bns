@@ -48,7 +48,7 @@ public class Main {
 
             for (int i = 0; i < n; i++) {
                 res.add(new Variable(names.get(i), data.get(i), params.defaultCls(),
-                        params.discPrior()));
+                        params.discPrior(), i));
             }
         }
 

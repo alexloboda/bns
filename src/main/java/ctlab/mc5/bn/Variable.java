@@ -24,6 +24,8 @@ public class Variable {
     private int lb;
     private int ub;
 
+    private int number;
+
     public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
         this.ub = ub;
@@ -36,7 +38,8 @@ public class Variable {
         return name;
     }
 
-    public Variable(String name, List<Double> data, int discClasses, DiscretizationPrior prior) {
+    public Variable(String name, List<Double> data, int discClasses, DiscretizationPrior prior, int number) {
+        this.number = number;
         random = ThreadLocalRandom.current();
         this.name = stripName(name);
         this.data = new ArrayList<>(data);
@@ -131,6 +134,7 @@ public class Variable {
         this.ub = v.ub;
         this.priors = v.priors;
         random = ThreadLocalRandom.current();
+        number = v.number;
     }
 
     void setLF(LogFactorial lf) {
@@ -299,7 +303,7 @@ public class Variable {
         int[] result = new int[m];
         int ps_size = ps.size();
         int[] cds = new int[ps_size + 1 + 1];
-        int i1 = 0 ;
+        int i1 = 0;
         for (Variable p : ps) {
             cds[i1] = p.cardinality();
             i1++;
@@ -391,6 +395,10 @@ public class Variable {
 
     public int obsNum() {
         return data.size();
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     void initial(int num_classes) {
