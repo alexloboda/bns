@@ -207,7 +207,6 @@ public class Multinomial {
         if (!initialized) {
             short pos;
             do {
-//                System.err.println("aaa1");
                 pos = (short) re.nextInt(n);
             } while (disabledActions.containsKey(pos));
             Short result = tryAction(pos);
@@ -227,16 +226,15 @@ public class Multinomial {
             int bs = batchSize(node);
             int iters = 0;
             while (true) {
-                if (iters == 100) {
+                if (iters == 4 * batchSize) {
+                    System.out.println("To many iterations, skipping");
                     return null;
                 }
-//                System.err.println("aaa2");
                 int curr;
                 do {
                     curr = re.nextInt(bs) + node * batchSize;
                 } while (disabledActions.containsKey((short) curr));
                 if (cache.contains((short) curr)) {
-//                    System.err.println("contains");
                     continue;
                 }
                 lastLL = computeLL.apply(curr);
@@ -246,7 +244,6 @@ public class Multinomial {
                     return (short) curr;
                 }
                 ++iters;
-//                System.err.println("No ac " + (finalLL - batchMaxLL[node]) + " " + randVal + " " + Math.log(randVal));
             }
         } else {
             batchHits[node]++;

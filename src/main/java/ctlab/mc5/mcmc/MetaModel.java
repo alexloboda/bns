@@ -32,6 +32,9 @@ public class MetaModel {
 
 
             if (targetSteps == coldChainSteps) {
+                if (Math.abs(models.get(0).computeLogLikelihood() - models.get(0).logLikelihood()) >= 0.1) {
+                    throw new IllegalStateException("lls dont match");
+                }
                 return models.get(0).edgeList();
             }
 
