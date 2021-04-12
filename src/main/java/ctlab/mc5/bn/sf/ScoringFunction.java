@@ -22,10 +22,10 @@ public abstract class ScoringFunction {
         void add(Variable v, Set<Variable> parents, double res) {
             synchronized (map) {
                 if (map.containsKey(v)) {
-                    map.get(v).put(new HashSet<>(parents), res);
+                    map.get(v).put(new LinkedHashSet<>(parents), res);
                 } else {
                     Map<Set<Variable>, Double> mapik = new HashMap<>();
-                    mapik.put(new HashSet<>(parents), res);
+                    mapik.put(new LinkedHashSet<>(parents), res);
                     map.put(v, mapik);
                 }
             }
@@ -41,6 +41,12 @@ public abstract class ScoringFunction {
     public double score(Variable v, Set<Variable> ps, int n) {
         Double resCache = ht.get(v, ps);
         if (resCache != null) {
+//            int[] parent_cls = v.mapObs(ps);
+//
+//            int[] all_cls = v.mapObsAnd(ps);
+//
+//            double res = score(parent_cls, all_cls, v.cardinality());
+//            assert res == resCache;
             return resCache;
         }
 

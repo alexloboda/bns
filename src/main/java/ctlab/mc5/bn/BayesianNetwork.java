@@ -58,22 +58,14 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
         sf = bn.sf;
-        cache = new IngoingCache(bn.cache);
+        cache = new IngoingCache();
     }
 
     static class IngoingCache {
         Map<Integer, LinkedHashSet<Variable>> map;
 
         IngoingCache() {
-            map = new ConcurrentHashMap<>();
-        }
-
-        IngoingCache(IngoingCache cache) {
-            map = new ConcurrentHashMap<>();
-            map.putAll(cache.map);
-            for (Map.Entry<Integer, LinkedHashSet<Variable>> elem : cache.map.entrySet()) {
-                map.put(elem.getKey(), new LinkedHashSet<>(elem.getValue()));
-            }
+            map = new HashMap<>();
         }
 
         void add(int to, Variable v) {
@@ -157,6 +149,8 @@ public class BayesianNetwork {
     }
 
     public double score(int to) {
+//        Set<Variable> setik = g.ingoingEdges(to).stream().map(this::var).collect(Collectors.toCollection(LinkedHashSet::new));
+//        assert(setik.equals(parentSet(to)));
         return sf.score(variables.get(to), parentSet(to), variables.size());
     }
 
