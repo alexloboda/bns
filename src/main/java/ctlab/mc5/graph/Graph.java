@@ -20,7 +20,12 @@ public class Graph {
     private DynamicGraph dgraph;
     private BiConsumer<Integer, Integer> noPathSupportCallback;
 
+    private Map<Edge, Integer> edgesHelper;
+    private List<Edge> allEdges;
+    private Random random;
+
     public Graph(int n) {
+        random = new Random();
         adj = new ArrayList<>();
         radj = new ArrayList<>();
         dgraph = new DynamicGraph(n);
@@ -34,6 +39,8 @@ public class Graph {
         edges = new Edge[n][n];
         subscriptions = new int[n][n];
         edgeCount = 0;
+        edgesHelper = new HashMap<>();
+        allEdges = new ArrayList<>();
     }
 
     public void setCallback(BiConsumer<Integer, Integer> callback) {
@@ -48,6 +55,12 @@ public class Graph {
             }
         }
         edgeCount = g.edgeCount;
+        edgesHelper = new HashMap<>(g.edgesHelper);
+        allEdges = new ArrayList<>(g.allEdges);
+    }
+
+    public Edge randomEdge() {
+        return allEdges.get(random.nextInt(allEdges.size()));
     }
 
     private Pair<Integer, Integer> step(Queue<Integer> q, int[] vis, boolean[] player, int[] parent) {
@@ -106,10 +119,10 @@ public class Graph {
 
     public List<Integer> ingoingEdges(int to) {
         List<Integer> ingoing = new ArrayList<>(radj.get(to).size());
-        for (Edge e: radj.get(to)) {
+        for (Edge e : radj.get(to)) {
             ingoing.add(e.from);
         }
-       return ingoing;
+        return ingoing;
     }
 
     public List<Integer> outgoingEdges(int from) {
@@ -195,8 +208,13 @@ public class Graph {
     public void addEdge(int from, int to) {
         assert edges[from][to] == null;
         edges[from][to] = new Edge(from, to, adj.get(from).size(), radj.get(to).size());
-        adj.get(from).add(edges[from][to]);
-        radj.get(to).add(edges[from][to]);
+
+        Edge e = edges[from][to];
+        allEdges.add(e);
+        edgesHelper.put(e, allEdges.size() - 1);
+
+        adj.get(from).add(e);
+        radj.get(to).add(e);
         DynamicGraph.EdgeToken token = dgraph.add(from, to);
         assert token != null;
 
@@ -212,6 +230,14 @@ public class Graph {
 
     public void removeEdge(int from, int to) {
         Edge e = edges[from][to];
+
+        int iterator = edgesHelper.get(e);
+        Edge tmp = allEdges.get(allEdges.size() - 1);
+        allEdges.set(allEdges.size() - 1, allEdges.get(iterator));
+        allEdges.set(iterator, tmp);
+        allEdges.remove(allEdges.size() - 1);
+        edgesHelper.put(tmp, iterator);
+
         e.unsubscribe();
         List<Edge> nei = adj.get(from);
         List<Edge> rnei = radj.get(to);
@@ -263,7 +289,7 @@ public class Graph {
             if (noPathSupportCallback != null) {
                 noPathSupportCallback.accept(v, u);
             }
-            for (LinkedList.Entry ref: backRefs) {
+            for (LinkedList.Entry ref : backRefs) {
                 ref.remove();
             }
         }
@@ -293,7 +319,7 @@ public class Graph {
                 subscriptions.add(curr.subscription());
                 curr = curr.right;
             } while (curr != head);
-            for (Subscription s: subscriptions) {
+            for (Subscription s : subscriptions) {
                 s.processDeletion();
             }
         }
@@ -350,6 +376,27 @@ public class Graph {
 
         void unsubscribe() {
             subscriptions.removeAll();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Edge edge = (Edge) o;
+            return from == edge.from && to == edge.to;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to);
+        }
+
+        public int getFrom() {
+            return from;
+        }
+
+        public int getTo() {
+            return to;
         }
     }
 }

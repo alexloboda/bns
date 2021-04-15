@@ -5,6 +5,7 @@ import ctlab.mc5.bn.BayesianNetwork;
 import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
+import ctlab.mc5.graph.Graph;
 import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
 import org.apache.commons.math3.util.Pair;
@@ -35,7 +36,6 @@ public class Model {
     private boolean reversedState = false;
     private final double initLL;
     private final double initLLDel;
-//    private int[] stats;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -51,7 +51,6 @@ public class Model {
         this.initLL = -Math.log(n * (n - 1));
         this.initLLDel = initLL - Math.log(2);
         setRandomGenerator(new SplittableRandom());
-//        stats = new int[10];
     }
 
     public void setRandomGenerator(SplittableRandom re) {
@@ -168,52 +167,40 @@ public class Model {
     }
 
     private boolean reverse(long limit) {
-        int to = random.nextInt(n);
-        List<Integer> edges = bn.ingoingEdges(to);
         steps++;
-        if (edges.size() == 0) {
-//            stats[5]++;
+        Graph.Edge edge = bn.randomEdge();
+        int from = edge.getFrom();
+        int to = edge.getTo();
+
+        if (bn.isSubscribed(from, to)) {
             return steps == limit;
         }
-        int from = edges.get(random.nextInt(edges.size()));
-
-        assert from != to;
-
-        if (bn.edgeExists(from, to)) {
-//            stats[6]++;
-            if (bn.isSubscribed(from, to)) {
-//                stats[7]++;
-                return steps == limit;
-            }
-            Set<Variable> parentFrom = bn.parentSet(from);
-            Set<Variable> parentTo = bn.parentSet(to);
-            Variable fromVar = bn.var(from);
-            Variable toVar = bn.var(to);
-            double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
-            double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
-            double systemLL = scoreF + scoreT;
-            bn.removeEdge(from, to);
-            if (!bn.pathRawGraph(from, to)) {
-//                stats[8]++;
-                bn.addEdge(to, from);
-                parentTo.remove(fromVar);
-                parentFrom.add(toVar);
-                double scoreFRev = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
-                double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
-                double systemLLRev = scoreFRev + scoreTRev;
-                if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
-//                    stats[9]++;
-                    updateLL(to, scoreTRev - ll[to]);
-                    updateLL(from, scoreFRev - ll[from]);
-                } else {
-                    bn.removeEdge(to, from);
-                    bn.addEdge(from, to);
-                }
-                return steps == limit;
+        Set<Variable> parentFrom = bn.parentSet(from);
+        Set<Variable> parentTo = bn.parentSet(to);
+        Variable fromVar = bn.var(from);
+        Variable toVar = bn.var(to);
+        double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+        double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+        double systemLL = scoreF + scoreT;
+        bn.removeEdge(from, to);
+        if (!bn.pathRawGraph(from, to)) {
+            bn.addEdge(to, from);
+            parentTo.remove(fromVar);
+            parentFrom.add(toVar);
+            double scoreFRev = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+            double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+            double systemLLRev = scoreFRev + scoreTRev;
+            if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
+                updateLL(to, scoreTRev - ll[to]);
+                updateLL(from, scoreFRev - ll[from]);
             } else {
+                bn.removeEdge(to, from);
                 bn.addEdge(from, to);
             }
+        } else {
+            bn.addEdge(from, to);
         }
+
         return steps == limit;
     }
 
@@ -241,7 +228,6 @@ public class Model {
         double proportions = Math.exp(rmll - all_ll);
 
         if (random.nextDouble() < proportions) {
-//            stats[0]++;
             return reverse(limit);
         }
 
@@ -250,7 +236,6 @@ public class Model {
         Short parent = mult.randomAction();
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
-//            stats[1]++;
             return steps == limit;
         }
 
@@ -258,16 +243,13 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-//            stats[2]++;
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
-//                stats[3]++;
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
-//            stats[4]++;
             addEdge(parent, node, mult.getLastLL());
         }
 
@@ -280,10 +262,6 @@ public class Model {
     }
 
     public EdgeList edgeList() {
-//        for (int x : stats) {
-//            System.out.print(x + " ");
-//        }
-//        System.out.println();
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
             for (int v : bn.ingoingEdges(u)) {

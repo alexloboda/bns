@@ -2,6 +2,7 @@ package ctlab.mc5.bn;
 
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
+import ctlab.mc5.mcmc.EdgeList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +16,6 @@ public class BayesianNetwork {
     private ScoringFunction sf;
     private Map<String, Integer> names;
     private IngoingCache cache;
-
 
     public BayesianNetwork(List<Variable> variables) {
         this(variables, null);
@@ -106,6 +106,10 @@ public class BayesianNetwork {
     public void removeEdge(int from, int to) {
         g.removeEdge(from, to);
         cache.rem(to, var(from));
+    }
+
+    public Graph.Edge randomEdge(){
+        return g.randomEdge();
     }
 
     public int getEdgeCount() {
