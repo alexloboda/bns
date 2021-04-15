@@ -35,7 +35,7 @@ public class EdgeList {
 
     public List<Edge> edges() {
         List<Edge> ret = new ArrayList<>(edgeList);
-        Collections.sort(ret);
+        Collections.sort(ret, Collections.reverseOrder());
         return ret;
     }
 

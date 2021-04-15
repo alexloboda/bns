@@ -96,7 +96,7 @@ public class Variable {
                     values[k - 1] = lf.value(k) + lf.value(n - k) - lf.value(n);
                     values[k - 1] -= k * Math.log(p) + (n - k) * Math.log(1 - p);
                 }
-                func = (u, v) -> values[v - u + 1];
+                func = (u, v) -> values[u - v];
                 break;
             case EXP:
                 List<Double> W = new ArrayList<>();
