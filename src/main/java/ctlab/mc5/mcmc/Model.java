@@ -5,6 +5,7 @@ import ctlab.mc5.bn.BayesianNetwork;
 import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
+import ctlab.mc5.graph.DynamicGraph;
 import ctlab.mc5.graph.Graph;
 import ctlab.mc5.mcmc.EdgeList.Edge;
 import org.apache.commons.math3.distribution.GeometricDistribution;
@@ -33,7 +34,6 @@ public class Model {
     private SplittableRandom random;
 
     private List<Integer> permutation;
-    private boolean reversedState = false;
     private final double initLL;
     private final double initLLDel;
 
@@ -256,11 +256,6 @@ public class Model {
         return steps == limit;
     }
 
-    private void tryInvert(int v, int u) {
-        removeEdge(v, u, 0);
-        addEdge(u, v, 0);
-    }
-
     public EdgeList edgeList() {
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
@@ -324,8 +319,8 @@ public class Model {
             otherModelEdges.stream()
                     .filter(x -> !modelEdges.contains(x))
                     .forEach(from -> {
-                        model.bn.addEdge(from, finalTo);
                         other.bn.removeEdge(from, finalTo);
+                        model.bn.addEdge(from, finalTo);
                     });
             double ll = model.ll[to];
             model.ll[to] = other.ll[to];
@@ -333,6 +328,9 @@ public class Model {
 
             model.updateDistribution(to);
             other.updateDistribution(to);
+        }
+        for (int i = 0 ; i < model.bn.size(); ++i) {
+            assert model.bn.ingoingEdges(i).stream().map(x -> model.bn.var(x)).collect(Collectors.toSet()).equals(model.bn.parentSet(i));
         }
         double ll = model.loglik;
         model.loglik = other.loglik;

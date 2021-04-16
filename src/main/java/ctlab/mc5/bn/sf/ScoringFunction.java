@@ -21,7 +21,6 @@ public abstract class ScoringFunction {
         }
 
         Double get(int num, Set<Variable> parents) {
-
             final Map<Set<Variable>, Double> curParents = map.get(num);
             synchronized (curParents) {
                 return curParents.get(parents);
@@ -50,6 +49,12 @@ public abstract class ScoringFunction {
     public double score(Variable v, Set<Variable> ps, int n) {
         Double resCache = ht.get(v.getNumber(), ps);
         if (resCache != null) {
+            int[] parent_cls = v.mapObs(ps);
+
+            int[] all_cls = v.mapObsAnd(ps);
+
+            double res = score(parent_cls, all_cls, v.cardinality());
+            assert res == resCache;
             return resCache;
         }
 
