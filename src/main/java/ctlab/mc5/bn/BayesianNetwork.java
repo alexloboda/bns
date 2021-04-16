@@ -2,9 +2,9 @@ package ctlab.mc5.bn;
 
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -62,6 +62,10 @@ public class BayesianNetwork {
         cache = new IngoingCache(bn.cache);
     }
 
+    public Pair<Integer, Integer> randomEdge(SplittableRandom random) {
+        return g.randomEdge(random);
+    }
+
     static class IngoingCache {
         ArrayList<LinkedHashSet<Variable>> map;
 
@@ -116,31 +120,6 @@ public class BayesianNetwork {
         return cache.get(to);
     }
 
-    private void discretizationStep() {
-        List<Integer> order = g.topSort();
-        for (int v : order) {
-            Variable var = variables.get(v);
-            Set<Variable> ps = parentSet(v);
-            List<Variable> cs = g.outgoingEdges(v).stream()
-                    .map(x -> variables.get(x))
-                    .collect(Collectors.toList());
-            List<List<Variable>> ss = g.outgoingEdges(v).stream()
-                    .map(x -> g.ingoingEdges(x))
-                    .map(x -> x.stream()
-                            .map(y -> variables.get(y))
-                            .filter(y -> !y.equals(var))
-                            .collect(Collectors.toList()))
-                    .collect(Collectors.toList());
-            var.discretize(new ArrayList<>(ps), cs, ss);
-        }
-    }
-
-    private List<List<Double>> discretizationPolicy() {
-        return variables.stream()
-                .map(Variable::discretizationEdges)
-                .collect(Collectors.toList());
-    }
-
     public void randomPolicy() {
         variables.forEach(Variable::randomPolicy);
     }
@@ -154,8 +133,6 @@ public class BayesianNetwork {
     }
 
     public double score(int to) {
-//        Set<Variable> setik = g.ingoingEdges(to).stream().map(this::var).collect(Collectors.toCollection(LinkedHashSet::new));
-//        assert(setik.equals(parentSet(to)));
         return sf.score(var(to), parentSet(to), variables.size());
     }
 
@@ -208,26 +185,6 @@ public class BayesianNetwork {
 
     public List<Integer> ingoingEdges(int to) {
         return g.ingoingEdges(to);
-    }
-
-    int discretize(int steps_ub) {
-        List<List<Double>> disc_policy = discretizationPolicy();
-        int ret = -1;
-        for (int i = 0; i < steps_ub; i++) {
-            discretizationStep();
-            List<List<Double>> new_policy = discretizationPolicy();
-            if (disc_policy.equals(new_policy)) {
-                ret = i + 1;
-                break;
-            } else {
-                disc_policy = new_policy;
-            }
-        }
-        int[] cs = new int[observations() + 1];
-        for (Variable v : variables) {
-            cs[v.cardinality()]++;
-        }
-        return ret != -1 ? ret : steps_ub;
     }
 
     public List<Integer> shuffleVariables(Random random) {

@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 public class Graph {
     private List<List<Edge>> adj;
     private List<List<Edge>> radj;
+    private List<Edge> edgelist;
     private Edge[][] edges;
     private int[][] subscriptions;
     private int edgeCount;
@@ -23,6 +24,7 @@ public class Graph {
     public Graph(int n) {
         adj = new ArrayList<>();
         radj = new ArrayList<>();
+        edgelist = new ArrayList<>();
         dgraph = new DynamicGraph(n);
         tokens = new ArrayList<>();
 
@@ -102,6 +104,11 @@ public class Graph {
         }
         out.set(v, ++time);
         return time;
+    }
+
+    public Pair<Integer, Integer> randomEdge(SplittableRandom rd) {
+        Edge e = edgelist.get(rd.nextInt(edgelist.size()));
+        return new Pair<>(e.from, e.to);
     }
 
     public List<Integer> ingoingEdges(int to) {
@@ -194,9 +201,10 @@ public class Graph {
 
     public void addEdge(int from, int to) {
         assert edges[from][to] == null;
-        edges[from][to] = new Edge(from, to, adj.get(from).size(), radj.get(to).size());
+        edges[from][to] = new Edge(from, to, adj.get(from).size(), radj.get(to).size(), edgelist.size());
         adj.get(from).add(edges[from][to]);
         radj.get(to).add(edges[from][to]);
+        edgelist.add(edges[from][to]);
         DynamicGraph.EdgeToken token = dgraph.add(from, to);
         assert token != null;
 
@@ -215,12 +223,19 @@ public class Graph {
         e.unsubscribe();
         List<Edge> nei = adj.get(from);
         List<Edge> rnei = radj.get(to);
+
         Collections.swap(nei, e.pos, nei.size() - 1);
         Collections.swap(rnei, e.rpos, rnei.size() - 1);
+        Collections.swap(edgelist, e.listpos, edgelist.size() - 1);
+
+
         nei.get(e.pos).pos = e.pos;
         rnei.get(e.rpos).rpos = e.rpos;
+        edgelist.get(e.listpos).listpos = e.listpos;
+
         nei.remove(nei.size() - 1);
         rnei.remove(rnei.size() - 1);
+        edgelist.remove(edgelist.size() - 1);
         edges[from][to] = null;
 
         if (to < from) {
@@ -334,13 +349,15 @@ public class Graph {
         private int to;
         private int pos;
         private int rpos;
+        private int listpos;
         private LinkedList subscriptions;
 
-        Edge(int from, int to, int pos, int rpos) {
+        Edge(int from, int to, int pos, int rpos, int listpos) {
             this.from = from;
             this.to = to;
             this.pos = pos;
             this.rpos = rpos;
+            this.listpos = listpos;
             subscriptions = new LinkedList();
         }
 

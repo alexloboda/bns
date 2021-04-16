@@ -28,12 +28,6 @@ interface Parameters {
     @Option(names = "--preranking-limit", defaultValue = "8")
     int prerankingLimit();
 
-    @Option(names = {"-p", "--discretization-prior"}, defaultValue = "MULTINOMIAL")
-    Variable.DiscretizationPrior discPrior();
-
-    @Option(names = "--optimal-bn-runs", defaultValue = "0")
-    int nOptimizer();
-
     @Option(names = "--disc-lb", defaultValue = "3")
     int discLB();
 

@@ -249,14 +249,12 @@ public class Multinomial {
             batchHits[node]++;
             int pos;
             do {
-//                System.err.println("aaa3");
                 pos = batchSize * node + re.nextInt(batchSize(node));
             } while (disabledActions.containsKey((short) pos));
 
             Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
-//                System.err.println("Resolve batch");
-                resolveBatch(node);
+                //resolveBatch(node);
             }
 
             return result;

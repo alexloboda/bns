@@ -32,10 +32,8 @@ public class Model {
     private SplittableRandom random;
 
     private List<Integer> permutation;
-    private boolean reversedState = false;
     private final double initLL;
     private final double initLLDel;
-//    private int[] stats;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -168,14 +166,10 @@ public class Model {
     }
 
     private boolean reverse(long limit) {
-        int to = random.nextInt(n);
-        List<Integer> edges = bn.ingoingEdges(to);
         steps++;
-        if (edges.size() == 0) {
-//            stats[5]++;
-            return steps == limit;
-        }
-        int from = edges.get(random.nextInt(edges.size()));
+        Pair<Integer, Integer> edge = bn.randomEdge(random);
+        int from = edge.getFirst();
+        int to = edge.getSecond();
 
         assert from != to;
 
@@ -226,7 +220,6 @@ public class Model {
         double jump = 0.0;
         double likelihood = Math.exp(all_ll);
         if (likelihood < 1.0) {
-//            GeometricDistribution gd = new GeometricDistribution(likelihood); // takes 22% of all time just to do what is below
             jump = (1 - likelihood) / likelihood; // geometric distribution
         }
         jump += 1.0;
@@ -241,7 +234,6 @@ public class Model {
         double proportions = Math.exp(rmll - all_ll);
 
         if (random.nextDouble() < proportions) {
-//            stats[0]++;
             return reverse(limit);
         }
 
@@ -250,7 +242,6 @@ public class Model {
         Short parent = mult.randomAction();
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
-//            stats[1]++;
             return steps == limit;
         }
 
@@ -258,16 +249,13 @@ public class Model {
             ++parent;
         }
         if (bn.edgeExists(parent, node)) {
-//            stats[2]++;
             removeEdge(parent, node, mult.getLastLL());
         } else {
             if (bn.pathExists(node, parent)) {
-//                stats[3]++;
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
-//            stats[4]++;
             addEdge(parent, node, mult.getLastLL());
         }
 
@@ -280,10 +268,6 @@ public class Model {
     }
 
     public EdgeList edgeList() {
-//        for (int x : stats) {
-//            System.out.print(x + " ");
-//        }
-//        System.out.println();
         EdgeList edges = new EdgeList();
         for (int u = 0; u < bn.size(); u++) {
             for (int v : bn.ingoingEdges(u)) {

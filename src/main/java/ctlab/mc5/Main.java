@@ -1,7 +1,6 @@
 package ctlab.mc5;
 
 import ctlab.mc5.bn.BayesianNetwork;
-import ctlab.mc5.bn.Solver;
 import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.sf.ScoringFunction;
 import ctlab.mc5.graph.Graph;
@@ -47,8 +46,7 @@ public class Main {
             }
 
             for (int i = 0; i < n; i++) {
-                res.add(new Variable(names.get(i), data.get(i), params.defaultCls(),
-                        params.discPrior(), i));
+                res.add(new Variable(names.get(i), data.get(i), params.defaultCls(), i));
             }
         }
 
@@ -73,7 +71,6 @@ public class Main {
     public static void main(String[] args) {
         Main app = new Main();
         CommandLine cmd = new CommandLine(app);
-        cmd.registerConverter(Variable.DiscretizationPrior.class, Variable.DiscretizationPrior::valueOf);
         cmd.registerConverter(ScoringFunction.class, ScoringFunction::parse);
         cmd.addMixin(ESTIMATOR_PARAMS, EstimatorParams.class);
         cmd.addMixin(MAIN_PARAMS, Parameters.class);
@@ -166,11 +163,6 @@ public class Main {
         }
 
         bn = new BayesianNetwork(genes, params.mainSF());
-
-        if (params.nOptimizer() > 0) {
-            Solver solver = new Solver(params.discSF());
-            solver.solve(bn, parseBound(bn), params.nOptimizer());
-        }
 
         bn.clearEdges();
 

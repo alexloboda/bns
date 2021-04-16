@@ -34,9 +34,9 @@ public class ModelTest {
             }
         }
 
-        Variable var1 = new Variable("VAR1", data1, 3, Variable.DiscretizationPrior.UNIFORM, 0);
-        Variable var2 = new Variable("VAR2", data2, 3, Variable.DiscretizationPrior.UNIFORM, 1);
-        Variable var3 = new Variable("VAR3", data3, 3, Variable.DiscretizationPrior.UNIFORM, 2);
+        Variable var1 = new Variable("VAR1", data1, 3, 0);
+        Variable var2 = new Variable("VAR2", data2, 3, 1);
+        Variable var3 = new Variable("VAR3", data3, 3, 2);
 
         BayesianNetwork bn = new BayesianNetwork(Arrays.asList(var1, var2, var3), sf);
         double[][] expectedFs = exactSolve(new BayesianNetwork(bn), 0, 1).getFirst();
