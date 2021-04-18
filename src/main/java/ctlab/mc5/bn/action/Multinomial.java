@@ -15,7 +15,6 @@ public class Multinomial {
     private final short mainCacheSize;
     private int hits;
     private final double initialLL;
-    private final double initialLLDel;
     private boolean initialized;
     private final double beta;
 
@@ -38,11 +37,7 @@ public class Multinomial {
     private double initLL(int action) {
         if (action >= v)
             action++;
-        if (bn.edgeExists(action, v)) {
-            return initialLLDel;
-        } else {
-            return initialLL;
-        }
+        return initialLL;
     }
 
     private int batchSize(int batch) {
@@ -146,7 +141,6 @@ public class Multinomial {
         }
         this.computeLL = computeLL;
         this.initialLL = initialLL;
-        this.initialLLDel = initialLL - Math.log(2);
         this.re = re;
         this.disabledActions = new LinkedHashMap<>();
         this.bn = bn;
@@ -155,15 +149,14 @@ public class Multinomial {
 
     public double logLikelihood() {
         if (!initialized) {
-            int edges = bn.getDegree(v);
-            return likelihoodsSum(Math.log(n - disabledActions.size() - edges) + initialLL, Math.log(edges) + initialLLDel);
+            return Math.log(n - disabledActions.size()) + initialLL;
         } else {
             return actions.likelihood();
         }
     }
 
     private void refreshCacheNode() {
-        actions.set(batchesNum, likelihoodsSum(cache.loglikelihoodAdd() + initialLL, cache.loglikelihoodRem() + initialLLDel));
+        actions.set(batchesNum, cache.loglikelihood() + initialLL);
     }
 
     private void init() {
@@ -211,7 +204,7 @@ public class Multinomial {
             } while (disabledActions.containsKey(pos));
             Short result = tryAction(pos);
             if (hits > (batchSize + mainCacheSize) / 2) {
-                init();
+                //init();
             }
             return result;
         }
@@ -288,12 +281,7 @@ public class Multinomial {
         double finalLL = Math.min(beta * loglik, 0.0) + initLL(action);
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
-            Short other;
-            if (action >= v) {
-                other = cache.add(action, bn.edgeExists( action + 1, v), loglik);
-            } else {
-                other = cache.add(action, bn.edgeExists(action, v), loglik);
-            }
+            Short other = cache.add(action, loglik);
             if (other != null) {
                 if (batch(other) == b) {
                     batchLL = likelihoodsSum(resolveAction(other, null), batchLL);

@@ -2,21 +2,15 @@ package ctlab.mc5.bn.action;
 
 import ctlab.mc5.algo.SegmentTree;
 
-import java.util.BitSet;
-import java.util.Random;
 import java.util.SplittableRandom;
 
-import static ctlab.mc5.bn.action.Multinomial.likelihoodsSum;
-
 public class HashTableCache implements Cache {
-    private SegmentTree addActions;
-    private SegmentTree remActions;
+    private SegmentTree actions;
     private HashTable topActionNodes;
     private Heap topActionsMin;
     private short[] topActions;
     private SplittableRandom re;
     private double ll;
-    private BitSet addRemBitset;
 
     public HashTableCache(short cacheSize, SplittableRandom re, double beta) {
         if (cacheSize == 0) {
@@ -25,10 +19,8 @@ public class HashTableCache implements Cache {
         this.re = re;
         topActionNodes = new HashTable(cacheSize);
         topActions = new short[cacheSize];
-        addActions = new SegmentTree(cacheSize, beta);
-        remActions = new SegmentTree(cacheSize, beta);
+        actions = new SegmentTree(cacheSize, beta);
         topActionsMin = new Heap(cacheSize);
-        addRemBitset = new BitSet(cacheSize);
     }
 
     public double getLastLL() {
@@ -37,12 +29,12 @@ public class HashTableCache implements Cache {
 
     @Override
     public void disable(short action) {
-        addActions.set(topActionNodes.get(action), Float.NEGATIVE_INFINITY);
+        actions.set(topActionNodes.get(action), Float.NEGATIVE_INFINITY);
     }
 
     @Override
     public void reEnable(short action, double ll) {
-        addActions.set(topActionNodes.get(action), ll);
+        actions.set(topActionNodes.get(action), ll);
     }
 
     @Override
@@ -58,41 +50,13 @@ public class HashTableCache implements Cache {
         if (topActions == null) {
             return Float.NEGATIVE_INFINITY;
         }
-        return likelihoodsSum(addActions.likelihood(), remActions.likelihood());
-    }
-
-    @Override
-    public double loglikelihoodAdd() {
-        if (topActions == null) {
-            return Float.NEGATIVE_INFINITY;
-        }
-        return addActions.likelihood();
-    }
-
-    @Override
-    public double loglikelihoodRem() {
-        if (topActions == null) {
-            return Float.NEGATIVE_INFINITY;
-        }
-        return remActions.likelihood();
+        return actions.likelihood();
     }
 
     @Override
     public Short randomAction() {
-
-        double remTotalLL = remActions.likelihood();
-        double addTotalLL = addActions.likelihood();
-
-        double cumulLL = likelihoodsSum(remTotalLL, addTotalLL);
-
-        short node;
-        if (re.nextDouble() < Math.exp(remTotalLL - cumulLL)) {
-            node = (short) remActions.randomChoice(re);
-            ll = remActions.get(node);
-        } else {
-            node = (short) addActions.randomChoice(re);
-            ll = addActions.get(node);
-        }
+        short node = (short)actions.randomChoice(re);
+        ll = actions.get(node);
         return topActions[node];
     }
 
@@ -102,15 +66,11 @@ public class HashTableCache implements Cache {
             return Float.POSITIVE_INFINITY;
         }
         int idx = topActionsMin.min();
-        if (addRemBitset.get(idx)) {
-            return addActions.get(idx);
-        } else {
-            return remActions.get(idx);
-        }
+        return actions.get(idx);
     }
 
     @Override
-    public Short add(short action, boolean type, double ll) {
+    public Short add(short action, double ll) {
         Short ret = null;
         short pos = (short) topActionNodes.size();
         if (topActionNodes.size() == topActions.length) {
@@ -119,12 +79,7 @@ public class HashTableCache implements Cache {
             topActionNodes.remove(topActions[pos]);
         }
         topActions[pos] = action;
-        if (!type) {
-            addActions.set(pos, ll);
-        } else {
-            remActions.set(pos, ll);
-        }
-        addRemBitset.set(pos, !type);
+        actions.set(pos, ll);
         topActionNodes.put(action, pos);
         topActionsMin.add(pos, ll);
         return ret;
@@ -143,11 +98,7 @@ public class HashTableCache implements Cache {
         for (int i = 0; i < topActionNodes.size(); i++) {
             int v = topActions[i];
             int edgeFrom = v >= u ? v + 1 : v;
-            if (addRemBitset.get(i)) {
-                System.out.println(edgeFrom + "->" + u + ": " + addActions.get(i));
-            } else {
-                System.out.println(edgeFrom + "->" + u + ": " + remActions.get(i));
-            }
+            System.out.println(edgeFrom + "->" + u + ": " + actions.get(i));
         }
     }
 }

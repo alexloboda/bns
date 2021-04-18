@@ -6,7 +6,6 @@ import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.action.Multinomial;
 import ctlab.mc5.bn.action.MultinomialFactory;
 import ctlab.mc5.mcmc.EdgeList.Edge;
-import org.apache.commons.math3.distribution.GeometricDistribution;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
@@ -33,7 +32,7 @@ public class Model {
 
     private List<Integer> permutation;
     private final double initLL;
-    private final double initLLDel;
+    private final double reverseLL;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
@@ -46,10 +45,11 @@ public class Model {
         this.multFactory = multFactory;
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
-        this.initLL = -Math.log(n * (n - 1));
-        this.initLLDel = initLL - Math.log(2);
+
+        double reverseProb = 1.0 / ((double)n / 2.0);
+        this.reverseLL = Math.log(reverseProb);
+        this.initLL = Math.log((1.0 - reverseProb) *  (n * (n - 1)));
         setRandomGenerator(new SplittableRandom());
-//        stats = new int[10];
     }
 
     public void setRandomGenerator(SplittableRandom re) {
@@ -167,6 +167,9 @@ public class Model {
 
     private boolean reverse(long limit) {
         steps++;
+        if (bn.getEdgeCount() == 0) {
+            return steps == limit;
+        }
         Pair<Integer, Integer> edge = bn.randomEdge(random);
         int from = edge.getFirst();
         int to = edge.getSecond();
@@ -174,9 +177,7 @@ public class Model {
         assert from != to;
 
         if (bn.edgeExists(from, to)) {
-//            stats[6]++;
             if (bn.isSubscribed(from, to)) {
-//                stats[7]++;
                 return steps == limit;
             }
             Set<Variable> parentFrom = bn.parentSet(from);
@@ -188,7 +189,6 @@ public class Model {
             double systemLL = scoreF + scoreT;
             bn.removeEdge(from, to);
             if (!bn.pathRawGraph(from, to)) {
-//                stats[8]++;
                 bn.addEdge(to, from);
                 parentTo.remove(fromVar);
                 parentFrom.add(toVar);
@@ -196,7 +196,6 @@ public class Model {
                 double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
                 double systemLLRev = scoreFRev + scoreTRev;
                 if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
-//                    stats[9]++;
                     updateLL(to, scoreTRev - ll[to]);
                     updateLL(from, scoreFRev - ll[from]);
                 } else {
@@ -207,23 +206,27 @@ public class Model {
             } else {
                 bn.addEdge(from, to);
             }
+        } else {
+            throw new IllegalStateException("Reversing nonexisting edge");
         }
         return steps == limit;
     }
 
     public boolean step(long limit) {
         double trll = transitions.likelihood();
-        double rmll = Math.log(bn.getEdgeCount()) + initLLDel;
+        double rmll = reverseLL;
 
         double all_ll = Multinomial.likelihoodsSum(trll, rmll);
         assert all_ll <= 0.01;
-        double jump = 0.0;
+        int jump = 0;
+        double geo = 0.0;
         double likelihood = Math.exp(all_ll);
         if (likelihood < 1.0) {
-            jump = (1 - likelihood) / likelihood; // geometric distribution
+            geo = (1 - likelihood) / likelihood; // geometric distribution
         }
+        jump += (int) geo;
         jump += 1.0;
-        if (random.nextDouble() < jump - (int) jump) {
+        if (random.nextDouble() < geo - (int) geo) {
             jump += 1.0;
         }
         if (steps + jump > limit) {
@@ -251,8 +254,8 @@ public class Model {
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
         } else {
-            if (bn.pathExists(node, parent)) {
-                mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
+            if (bn.pathRawGraph(node, parent)) {
+                //mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }
@@ -260,11 +263,6 @@ public class Model {
         }
 
         return steps == limit;
-    }
-
-    private void tryInvert(int v, int u) {
-        removeEdge(v, u, 0);
-        addEdge(u, v, 0);
     }
 
     public EdgeList edgeList() {
