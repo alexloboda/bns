@@ -57,7 +57,7 @@ public class ScaleFreePrior implements PriorDistribution {
     }
 
     public double value() {
-        return loglik;
+        return 0.0;
     }
 
     @Override
