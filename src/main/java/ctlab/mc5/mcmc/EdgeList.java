@@ -7,10 +7,14 @@ public class EdgeList {
     private Map<Integer, Map<Integer, Edge>> edgeMap;
     private int number_merged = 1;
 
-    public EdgeList() {
+    public EdgeList(int count) {
         edgeList = new ArrayList<>();
         edgeMap = new HashMap<>();
-        number_merged = 0;
+        number_merged = count;
+    }
+
+    public int get_number_merged() {
+        return number_merged;
     }
 
     public Edge getEdge(int from, int to) {
@@ -24,9 +28,7 @@ public class EdgeList {
         if (getEdge(edge.v(), edge.u()) != null) {
             throw new IllegalArgumentException();
         }
-        Edge mEdge = new Edge(edge);
-        mEdge.num += number_merged;
-        edgeList.add(mEdge);
+        edgeList.add(edge);
         if (!edgeMap.containsKey(edge.v())) {
             edgeMap.put(edge.v(), new HashMap<>());
         }
@@ -58,29 +60,25 @@ public class EdgeList {
     public static class Edge implements Comparable<Edge> {
         private int v;
         private int u;
-        private int num;
-        private double k;
+        private int count;
 
-        public Edge(int v, int u, int num, double k) {
+        public Edge(int v, int u, int count) {
             this.v = v;
             this.u = u;
-            this.num = num;
-            this.k = k;
+            this.count = count;
         }
 
         public Edge(Edge other) {
             this.v = other.v;
             this.u = other.u;
-            this.num = other.num;
-            this.k = other.k;
+            this.count = other.count;
         }
 
         public void merge(Edge other) {
             if (!equals(other)) {
                 throw new IllegalArgumentException();
             }
-            k += other.k;
-            num += other.num;
+            count += other.count;
         }
 
         public int v() {
@@ -91,12 +89,8 @@ public class EdgeList {
             return u;
         }
 
-        public double p() {
-            return k / num;
-        }
-
-        public double k() {
-            return k;
+        public double p(int number_merged) {
+            return count * 1.0 / number_merged;
         }
 
         @Override
@@ -110,7 +104,7 @@ public class EdgeList {
 
         @Override
         public int compareTo(Edge o) {
-            return Double.compare(k / num, o.k / o.num);
+            return Double.compare(count, o.count);
         }
     }
 }

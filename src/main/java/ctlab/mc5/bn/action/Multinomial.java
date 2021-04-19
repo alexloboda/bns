@@ -245,7 +245,7 @@ public class Multinomial {
 
             Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
-                resolveBatch(node);
+//                resolveBatch(node);
             }
 
             return result;

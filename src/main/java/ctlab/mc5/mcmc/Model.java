@@ -267,10 +267,10 @@ public class Model {
     }
 
     public EdgeList edgeList() {
-        EdgeList edges = new EdgeList();
+        EdgeList edges = new EdgeList(1);
         for (int u = 0; u < bn.size(); u++) {
             for (int v : bn.ingoingEdges(u)) {
-                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1, 1));
+                edges.addEdge(new Edge(permutation.get(v), permutation.get(u), 1));
             }
         }
         return edges;

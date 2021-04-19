@@ -101,7 +101,7 @@ public class Main {
 
     private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
         for (EdgeList.Edge e : edges.edges()) {
-            pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p());
+            pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p(edges.get_number_merged()));
         }
     }
 
@@ -130,6 +130,7 @@ public class Main {
     }
 
     private void printParameters(Parameters params, EstimatorParams estimatorParams) {
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
         System.out.println("Parameters:");
         System.out.println("geneExpressionFile = " + params.geneExpressionFile().getPath());
         if (params.gold() != null)
@@ -216,7 +217,7 @@ public class Main {
                 }
                 EdgeList results = estimator.resultsFromCompletedTasks();
                 for (EdgeList.Edge edge : results.edges()) {
-                    GeneEdge mEdge = new GeneEdge(bn.var(edge.v()).getName(), bn.var(edge.u()).getName(), edge.p());
+                    GeneEdge mEdge = new GeneEdge(bn.var(edge.v()).getName(), bn.var(edge.u()).getName(), edge.p(results.get_number_merged()));
                     edgesMy.add(mEdge);
                     edgesMyList.add(mEdge);
                 }
