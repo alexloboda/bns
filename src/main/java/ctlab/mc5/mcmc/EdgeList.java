@@ -28,11 +28,12 @@ public class EdgeList {
         if (getEdge(edge.v(), edge.u()) != null) {
             throw new IllegalArgumentException();
         }
-        edgeList.add(edge);
+        Edge mEdge = new Edge(edge);
+        edgeList.add(mEdge);
         if (!edgeMap.containsKey(edge.v())) {
             edgeMap.put(edge.v(), new HashMap<>());
         }
-        edgeMap.get(edge.v()).put(edge.u(), edge);
+        edgeMap.get(edge.v()).put(edge.u(), mEdge);
     }
 
     public List<Edge> edges() {
