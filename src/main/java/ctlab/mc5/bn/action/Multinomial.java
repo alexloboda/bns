@@ -35,8 +35,6 @@ public class Multinomial {
     private final int v;
 
     private double initLL(int action) {
-        if (action >= v)
-            action++;
         return initialLL;
     }
 

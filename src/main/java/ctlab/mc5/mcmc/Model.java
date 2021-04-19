@@ -48,7 +48,8 @@ public class Model {
 
         double reverseProb = 1.0 / ((double)n / 2.0);
         this.reverseLL = Math.log(reverseProb);
-        this.initLL = Math.log((1.0 - reverseProb) *  (n * (n - 1)));
+        double totalTransitions = n * (n - 1);
+        this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
     }
 
@@ -207,7 +208,7 @@ public class Model {
                 bn.addEdge(from, to);
             }
         } else {
-            throw new IllegalStateException("Reversing nonexisting edge");
+            throw new IllegalStateException("Reversing non-existing edge");
         }
         return steps == limit;
     }
