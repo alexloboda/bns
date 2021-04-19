@@ -56,10 +56,10 @@ public class Multinomial {
             }
             int b = batch(action);
             if (batchResolved.get(b)) {
-                double finalLL = Math.min(beta * ll, 0.0) + initialLL; // can only be addition
+                double finalLL = Math.min(beta * ll, 0.0) + initialLL;
                 actions.set(b, likelihoodSubtract(actions.get(b), finalLL));
             } else {
-                actions.set(b, likelihoodSubtract(actions.get(b), initialLL)); // can only be addition
+                actions.set(b, likelihoodSubtract(actions.get(b), initialLL));
             }
         }
     }
@@ -90,7 +90,7 @@ public class Multinomial {
                 actions.set(b, batchLL);
                 refreshCacheNode();
             } else {
-                actions.set(b, likelihoodsSum(actions.get(b), initialLL)); // we add only removed edges
+                actions.set(b, likelihoodsSum(actions.get(b), initialLL));
             }
         }
     }
@@ -202,7 +202,7 @@ public class Multinomial {
             } while (disabledActions.containsKey(pos));
             Short result = tryAction(pos);
             if (hits > (batchSize + mainCacheSize) / 2) {
-                //init();
+                init();
             }
             return result;
         }
@@ -245,7 +245,7 @@ public class Multinomial {
 
             Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
-                //resolveBatch(node);
+                resolveBatch(node);
             }
 
             return result;

@@ -44,14 +44,14 @@ public class ModelTest {
         SplittableRandom sr = new SplittableRandom(42);
         int[][] actual = new int[bn.size()][bn.size()];
 
-        int models = 100;
+        int models = 10000;
 
         for (int i = 0; i < models; i++) {
             Model model = new Model(bn, new MultinomialFactory(1, 2),
                     10, 1.0);
             model.setRandomGenerator(sr);
             model.init(true);
-            while (!model.step(10000)) {}
+            while (!model.step(5000)) {}
 
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
@@ -67,8 +67,19 @@ public class ModelTest {
                 if (i == j) {
                     continue;
                 }
+                System.out.print(actual[i][j] / (double)models + " ");
+            }
+            System.out.println("");
+        }
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (i == j) {
+                    continue;
+                }
                 Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-3);
             }
+            System.out.println("\n");
         }
     }
 

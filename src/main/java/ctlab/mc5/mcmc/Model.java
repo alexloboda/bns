@@ -178,7 +178,7 @@ public class Model {
         assert from != to;
 
         if (bn.edgeExists(from, to)) {
-            if (bn.isSubscribed(from, to)) {
+            if (bn.isSubscribed(to, from)) {
                 return steps == limit;
             }
             Set<Variable> parentFrom = bn.parentSet(from);
@@ -189,7 +189,7 @@ public class Model {
             double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
             double systemLL = scoreF + scoreT;
             bn.removeEdge(from, to);
-            if (!bn.pathRawGraph(from, to)) {
+            if (!bn.pathExists(from, to)) {
                 bn.addEdge(to, from);
                 parentTo.remove(fromVar);
                 parentFrom.add(toVar);
@@ -255,8 +255,8 @@ public class Model {
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
         } else {
-            if (bn.pathRawGraph(node, parent)) {
-                //mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
+            if (bn.pathExists(node, parent)) {
+                mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 return steps == limit;
             }

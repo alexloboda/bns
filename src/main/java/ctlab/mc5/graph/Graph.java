@@ -128,7 +128,7 @@ public class Graph {
     }
 
     public boolean isSubscribed(int first, int last) {
-        return subscriptions[first][last] != 0;
+        return subscriptions[first][last] > 0;
     }
 
     private void processPath(Pair<Integer, Integer> meet, int first, int last, int[] parent) {

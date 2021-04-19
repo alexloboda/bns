@@ -172,11 +172,10 @@ public class BayesianNetwork {
     }
 
     public boolean pathExists(int from, int to) {
+        if (g.edgeExists(from, to)) {
+            return true;
+        }
         return g.pathExists(from, to);
-    }
-
-    public boolean pathRawGraph(int from, int to) {
-        return g.meetAtTheMiddle(from, to);
     }
 
     public int getDegree(int to) {
