@@ -39,4 +39,7 @@ interface Parameters {
 
     @Option(names = {"-gs", "-golden-standard"})
     File gold();
+
+    @Option(names = {"-print"}, defaultValue = "0")
+    int print();
 }
