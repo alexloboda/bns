@@ -243,7 +243,7 @@ public class Model {
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
-        Short parent = mult.randomAction();
+        Short parent = mult.randomAction(true);
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
             return steps == limit;

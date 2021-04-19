@@ -3,8 +3,6 @@ package ctlab.mc5.bn.sf;
 import ctlab.mc5.bn.Variable;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ScoringFunction {
 

@@ -193,7 +193,7 @@ public class Multinomial {
         }
     }
 
-    public Short randomAction() {
+    public Short randomAction(boolean init) {
         hits++;
         if (!initialized) {
             short pos;
@@ -201,7 +201,7 @@ public class Multinomial {
                 pos = (short) re.nextInt(n);
             } while (disabledActions.containsKey(pos));
             Short result = tryAction(pos);
-            if (hits > (batchSize + mainCacheSize) / 2) {
+            if (init && hits > (batchSize + mainCacheSize) / 2) {
                 init();
             }
             return result;

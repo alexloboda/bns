@@ -69,7 +69,7 @@ public class MultinomialTest {
     private void testMultinomial(Multinomial mult, double[] ps) {
         int hits[] = new int[ps.length];
         for (int i = 0; i < NCHOICES; i++) {
-            Short choice = mult.randomAction();
+            Short choice = mult.randomAction(false);
             if (choice != null) {
                 ++hits[choice];
             }
@@ -155,9 +155,9 @@ public class MultinomialTest {
                             disabled[toChange] = !disabled[toChange];
                         }
                     }
-                    mult.randomAction();
+                    mult.randomAction(false);
                 }
-                Short action = mult.randomAction();
+                Short action = mult.randomAction(false);
                 if (action != null) {
                     ++hits[action];
                 }
