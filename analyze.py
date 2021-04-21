@@ -1,6 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
-import csv
+
 import sys
 
 from sklearn.metrics import precision_recall_curve
@@ -29,13 +29,19 @@ class classifier:
                 res.append(0.)
         return np.array(res)
 
+def read_csv(file):
+    lines = []
+    with open(file) as f:
+        content = f.readlines()
+        for line in content:
+            lines.append(line.split())
+    return lines
 
 if __name__ == '__main__':
     print(sys.argv)
     ress = []
 
-    tsv_out_file = open(sys.argv[2])
-    read_out_tsv = csv.reader(tsv_out_file, delimiter="\t")
+    read_out_tsv = read_csv(sys.argv[2])
 
     index = 0
     elem = {}
@@ -45,8 +51,7 @@ if __name__ == '__main__':
         elem[res] = index
         index += 1
 
-    tsv_out_file = open(sys.argv[1])
-    read_out_tsv = csv.reader(tsv_out_file, delimiter="\t")
+    read_out_tsv = read_csv(sys.argv[1])
     for row in read_out_tsv:
         res = row[0] + " " + row[1]
         tuple1 = ress[elem[res]]

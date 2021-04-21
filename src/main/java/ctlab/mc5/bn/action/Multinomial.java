@@ -100,7 +100,7 @@ public class Multinomial {
         for (Short action : toDisable) {
             reEnableAction(action);
         }
-        disabledActions = new LinkedHashMap<>();
+        disabledActions.clear();
         assert logLikelihood() < 0.1;
     }
 
@@ -229,7 +229,7 @@ public class Multinomial {
                     continue;
                 }
                 lastLL = computeLL.apply(curr);
-                double finalLL = Math.min(beta * lastLL, 0.0) + initLL(curr);
+                double finalLL = Math.min(beta * lastLL, 0.0) + initialLL;
                 double randVal = re.nextDouble();
                 if (Math.log(randVal) < finalLL - batchMaxLL[node]) {
                     return (short) curr;
@@ -245,7 +245,7 @@ public class Multinomial {
 
             Short result = tryAction(pos);
             if (batchHits[node] > batchSize(node) / 2) {
-//                resolveBatch(node);
+                resolveBatch(node);
             }
 
             return result;
@@ -260,7 +260,7 @@ public class Multinomial {
         if (action == null || disabledActions.containsKey(action)) {
             return;
         }
-        double finalLL = Math.min(beta * computeLL.apply((int) action), 0.0) + initLL(action);
+        double finalLL = Math.min(beta * computeLL.apply((int) action), 0.0) + initialLL;
         int b = batch(action);
         batchMaxLL[b] = Math.max(batchMaxLL[b], (float) finalLL);
         actions.set(b, likelihoodsSum(actions.get(b), finalLL));
@@ -276,7 +276,7 @@ public class Multinomial {
         if (loglik == null) {
             loglik = computeLL.apply((int) action);
         }
-        double finalLL = Math.min(beta * loglik, 0.0) + initLL(action);
+        double finalLL = Math.min(beta * loglik, 0.0) + initialLL;
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
             Short other = cache.add(action, loglik);

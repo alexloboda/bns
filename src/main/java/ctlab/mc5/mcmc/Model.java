@@ -46,7 +46,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double)n / 2.0);
+        double reverseProb = 1.0 / ((double) n / 2.0);
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -86,8 +86,8 @@ public class Model {
 
     private Function<List<Integer>, Multinomial> multinomials(int to_node) {
         return ps -> {
-            double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
+                double currLL = ll[to_node];
                 if (i >= to_node) {
                     ++i;
                 }
@@ -167,7 +167,6 @@ public class Model {
     }
 
     private boolean reverse(long limit) {
-        steps++;
         if (bn.getEdgeCount() == 0) {
             return steps == limit;
         }

@@ -37,6 +37,7 @@ public class MetaModel {
                     System.err.println(models.get(0).logLikelihood());
                     System.err.println("lls dont match");
                 }
+                System.out.println("Iteration finished");
                 return models.get(0).edgeList();
             }
             if (models.size() > 1) {
