@@ -3,6 +3,7 @@ package ctlab.mc5.bn.sf;
 import ctlab.mc5.bn.Variable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ScoringFunction {
 
@@ -14,24 +15,24 @@ public abstract class ScoringFunction {
             if (inited) return;
             inited = true;
             for (int i = 0; i < varSize; ++i) {
-                map.add(new HashMap<>());
+                map.add(new ConcurrentHashMap<>());
             }
         }
 
         Double get(int num, Set<Variable> parents) {
 
             final Map<Set<Variable>, Double> curParents = map.get(num);
-            synchronized (curParents) {
+//            synchronized (curParents) {
                 return curParents.get(parents);
-            }
+//            }
         }
 
         void add(int num, Set<Variable> parents, double res) {
             final Map<Set<Variable>, Double> curParents = map.get(num);
             Set<Variable> copySet = new LinkedHashSet<>(parents);
-            synchronized (curParents) {
+//            synchronized (curParents) {
                 curParents.put(copySet, res);
-            }
+//            }
         }
     }
 

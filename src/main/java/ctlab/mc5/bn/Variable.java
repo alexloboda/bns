@@ -78,8 +78,8 @@ public class Variable {
 
         this.defaultDiscClasses = discClasses;
         initial(discClasses);
-        lb = 1;
         ub = obsNum();
+        lb = 1;
     }
 
     Variable(Variable v) {

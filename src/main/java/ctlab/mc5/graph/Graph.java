@@ -208,12 +208,12 @@ public class Graph {
         DynamicGraph.EdgeToken token = dgraph.add(from, to);
         assert token != null;
 
-        if (to < from) {
-            int t = to;
-            to = from;
-            from = t;
-        }
-        assert from < to;
+//        if (to < from) {
+//            int t = to;
+//            to = from;
+//            from = t;
+//        }
+//        assert from < to;
         tokens.get(from).put(to, token);
         edgeCount++;
     }
@@ -238,11 +238,11 @@ public class Graph {
         edgelist.remove(edgelist.size() - 1);
         edges[from][to] = null;
 
-        if (to < from) {
-            int t = to;
-            to = from;
-            from = t;
-        }
+//        if (to < from) {
+//            int t = to;
+//            to = from;
+//            from = t;
+//        }
         DynamicGraph.EdgeToken token = tokens.get(from).remove(to);
         assert token != null;
         assert edgeCount != 0;

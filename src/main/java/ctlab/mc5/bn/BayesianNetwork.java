@@ -60,6 +60,7 @@ public class BayesianNetwork {
         names = new HashMap<>(bn.names);
         sf = bn.sf;
         cache = new IngoingCache(bn.cache);
+//        randomPolicy();
     }
 
     public Pair<Integer, Integer> randomEdge(SplittableRandom random) {

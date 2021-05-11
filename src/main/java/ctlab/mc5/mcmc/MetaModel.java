@@ -55,6 +55,7 @@ public class MetaModel {
                 double acceptLL = iBeta * (jLL - iLL) + jBeta * (iLL - jLL);
                 if (Math.log(random.nextDouble()) < acceptLL) {
                     Model.swapNetworks(models.get(i), models.get(j));
+//                    Model.swapNetworks(models.get(j), models.get(i));
                 }
             }
         }

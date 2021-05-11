@@ -12,6 +12,7 @@ import picocli.CommandLine.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
         resourceBundle = "ctlab.mc5.Parameters")
@@ -154,7 +155,16 @@ public class Main {
         bn.clearEdges();
 
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+        long cur_time = System.currentTimeMillis();
         estimator.run(bn);
+        long elapsed_time = System.currentTimeMillis() - cur_time;
+
+        System.out.printf("%02d:%02d:%02d\n",
+                TimeUnit.MILLISECONDS.toHours(elapsed_time),
+                TimeUnit.MILLISECONDS.toMinutes(elapsed_time) -
+                        TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(elapsed_time)),
+                TimeUnit.MILLISECONDS.toSeconds(elapsed_time) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(elapsed_time)));
 
         writeResults(new OutputStreamWriter(new FileOutputStream(params.output())));
 

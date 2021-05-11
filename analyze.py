@@ -5,6 +5,7 @@ import sys
 
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import plot_precision_recall_curve
+from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -63,7 +64,10 @@ if __name__ == '__main__':
     gold_y = [i[1] for i in ress ]
 
     precision, recall, _ = precision_recall_curve(np.array(gold_y), np.array(real_y))
-
+    try:
+        print(auc(precision, recall))
+    except ValueError:
+        pass
     plt.figure()
     plt.step(recall, precision, where='post')
 
