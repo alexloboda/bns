@@ -52,13 +52,9 @@ public abstract class ScoringFunction {
 //            return resCache;
 //        }
 
-        double parent_cls = v.mapObs(ps);
+        double parent_cls = v.mapObs(ps, true);
 
-        ps.add(v);
-
-        double all_cls = v.mapObs(ps);
-
-        ps.remove(v);
+        double all_cls = v.mapObs(ps, false);
 
 //        double res = score(parent_cls, all_cls, v.cardinality());
 //        ht.add(v.getNumber(), ps, res);

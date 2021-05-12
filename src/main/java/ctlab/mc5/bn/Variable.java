@@ -211,8 +211,8 @@ public class Variable {
         return matrix;
     }
 
-    public double mapObs(Set<Variable> ps) {
-        int l = ps.size();
+    public double mapObs(Set<Variable> ps, boolean flag) {
+        int l = flag ? 0 : ps.size();
         int m = obsNum();
         double nu0 = 1;
         double sigma2_0 = variance;
@@ -228,7 +228,8 @@ public class Variable {
         if (l == 0) {
             X = ones(m, 1);
         } else {
-            RealMatrix X2 = new Array2DRowRealMatrix().createMatrix(m, l);
+            RealMatrix X2;
+            X2 = new Array2DRowRealMatrix().createMatrix(m, l);
             int iter = 0;
             for (Variable v : ps) {
                 assert v.data.size() == m;
@@ -251,16 +252,6 @@ public class Variable {
                 }
             }
         }
-
-//        RealMatrix Y = new Array2DRowRealMatrix().createMatrix(m, l);
-//        int iter = 0;
-//        for (Variable v : ps) {
-//            assert v.data.size() == m;
-//            for (int i = 0; i < m; ++i) {
-//                Y.setEntry(i, iter, v.data.get(i));
-//            }
-//            ++iter;
-//        }
 
         RealMatrix Y = new Array2DRowRealMatrix().createMatrix(m, 1);
         for (int i = 0; i < m; ++i) {
