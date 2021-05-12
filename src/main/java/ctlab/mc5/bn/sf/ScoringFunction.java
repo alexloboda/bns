@@ -23,7 +23,7 @@ public abstract class ScoringFunction {
 
             final Map<Set<Variable>, Double> curParents = map.get(num);
 //            synchronized (curParents) {
-                return curParents.get(parents);
+            return curParents.get(parents);
 //            }
         }
 
@@ -31,7 +31,7 @@ public abstract class ScoringFunction {
             final Map<Set<Variable>, Double> curParents = map.get(num);
             Set<Variable> copySet = new LinkedHashSet<>(parents);
 //            synchronized (curParents) {
-                curParents.put(copySet, res);
+            curParents.put(copySet, res);
 //            }
         }
     }
@@ -47,18 +47,22 @@ public abstract class ScoringFunction {
     }
 
     public double score(Variable v, Set<Variable> ps, int n) {
-        Double resCache = ht.get(v.getNumber(), ps);
-        if (resCache != null) {
-            return resCache;
-        }
+//        Double resCache = ht.get(v.getNumber(), ps);
+//        if (resCache != null) {
+//            return resCache;
+//        }
 
-        int[] parent_cls = v.mapObs(ps);
+        double parent_cls = v.mapObs(ps);
 
-        int[] all_cls = v.mapObsAnd(ps);
+        ps.add(v);
 
-        double res = score(parent_cls, all_cls, v.cardinality());
-        ht.add(v.getNumber(), ps, res);
-        return res;
+        double all_cls = v.mapObs(ps);
+
+        ps.remove(v);
+
+//        double res = score(parent_cls, all_cls, v.cardinality());
+//        ht.add(v.getNumber(), ps, res);
+        return parent_cls - all_cls;
     }
 
     abstract double score(int[] parent_cls, int[] all_cls, int cardinality);

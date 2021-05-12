@@ -6,6 +6,13 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.commons.math3.linear.MatrixUtils.inverse;
+import static org.apache.commons.math3.special.Gamma.logGamma;
+
+import org.apache.commons.math3.linear.LUDecomposition;
+
+import org.apache.commons.math3.linear.*;
+
 public class Variable {
     private String name;
 
@@ -24,6 +31,9 @@ public class Variable {
     private int ub;
 
     private int number;
+
+    private double mean;
+    private double variance;
 
     public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
@@ -80,6 +90,19 @@ public class Variable {
         initial(discClasses);
         ub = obsNum();
         lb = 1;
+
+        mean = 0;
+        for (Double datum : data) {
+            mean += datum;
+        }
+        mean /= data.size();
+
+        variance = 0;
+        for (Double datum : data) {
+            variance += ((datum - mean) * (datum - mean));
+        }
+        variance /= (data.size() - 1);
+
     }
 
     Variable(Variable v) {
@@ -97,6 +120,8 @@ public class Variable {
         this.ub = v.ub;
         random = ThreadLocalRandom.current();
         number = v.number;
+        mean = v.mean;
+        variance = v.variance;
     }
 
     void setLF(LogFactorial lf) {
@@ -139,30 +164,130 @@ public class Variable {
                 .max().getAsInt() + 1;
     }
 
-    public int[] mapObs(Set<Variable> ps) {
-        int m = obsNum();
-        int[] result = new int[m];
-        int ps_size = ps.size();
-        int[] cds = new int[ps_size + 1];
-        int i1 = 0;
-        for (Variable p : ps) {
-            cds[i1] = p.cardinality();
-            i1++;
+    private static double c(double x) {
+        return logGamma(x);
+    }
+
+    private static RealMatrix eye(int len) {
+        RealMatrix R0 = new Array2DRowRealMatrix().createMatrix(len, len);
+        for (int i = 0; i < len; ++i) {
+            for (int j = 0; j < len; ++j) {
+                if (i == j) {
+                    R0.setEntry(i, j, 1);
+                } else {
+                    R0.setEntry(i, j, 0);
+                }
+            }
         }
-        cds[ps_size] = 1;
+        return R0;
+    }
 
-        Trie t = new Trie(cds);
+    private static RealMatrix ones(int a, int b) {
+        RealMatrix R0 = new Array2DRowRealMatrix().createMatrix(a, b);
+        for (int i = 0; i < a; ++i) {
+            for (int j = 0; j < b; ++j) {
+                R0.setEntry(i, j, 1);
+            }
+        }
+        return R0;
+    }
 
-        Trie.Selector selector = t.selector();
-        for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+    private static RealMatrix zeros(int a, int b) {
+        RealMatrix R0 = new Array2DRowRealMatrix().createMatrix(a, b);
+        for (int i = 0; i < a; ++i) {
+            for (int j = 0; j < b; ++j) {
+                R0.setEntry(i, j, 0);
+            }
+        }
+        return R0;
+    }
+
+    private static RealMatrix uminus(RealMatrix matrix) {
+        for (int i = 0; i < matrix.getRowDimension(); ++i) {
+            for (int j = 0; j < matrix.getColumnDimension(); ++j) {
+                matrix.setEntry(i, j, -matrix.getEntry(i, j));
+            }
+        }
+        return matrix;
+    }
+
+    public double mapObs(Set<Variable> ps) {
+        int l = ps.size();
+        int m = obsNum();
+        double nu0 = 1;
+        double sigma2_0 = variance;
+
+        double nun = nu0 + m;
+
+        double T0 = nu0 * sigma2_0 / 2;
+
+        RealMatrix R0 = eye(l + 1);
+        RealMatrix beta = zeros(l + 1, 1);
+
+        RealMatrix X;
+        if (l == 0) {
+            X = ones(m, 1);
+        } else {
+            RealMatrix X2 = new Array2DRowRealMatrix().createMatrix(m, l);
+            int iter = 0;
+            for (Variable v : ps) {
+                assert v.data.size() == m;
+                for (int i = 0; i < m; ++i) {
+                    X2.setEntry(i, iter, v.data.get(i));
+                }
+                ++iter;
+            }
+            RealMatrix X1 = ones(m, 1);
+            X = new Array2DRowRealMatrix().createMatrix(m, 1 + l);
+            for (int i = 0; i < m; ++i) {
+                for (int j = 0; j < 1; ++j) {
+                    X.setEntry(i, j, X1.getEntry(i, j));
+                }
             }
 
-            result[i] = selector.get();
+            for (int i = 0; i < m; ++i) {
+                for (int j = 0; j < l; ++j) {
+                    X.setEntry(i, 1 + j, X2.getEntry(i, j));
+                }
+            }
         }
-        return result;
+
+//        RealMatrix Y = new Array2DRowRealMatrix().createMatrix(m, l);
+//        int iter = 0;
+//        for (Variable v : ps) {
+//            assert v.data.size() == m;
+//            for (int i = 0; i < m; ++i) {
+//                Y.setEntry(i, iter, v.data.get(i));
+//            }
+//            ++iter;
+//        }
+
+        RealMatrix Y = new Array2DRowRealMatrix().createMatrix(m, 1);
+        for (int i = 0; i < m; ++i) {
+            Y.setEntry(i, 0, this.data.get(i));
+        }
+
+        RealMatrix Rn = R0.add(X.transpose().multiply(X));
+        RealMatrix Rinv = inverse(Rn);
+
+        double alfa2 = 2d / (nu0 * sigma2_0);
+
+        RealMatrix betan = Rinv.multiply(R0.multiply(beta).add(X.transpose().multiply(Y)));
+        double inv_alfa2n = (uminus(betan.transpose().multiply(Rn).multiply(betan))
+                .add(Y.transpose().multiply(Y))
+                .add(beta.transpose().multiply(R0).multiply(beta)))
+                .getEntry(0, 0) / 2 + 1d / alfa2;
+        double alfa2n = 1d / inv_alfa2n;
+        double sigma2 = 2d / (nun * alfa2n);
+        double Tm = nun * sigma2 / 2;
+
+        return -(double)m / 2 * Math.log(2 * Math.PI) +
+                1d / 2 * (Math.log(new LUDecomposition(R0).getDeterminant())
+                        - Math.log(new LUDecomposition(Rn).getDeterminant()))
+                + c(nun / 2)
+                - c(nu0 / 2)
+                + (nu0 / 2) * Math.log(T0)
+                - (nun / 2) * Math.log(Tm);
     }
 
     public int[] mapObsAnd(Set<Variable> ps) {
