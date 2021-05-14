@@ -51,7 +51,7 @@ public class EdgeList {
                 local.merge(e);
             }
         }
-        number_merged++;
+        number_merged+=other.number_merged;
     }
 
     public int size() {
@@ -79,7 +79,11 @@ public class EdgeList {
             if (!equals(other)) {
                 throw new IllegalArgumentException();
             }
-            count += other.count;
+            if (other == this) {
+                count++;
+            } else {
+                count += other.count;
+            }
         }
 
         public int v() {

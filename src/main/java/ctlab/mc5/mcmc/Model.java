@@ -18,6 +18,7 @@ public class Model {
     private double[] ll;
     private double loglik;
     private double beta;
+
     private long steps;
 
     private List<Cache> caches;
@@ -65,6 +66,10 @@ public class Model {
             ll[i] = bn.score(i);
             loglik += ll[i];
         }
+    }
+
+    public long getSteps() {
+        return steps;
     }
 
     public double logLikelihood() {
