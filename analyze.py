@@ -1,10 +1,10 @@
 import matplotlib
+
 matplotlib.use('Agg')
 
 import sys
 
 from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import plot_precision_recall_curve
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,6 +30,7 @@ class classifier:
                 res.append(0.)
         return np.array(res)
 
+
 def read_csv(file):
     lines = []
     with open(file) as f:
@@ -38,41 +39,45 @@ def read_csv(file):
             lines.append(line.split())
     return lines
 
+
 if __name__ == '__main__':
     print(sys.argv)
-    ress = []
 
-    read_out_tsv = read_csv(sys.argv[2])
+    size = len(sys.argv) - 2
 
-    index = 0
-    elem = {}
-    for row in read_out_tsv:
-        res = row[0] + " " + row[1]
-        ress.append(tuple([res, int(row[2]), 0.]))
-        elem[res] = index
-        index += 1
+    for i in range(size):
+        ress = []
+        read_out_tsv = read_csv(sys.argv[size + 1])
 
-    read_out_tsv = read_csv(sys.argv[1])
-    for row in read_out_tsv:
-        res = row[0] + " " + row[1]
-        tuple1 = ress[elem[res]]
-        ress[elem[res]] = tuple([tuple1[0], tuple1[1], float(row[2])])
+        index = 0
+        elem = {}
+        for row in read_out_tsv:
+            res = row[0] + " " + row[1]
+            ress.append(tuple([res, int(row[2]), 0.]))
+            elem[res] = index
+            index += 1
 
-    ress = sorted(ress, key = lambda a: -a[2])
+        read_out_tsv = read_csv(sys.argv[i + 1])
+        for row in read_out_tsv:
+            res = row[0] + " " + row[1]
+            tuple1 = ress[elem[res]]
+            ress[elem[res]] = tuple([tuple1[0], tuple1[1], float(row[2])])
 
-    real_y = [i[2] for i in ress ]
-    gold_y = [i[1] for i in ress ]
+        ress = sorted(ress, key=lambda a: -a[2])
 
-    precision, recall, _ = precision_recall_curve(np.array(gold_y), np.array(real_y))
-    try:
-        print(auc(precision, recall))
-    except ValueError:
-        pass
-    plt.figure()
-    plt.step(recall, precision, where='post')
+        real_y = [i[2] for i in ress]
+        gold_y = [i[1] for i in ress]
+
+        precision, recall, _ = precision_recall_curve(np.array(gold_y), np.array(real_y))
+        try:
+            print(auc(precision, recall))
+        except ValueError:
+            pass
+        plt.step(recall, precision, where='post',  label=sys.argv[i + 1])
 
     plt.ylim([-0.01, 1.05])
     plt.xlim([-0.01, 1.05])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
+    plt.legend()
     plt.savefig("Precision_Recall.png")
