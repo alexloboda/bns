@@ -52,13 +52,16 @@ public abstract class ScoringFunction {
 //            return resCache;
 //        }
 
-        double parent_cls = v.mapObs(ps, true);
+        Set<Variable> varik = new HashSet<>(ps);
 
-        double all_cls = v.mapObs(ps, false);
+        double parent_cls = v.mapObs(varik);
+
+        varik.add(v);
+        double all_cls = v.mapObs(varik);
 
 //        double res = score(parent_cls, all_cls, v.cardinality());
 //        ht.add(v.getNumber(), ps, res);
-        return parent_cls - all_cls;
+        return all_cls - parent_cls;
     }
 
     abstract double score(int[] parent_cls, int[] all_cls, int cardinality);

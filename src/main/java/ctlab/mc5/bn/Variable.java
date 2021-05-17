@@ -211,11 +211,11 @@ public class Variable {
         return matrix;
     }
 
-    public double mapObs(Set<Variable> ps, boolean flag) {
-        int l = flag ? 0 : ps.size();
+    public double mapObs(Set<Variable> ps) {
+        int l = ps.size();
         int m = obsNum();
         double nu0 = 1;
-        double sigma2_0 = variance;
+        double sigma2_0 = 1;
 
         double nun = nu0 + m;
 
