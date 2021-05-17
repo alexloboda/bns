@@ -5,7 +5,7 @@ import java.util.*;
 public class EdgeList {
     private List<Edge> edgeList;
     private Map<Integer, Map<Integer, Edge>> edgeMap;
-    private int number_merged = 1;
+    private long number_merged = 1;
 
     public EdgeList(int count) {
         edgeList = new ArrayList<>();
@@ -13,7 +13,7 @@ public class EdgeList {
         number_merged = count;
     }
 
-    public int get_number_merged() {
+    public long get_number_merged() {
         return number_merged;
     }
 
@@ -38,7 +38,7 @@ public class EdgeList {
 
     public List<Edge> edges() {
         List<Edge> ret = new ArrayList<>(edgeList);
-        Collections.sort(ret, Collections.reverseOrder());
+        ret.sort(Collections.reverseOrder());
         return ret;
     }
 
@@ -51,7 +51,7 @@ public class EdgeList {
                 local.merge(e);
             }
         }
-        number_merged+=other.number_merged;
+        number_merged += other.number_merged;
     }
 
     public int size() {
@@ -61,9 +61,9 @@ public class EdgeList {
     public static class Edge implements Comparable<Edge> {
         private int v;
         private int u;
-        private int count;
+        private long count;
 
-        public Edge(int v, int u, int count) {
+        public Edge(int v, int u, long count) {
             this.v = v;
             this.u = u;
             this.count = count;
@@ -94,7 +94,7 @@ public class EdgeList {
             return u;
         }
 
-        public double p(int number_merged) {
+        public double p(long number_merged) {
             return count * 1.0 / number_merged;
         }
 
