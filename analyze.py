@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
         precision, recall, _ = precision_recall_curve(np.array(gold_y), np.array(real_y))
         try:
-            print(auc(precision, recall))
+            print(auc(recall, precision))
         except ValueError:
             pass
         plt.step(recall, precision, where='post',  label=sys.argv[i + 1])
