@@ -7,7 +7,7 @@ public class EdgeList {
     private Map<Integer, Map<Integer, Edge>> edgeMap;
     private long number_merged = 1;
 
-    public EdgeList(int count) {
+    public EdgeList(long count) {
         edgeList = new ArrayList<>();
         edgeMap = new HashMap<>();
         number_merged = count;

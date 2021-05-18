@@ -24,4 +24,6 @@ public interface EstimatorParams {
     double deltaT();
     @Option(names = "--swap-period", defaultValue = "10000")
     long swapPeriod();
+    @Option(names = {"-warmup", "-w"}, defaultValue = "0")
+    long warmup();
 }

@@ -70,7 +70,7 @@ public class NetworkEstimator {
         public void run() {
             EdgeList result;
             try {
-                result = model.run(params.swapPeriod(), params.coldChainSteps(), params.powerBase());
+                result = model.run(params.swapPeriod(), params.coldChainSteps(), params.warmup(), params.powerBase());
             } catch (InterruptedException e) {
                 return;
             } catch (Error | Exception e) {

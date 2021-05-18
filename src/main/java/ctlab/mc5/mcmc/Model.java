@@ -35,11 +35,16 @@ public class Model {
     private final double initLL;
     private final double reverseLL;
 
+    private final long[][] counter;
+    private final long[][] time;
+
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta) {
         this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
         this.n = bn.size();
+        counter = new long[n][n];
+        time = new long[n][n];
         this.bn = bn;
         this.ll = new double[n];
         this.distributions = new ArrayList<>();
@@ -131,6 +136,10 @@ public class Model {
         System.out.println();
     }
 
+    public int getN() {
+        return n;
+    }
+
     public void init(boolean randomDAG) {
         bn = new BayesianNetwork(bn);
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
@@ -172,9 +181,13 @@ public class Model {
         }
     }
 
-    private boolean reverse(long limit) {
+    private void fix_delete(int from, int to) {
+        counter[from][to] += steps - time[from][to];
+    }
+
+    private void reverse() {
         if (bn.getEdgeCount() == 0) {
-            return steps == limit;
+            return;
         }
         Pair<Integer, Integer> edge = bn.randomEdge(random);
         int from = edge.getFirst();
@@ -184,7 +197,7 @@ public class Model {
 
         assert bn.edgeExists(from, to);
         if (bn.isSubscribed(to, from)) {
-            return steps == limit;
+            return;
         }
         Set<Variable> parentFrom = bn.parentSet(from);
         Set<Variable> parentTo = bn.parentSet(to);
@@ -204,6 +217,8 @@ public class Model {
             if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
                 updateLL(to, scoreTRev - ll[to]);
                 updateLL(from, scoreFRev - ll[from]);
+                time[to][from] = steps;
+                fix_delete(from, to);
             } else {
                 bn.removeEdge(to, from);
                 bn.addEdge(from, to);
@@ -211,7 +226,6 @@ public class Model {
         } else {
             bn.addEdge(from, to);
         }
-        return steps == limit;
     }
 
     public boolean step(long limit) {
@@ -239,7 +253,8 @@ public class Model {
         double proportions = Math.exp(rmll - all_ll);
 
         if (random.nextDouble() < proportions) {
-            return reverse(limit);
+            reverse();
+            return steps == limit;
         }
 
         int node = transitions.randomChoice(random);
@@ -255,6 +270,7 @@ public class Model {
         }
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
+            fix_delete(parent, node);
         } else {
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
@@ -262,8 +278,8 @@ public class Model {
                 return steps == limit;
             }
             addEdge(parent, node, mult.getLastLL());
+            time[parent][node] = steps;
         }
-
         return steps == limit;
     }
 
@@ -387,5 +403,31 @@ public class Model {
 
     public double beta() {
         return beta;
+    }
+
+    public void finish_warmup() {
+        steps = 0;
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                counter[i][j] = 0;
+                time[i][j] = 0;
+            }
+        }
+    }
+
+    public EdgeList results() {
+        EdgeList edgeList = new EdgeList(steps);
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n ; j++) {
+                long sum = counter[i][j];
+                if (bn.edgeExists(i, j)) {
+                    sum += steps - time[i][j];
+                }
+                if (sum != 0) {
+                    edgeList.addEdge(new Edge(permutation.get(i), permutation.get(j), sum));
+                }
+            }
+        }
+        return edgeList;
     }
 }

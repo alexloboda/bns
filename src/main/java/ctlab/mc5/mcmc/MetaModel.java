@@ -9,19 +9,22 @@ public class MetaModel {
     private List<Model> models;
     private SplittableRandom random;
 
-    private EdgeList finalAnswer;
 
     public MetaModel(List<Model> models, SplittableRandom random) {
         this.models = new ArrayList<>(models);
         this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
-        this.finalAnswer = new EdgeList(0);
     }
 
-    public EdgeList run(long swapPeriod, long coldChainSteps, double powerBase) throws InterruptedException {
+    public EdgeList run(long swapPeriod, long coldChainSteps, long warmup, double powerBase) throws InterruptedException {
         long targetSteps = 0;
 
-        final long stepCollect = 1000;
+        for (Model model : models) {
+            while (!model.step(warmup)) {
+            }
+            model.finish_warmup();
+        }
+
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
@@ -32,11 +35,7 @@ public class MetaModel {
 
             for (int i = 0; i < models.size(); i++) {
                 long currentTarget = (long)(targetSteps / Math.pow(powerBase, i));
-                long currentSteps = models.get(i).getSteps();
                 while (!models.get(i).step(currentTarget)) {
-                    for (long cur = currentSteps; cur < models.get(i).getSteps(); cur += stepCollect) {
-                        finalAnswer.merge(models.get(i).edgeList());
-                    }
                 }
             }
 
@@ -48,7 +47,7 @@ public class MetaModel {
                     System.err.println("lls dont match");
                 }
                 System.out.println("Iteration finished");
-                return finalAnswer;
+                return models.get(0).results();
             }
             if (models.size() > 1) {
                 int i = random.nextInt(models.size());

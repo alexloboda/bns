@@ -128,6 +128,7 @@ public class Main {
         System.out.println("cached-states = " + estimatorParams.numberOfCachedStates());
         System.out.println("batch-size = " + estimatorParams.batchSize());
         System.out.println("cache-size = " + estimatorParams.mainCacheSize());
+        System.out.println("warmup = " + estimatorParams.warmup());
         System.out.println("steps = " + estimatorParams.coldChainSteps());
         System.out.println("steps-power-base = " + estimatorParams.powerBase());
         System.out.println("temperature-delta = " + estimatorParams.deltaT());
