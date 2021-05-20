@@ -159,7 +159,7 @@ public class Main {
         long cur_time = System.currentTimeMillis();
         estimator.run(bn);
         long elapsed_time = System.currentTimeMillis() - cur_time;
-
+        System.out.println();
         System.out.printf("%02d:%02d:%02d\n",
                 TimeUnit.MILLISECONDS.toHours(elapsed_time),
                 TimeUnit.MILLISECONDS.toMinutes(elapsed_time) -

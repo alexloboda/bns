@@ -48,7 +48,7 @@ public class ModelTest {
 
         for (int i = 0; i < models; i++) {
             Model model = new Model(bn, new MultinomialFactory(1, 2),
-                    10, 1.0);
+                    10, 1.0, true);
             model.setRandomGenerator(sr);
             model.init(true);
             while (!model.step(1000)) {}
@@ -79,7 +79,6 @@ public class ModelTest {
                 }
                 Assert.assertTrue(Utils.binomialTest(actual[i][j], models, expectedFs[i][j]) > 1e-3);
             }
-            System.out.println("\n");
         }
     }
 

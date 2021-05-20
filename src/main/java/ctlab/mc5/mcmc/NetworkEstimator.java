@@ -34,11 +34,20 @@ public class NetworkEstimator {
         return result;
     }
 
+    static class Int {
+        int count = 0;
+
+        public void inc() {
+            count++;
+        }
+    }
+
     public void run(BayesianNetwork bn) {
         ExecutorService es = Executors.newFixedThreadPool(params.nThreads());
         tasks = new ArrayList<>();
+        Int model_counter = new Int();
         for (int i = 0; i < params.nRuns(); i++) {
-            Task task = new Task(bn);
+            Task task = new Task(bn, model_counter);
             tasks.add(task);
             es.submit(task);
         }
@@ -53,16 +62,16 @@ public class NetworkEstimator {
         private MetaModel model;
         private EdgeList result;
 
-        public Task(BayesianNetwork bn) {
+        public Task(BayesianNetwork bn, Int mc) {
             SplittableRandom random = re.split();
             List<Model> models = new ArrayList<>();
             for (int i = 0; i < params.chains(); i++) {
                 MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
-                Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0);
+                Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0, params.multipleCollectors() == 0);
                 model.init(false);
                 models.add(model);
             }
-            model = new MetaModel(models, random);
+            model = new MetaModel(models, random,  mc);
             result = null;
         }
 

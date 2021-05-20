@@ -7,7 +7,6 @@ public interface EstimatorParams {
     int nThreads();
     @Option(names = {"-r", "--runs"}, defaultValue = "10")
     int nRuns();
-
     @Option(names = {"-c", "--chains"}, defaultValue = "5")
     int chains();
     @Option(names = "--cached-states", defaultValue = "200")
@@ -26,4 +25,6 @@ public interface EstimatorParams {
     long swapPeriod();
     @Option(names = {"-warmup", "-w"}, defaultValue = "0")
     long warmup();
+    @Option(names = {"-mc"}, defaultValue = "0")
+    int multipleCollectors();
 }

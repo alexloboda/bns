@@ -8,9 +8,11 @@ import java.util.SplittableRandom;
 public class MetaModel {
     private List<Model> models;
     private SplittableRandom random;
+    private NetworkEstimator.Int modelCounter;
 
 
-    public MetaModel(List<Model> models, SplittableRandom random) {
+    public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc) {
+        modelCounter = mc;
         this.models = new ArrayList<>(models);
         this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
@@ -34,7 +36,7 @@ public class MetaModel {
             targetSteps = Math.min(targetSteps, coldChainSteps);
 
             for (int i = 0; i < models.size(); i++) {
-                long currentTarget = (long)(targetSteps / Math.pow(powerBase, i));
+                long currentTarget = (long) (targetSteps / Math.pow(powerBase, i));
                 while (!models.get(i).step(currentTarget)) {
                 }
             }
@@ -46,7 +48,10 @@ public class MetaModel {
                     System.err.println(models.get(0).logLikelihood());
                     System.err.println("lls dont match");
                 }
-                System.out.println("Iteration finished");
+                synchronized (System.err) {
+                    modelCounter.inc();
+                    System.err.print("\rIteration: " + modelCounter.count);
+                }
                 return models.get(0).results();
             }
             if (models.size() > 1) {

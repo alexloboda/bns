@@ -218,7 +218,6 @@ public class Multinomial {
             int iters = 0;
             while (true) {
                 if (iters == 4 * batchSize) {
-                    System.out.println("To many iterations, skipping");
                     return null;
                 }
                 int curr;

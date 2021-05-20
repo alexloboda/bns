@@ -60,8 +60,13 @@ if __name__ == '__main__':
         read_out_tsv = read_csv(sys.argv[i + 1])
         for row in read_out_tsv:
             res = row[0] + " " + row[1]
-            tuple1 = ress[elem[res]]
-            ress[elem[res]] = tuple([tuple1[0], tuple1[1], float(row[2])])
+            if res in elem:
+                tuple1 = ress[elem[res]]
+                ress[elem[res]] = tuple([tuple1[0], tuple1[1], float(row[2])])
+            else:
+                ress.append(tuple([res, 0., float(row[2])]))
+                elem[res] = index
+                index += 1
 
         ress = sorted(ress, key=lambda a: -a[2])
 

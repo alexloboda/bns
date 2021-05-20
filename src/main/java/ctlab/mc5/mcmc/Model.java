@@ -38,8 +38,10 @@ public class Model {
     private final long[][] counter;
     private final long[][] time;
 
+    private final boolean raw;
+
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
-                 int nCachedStates, double beta) {
+                 int nCachedStates, double beta, boolean raw) {
         this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
         this.n = bn.size();
@@ -52,11 +54,12 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double) n / 2.0);
+        double reverseProb = 1.0 / ((double) n / 2.);
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
+        this.raw = raw;
 //        bn.randomPolicy();
     }
 
@@ -230,6 +233,7 @@ public class Model {
 
     public boolean step(long limit) {
         double trll = transitions.likelihood();
+//        double rmll = Math.min(reverseLL, trll);
         double rmll = reverseLL;
 
         double all_ll = Multinomial.likelihoodsSum(trll, rmll);
@@ -416,15 +420,25 @@ public class Model {
     }
 
     public EdgeList results() {
-        EdgeList edgeList = new EdgeList(steps);
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n ; j++) {
-                long sum = counter[i][j];
-                if (bn.edgeExists(i, j)) {
-                    sum += steps - time[i][j];
+        EdgeList edgeList;
+        if (raw) {
+            edgeList = new EdgeList(1);
+            for (int i = 0; i < n; ++i) {
+                for (int j : bn.ingoingEdges(i)) {
+                    edgeList.addEdge(new Edge(permutation.get(i), permutation.get(j), 1));
                 }
-                if (sum != 0) {
-                    edgeList.addEdge(new Edge(permutation.get(i), permutation.get(j), sum));
+            }
+        } else {
+            edgeList = new EdgeList(steps);
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; j++) {
+                    long sum = counter[i][j];
+                    if (bn.edgeExists(i, j)) {
+                        sum += steps - time[i][j];
+                    }
+                    if (sum != 0) {
+                        edgeList.addEdge(new Edge(permutation.get(i), permutation.get(j), sum));
+                    }
                 }
             }
         }
