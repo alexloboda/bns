@@ -1,5 +1,7 @@
 package ctlab.bn;
 
+import org.apache.commons.math3.distribution.BinomialDistribution;
+
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
@@ -368,10 +370,21 @@ public class Variable {
 
     public void random_policy() {
         double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::get_disc_edge).toArray();
-        int k = random.nextInt(ub - lb + 1) + lb - 1;
-        List<Integer> idx = IntStream.range(0, edges.length).boxed().collect(Collectors.toList());
-        Collections.shuffle(idx, random);
-        idx = idx.subList(0, k);
+        int k = random.nextInt(ub - lb + 1) + lb;
+        List<Integer> idx = new ArrayList<>();
+
+        int left = uniq.length;
+        for (int i = k; i > 1; i--) {
+            double p = 1.0 / (double) i;
+            BinomialDistribution binom = new BinomialDistribution(left, p);
+            int bucket = binom.sample();
+            left -= bucket;
+            if (left == 0 || bucket == 0) {
+                continue;
+            }
+            idx.add(uniq.length - left);
+        }
+
         Collections.sort(idx);
         this.edges = idx.stream().map(x -> edges[x]).collect(Collectors.toList());
         write_discretization();
