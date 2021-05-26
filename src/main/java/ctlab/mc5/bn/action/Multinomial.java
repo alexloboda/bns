@@ -118,6 +118,9 @@ public class Multinomial {
     }
 
     public static double likelihoodSubtract(double ll1, double ll2) {
+        if (ll1 < ll2) {
+            return Double.NEGATIVE_INFINITY;
+        }
         double maxLL = Math.max(ll1, ll2);
         ll1 -= maxLL;
         ll2 -= maxLL;
