@@ -382,7 +382,7 @@ public class Variable {
             if (left == 0 || bucket == 0) {
                 continue;
             }
-            idx.add(uniq.length - left);
+            idx.add(uniq.length - left - 1);
         }
 
         Collections.sort(idx);
