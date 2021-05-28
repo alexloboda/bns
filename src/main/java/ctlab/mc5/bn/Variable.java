@@ -155,18 +155,14 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector[] selectors = new Trie.Selector[m];
+        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            selectors[i] = t.selector();
-        }
-
-        for (Variable p : ps) {
-            for (int i = 0; i < m; i++) {
-                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
-        }
-        for (int i = 0; i < m; i++) {
-            result[i] = selectors[i].get();
+
+            result[i] = selector.get();
         }
         return result;
     }
@@ -186,18 +182,15 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector[] selectors = new Trie.Selector[m];
+        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            selectors[i] = t.selector();
-        }
-        for (Variable p : ps) {
-            for (int i = 0; i < m; i++) {
-                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
-        }
-        for (int i = 0; i < m; i++) {
-            selectors[i].choose(this.discreteValue(orderedObs[i]) - 1);
-            result[i] = selectors[i].get();
+            selector.choose(this.discreteValue(orderedObs[i]) - 1);
+
+            result[i] = selector.get();
         }
         return result;
     }
@@ -271,6 +264,7 @@ public class Variable {
         double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::getDiscEdge).toArray();
         int k = random.nextInt(ub - lb + 1) + lb;
         List<Integer> idx = new ArrayList<>();
+
         int left = uniq.length;
         for (int i = k; i > 1; i--) {
             double p = 1.0 / (double) i;

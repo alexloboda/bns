@@ -24,7 +24,7 @@ public class Model {
     private List<Cache> caches;
     private int nCachedStates;
 
-    private List<Multinomial> distributions;
+    private final List<Multinomial> distributions;
     private final MultinomialFactory multFactory;
     private SegmentTree transitions;
 
@@ -54,7 +54,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 0;//1.0 / ((double) n * 50.);
+        double reverseProb = 1.0 / ((double) n * 50 );
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -144,7 +144,7 @@ public class Model {
 
     public void init(boolean randomDAG) {
         bn = new BayesianNetwork(bn);
-//        bn.randomPolicy();
+        bn.randomPolicy();
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
         bn.setCallback(this::processPathElimination);
@@ -354,11 +354,7 @@ public class Model {
             model.permutation = other.permutation;
             other.permutation = tmpperm;
         }
-        {
-            List<Multinomial> tmp1 = model.distributions;
-            model.distributions = other.distributions;
-            other.distributions = tmp1;
-        }
+
 //        {
 //            SegmentTree tmp1 = model.transitions;
 //            model.transitions = other.transitions;
@@ -421,12 +417,7 @@ public class Model {
     public EdgeList results() {
         EdgeList edgeList;
         if (raw) {
-            edgeList = new EdgeList(1);
-            for (int i = 0; i < n; ++i) {
-                for (int j : bn.ingoingEdges(i)) {
-                    edgeList.addEdge(new Edge(permutation.get(i), permutation.get(j), 1));
-                }
-            }
+            edgeList = edgeList();
         } else {
             edgeList = new EdgeList(steps);
             for (int i = 0; i < n; ++i) {
