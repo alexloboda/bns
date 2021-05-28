@@ -60,7 +60,6 @@ public class Model {
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
         this.raw = raw;
-//        bn.randomPolicy();
     }
 
     public void setRandomGenerator(SplittableRandom re) {
@@ -145,13 +144,13 @@ public class Model {
 
     public void init(boolean randomDAG) {
         bn = new BayesianNetwork(bn);
+        bn.randomPolicy();
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
         bn.setCallback(this::processPathElimination);
         if (randomDAG) {
             sampleDAG();
         }
-
         calculateLikelihood();
 
         transitions = new SegmentTree(n);

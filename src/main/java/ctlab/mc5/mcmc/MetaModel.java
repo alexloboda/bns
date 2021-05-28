@@ -8,12 +8,12 @@ import java.util.SplittableRandom;
 public class MetaModel {
     private List<Model> models;
     private SplittableRandom random;
-    private NetworkEstimator.Int modelCounter;
+    final private NetworkEstimator.Int modelCounter;
 
 
     public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc) {
         modelCounter = mc;
-        this.models = new ArrayList<>(models);
+        this.models = models;
         this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
     }
@@ -48,7 +48,7 @@ public class MetaModel {
                     System.err.println(models.get(0).logLikelihood());
                     System.err.println("lls dont match");
                 }
-                synchronized (System.err) {
+                synchronized (modelCounter) {
                     modelCounter.inc();
                     System.err.print("\rIteration: " + modelCounter.count);
                 }

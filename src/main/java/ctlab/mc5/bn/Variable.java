@@ -155,14 +155,18 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector selector = t.selector();
+        Trie.Selector[] selectors = new Trie.Selector[m];
         for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
-            }
+            selectors[i] = t.selector();
+        }
 
-            result[i] = selector.get();
+        for (Variable p : ps) {
+            for (int i = 0; i < m; i++) {
+                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            }
+        }
+        for (int i = 0; i < m; i++) {
+            result[i] = selectors[i].get();
         }
         return result;
     }
@@ -182,15 +186,18 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector selector = t.selector();
+        Trie.Selector[] selectors = new Trie.Selector[m];
         for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+            selectors[i] = t.selector();
+        }
+        for (Variable p : ps) {
+            for (int i = 0; i < m; i++) {
+                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
             }
-            selector.choose(this.discreteValue(orderedObs[i]) - 1);
-
-            result[i] = selector.get();
+        }
+        for (int i = 0; i < m; i++) {
+            selectors[i].choose(this.discreteValue(orderedObs[i]) - 1);
+            result[i] = selectors[i].get();
         }
         return result;
     }
@@ -264,7 +271,6 @@ public class Variable {
         double[] edges = IntStream.range(0, uniq.length - 1).mapToDouble(this::getDiscEdge).toArray();
         int k = random.nextInt(ub - lb + 1) + lb;
         List<Integer> idx = new ArrayList<>();
-
         int left = uniq.length;
         for (int i = k; i > 1; i--) {
             double p = 1.0 / (double) i;

@@ -64,8 +64,9 @@ public class NetworkEstimator {
 
         public Task(BayesianNetwork bn, Int mc) {
             SplittableRandom random = re.split();
-            List<Model> models = new ArrayList<>();
-            for (int i = 0; i < params.chains(); i++) {
+            int chains = params.chains();
+            List<Model> models = new ArrayList<>(chains);
+            for (int i = 0; i < chains; i++) {
                 MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
                 Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0, params.multipleCollectors() == 0);
                 model.init(false);

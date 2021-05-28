@@ -118,15 +118,14 @@ public class Multinomial {
     }
 
     public static double likelihoodSubtract(double ll1, double ll2) {
-        if (ll1 < ll2) {
-            return Double.NEGATIVE_INFINITY;
-        }
         double maxLL = Math.max(ll1, ll2);
         ll1 -= maxLL;
         ll2 -= maxLL;
         if (ll1 < 0 && ll1 > -EPS) {
             return Double.NEGATIVE_INFINITY;
         }
+        if (ll1 < ll2) return Double.NEGATIVE_INFINITY;
+
         return Math.log(Math.exp(ll1) - Math.exp(ll2)) + maxLL;
     }
 

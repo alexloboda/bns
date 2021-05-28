@@ -116,6 +116,17 @@ public class Main {
         }
     }
 
+    private String toLog(long val) {
+        long exp = (long) Math.log10(val);
+        if (exp > 3) {
+            if (val == Math.pow(10, exp)) {
+                return "10^" + exp;
+            }
+            return (val / Math.pow(10, exp)) + "*10^" + exp;
+        }
+        return val + "";
+    }
+
     private void printParameters(Parameters params, EstimatorParams estimatorParams) {
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         System.out.println("Parameters:");
@@ -128,8 +139,8 @@ public class Main {
         System.out.println("cached-states = " + estimatorParams.numberOfCachedStates());
         System.out.println("batch-size = " + estimatorParams.batchSize());
         System.out.println("cache-size = " + estimatorParams.mainCacheSize());
-        System.out.println("warmup = " + estimatorParams.warmup());
-        System.out.println("steps = " + estimatorParams.coldChainSteps());
+        System.out.println("warmup = " + toLog(estimatorParams.warmup()));
+        System.out.println("steps = " + toLog(estimatorParams.coldChainSteps()));
         System.out.println("steps-power-base = " + estimatorParams.powerBase());
         System.out.println("temperature-delta = " + estimatorParams.deltaT());
         System.out.println("swap-period = " + estimatorParams.swapPeriod());
