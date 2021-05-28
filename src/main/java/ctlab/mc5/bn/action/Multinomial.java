@@ -31,8 +31,6 @@ public class Multinomial {
     private BitSet batchResolved;
 
     private HashMap<Short, Double> disabledActions;
-    private final BayesianNetwork bn;
-    private final int v;
 
     private double initLL(int action) {
         return initialLL;
@@ -130,7 +128,7 @@ public class Multinomial {
     }
 
     public Multinomial(int maxSize, int batchSize, double beta, int mainCacheSize, Function<Integer, Double> computeLL,
-                       double initialLL, SplittableRandom re, BayesianNetwork bn, int v) {
+                       double initialLL, SplittableRandom re) {
         n = maxSize;
         this.beta = beta;
         this.mainCacheSize = (short) mainCacheSize;
@@ -143,8 +141,6 @@ public class Multinomial {
         this.initialLL = initialLL;
         this.re = re;
         this.disabledActions = new LinkedHashMap<>();
-        this.bn = bn;
-        this.v = v;
     }
 
     public double logLikelihood() {
@@ -176,11 +172,6 @@ public class Multinomial {
         Arrays.fill(batchMaxLL, Float.NEGATIVE_INFINITY);
 
         for (Map.Entry<Short, Double> action : disabledActions.entrySet()) {
-            if (action.getKey() >= v) {
-                assert !bn.edgeExists(action.getKey() + 1, v);
-            } else {
-                assert !bn.edgeExists(action.getKey(), v);
-            }
             disableAction(action.getKey(), action.getValue());
         }
     }

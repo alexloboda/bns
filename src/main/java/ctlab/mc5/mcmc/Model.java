@@ -54,7 +54,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double) n * 50.);
+        double reverseProb = 0;//1.0 / ((double) n * 50.);
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -110,7 +110,7 @@ public class Model {
                     return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta, bn, to_node);
+            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta);
         };
     }
 
@@ -144,7 +144,7 @@ public class Model {
 
     public void init(boolean randomDAG) {
         bn = new BayesianNetwork(bn);
-        bn.randomPolicy();
+//        bn.randomPolicy();
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
         bn.setCallback(this::processPathElimination);

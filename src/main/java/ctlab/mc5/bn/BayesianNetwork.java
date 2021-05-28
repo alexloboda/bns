@@ -117,6 +117,7 @@ public class BayesianNetwork {
     }
 
     public Set<Variable> parentSet(int to) {
+        assert (cache.get(to)).equals(ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toSet()));
         return cache.get(to);
     }
 

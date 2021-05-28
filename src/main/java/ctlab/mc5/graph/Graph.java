@@ -192,6 +192,9 @@ public class Graph {
         if (subscriptions[from][to] > 0) {
             return true;
         }
+        if (edgeExists(from, to)) {
+            return true;
+        }
         return meetAtTheMiddle(from, to);
     }
 
