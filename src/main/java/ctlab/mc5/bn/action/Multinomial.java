@@ -32,10 +32,6 @@ public class Multinomial {
 
     private HashMap<Short, Double> disabledActions;
 
-    private double initLL(int action) {
-        return initialLL;
-    }
-
     private int batchSize(int batch) {
         if (batch < batchesNum - 1) {
             return batchSize;
@@ -72,6 +68,7 @@ public class Multinomial {
         }
 
         double ll = disabledActions.get(action);
+//        assert (ll == computeLL.apply((int) action));
         disabledActions.remove(action);
 
         if (!initialized) {
@@ -122,7 +119,8 @@ public class Multinomial {
         if (ll1 < 0 && ll1 > -EPS) {
             return Double.NEGATIVE_INFINITY;
         }
-        if (ll1 < ll2) return Double.NEGATIVE_INFINITY;
+        assert (ll1 >= ll2);
+        //return Double.NEGATIVE_INFINITY;
 
         return Math.log(Math.exp(ll1) - Math.exp(ll2)) + maxLL;
     }
@@ -163,7 +161,7 @@ public class Multinomial {
         for (int i = 0; i < batchesNum; i++) {
             double curLL = Double.NEGATIVE_INFINITY;
             for (int j = 0; j < batchSize(i); ++j) {
-                curLL = likelihoodsSum(curLL, initLL(i * batchSize + j));
+                curLL = likelihoodsSum(curLL, initialLL);
             }
             actions.set(i, curLL);
         }
@@ -188,6 +186,7 @@ public class Multinomial {
 
     public Short randomAction(boolean init) {
         hits++;
+        int iters = 0;
         if (!initialized) {
             short pos;
             do {
@@ -208,14 +207,14 @@ public class Multinomial {
         }
         if (batchResolved.get(node)) {
             int bs = batchSize(node);
-            int iters = 0;
             while (true) {
-                if (iters == 4 * batchSize) {
-                    return null;
-                }
                 int curr;
                 do {
                     curr = re.nextInt(bs) + node * batchSize;
+                    ++iters;
+                    if (iters == 10 * batchSize) {
+                        return null;
+                    }
                 } while (disabledActions.containsKey((short) curr));
                 if (cache.contains((short) curr)) {
                     continue;
@@ -226,12 +225,15 @@ public class Multinomial {
                 if (Math.log(randVal) < finalLL - batchMaxLL[node]) {
                     return (short) curr;
                 }
-                ++iters;
             }
         } else {
             batchHits[node]++;
             int pos;
             do {
+                ++iters;
+                if (iters == 10 * batchSize) {
+                    return null;
+                }
                 pos = batchSize * node + re.nextInt(batchSize(node));
             } while (disabledActions.containsKey((short) pos));
 

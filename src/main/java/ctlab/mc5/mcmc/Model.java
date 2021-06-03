@@ -54,7 +54,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double) n * 50 );
+        double reverseProb = 0;//1.0 / ((double) n * 50 );
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -85,7 +85,7 @@ public class Model {
 
     double computeLogLikelihood() {
         double ll = 0.0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < bn.size(); i++) {
             ll += bn.score(i);
         }
         return ll;
@@ -101,6 +101,7 @@ public class Model {
         return ps -> {
             Function<Integer, Double> computeLL = i -> {
                 double currLL = ll[to_node];
+//                assert(currLL == ll[to_node]);
                 if (i >= to_node) {
                     ++i;
                 }
@@ -156,7 +157,7 @@ public class Model {
         transitions = new SegmentTree(n);
         for (int i = 0; i < n; i++) {
             caches.add(new Cache(nCachedStates, multinomials(i)));
-            List<Integer> ps = this.bn.ingoingEdges(i);
+            List<Integer> ps = bn.ingoingEdges(i);
             Collections.sort(ps);
             distributions.add(caches.get(i).request(ps));
             transitions.set(i, distributions.get(i).logLikelihood());
@@ -257,13 +258,17 @@ public class Model {
 
         if (random.nextDouble() < proportions) {
             reverse();
+            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
             return steps == limit;
         }
+//        assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction(true);
         transitions.set(node, mult.logLikelihood());
+//        assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
+
         if (parent == null) {
             return steps == limit;
         }
@@ -274,14 +279,19 @@ public class Model {
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
             fix_delete(parent, node);
+            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         } else {
+//            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
+
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
+                assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
                 return steps == limit;
             }
             addEdge(parent, node, mult.getLastLL());
             time[parent][node] = steps;
+            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         }
         return steps == limit;
     }

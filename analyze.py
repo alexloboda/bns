@@ -74,11 +74,13 @@ if __name__ == '__main__':
         gold_y = [i[1] for i in ress]
 
         precision, recall, _ = precision_recall_curve(np.array(gold_y), np.array(real_y))
+        val = 0.
         try:
-            print(auc(recall, precision))
+            val = auc(recall, precision)
+            print(val)
         except ValueError:
             pass
-        plt.step(recall, precision, where='post',  label=sys.argv[i + 1])
+        plt.step(recall, precision, where='post',  label=sys.argv[i + 1] + " AUROC: " + "{:.5f}".format(val))
 
     plt.ylim([-0.01, 1.05])
     plt.xlim([-0.01, 1.05])

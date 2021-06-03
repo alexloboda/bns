@@ -21,9 +21,9 @@ public class NetworkEstimator {
         this.re = re;
     }
 
-    public EdgeList resultsFromCompletedTasks(){
+    public EdgeList resultsFromCompletedTasks() {
         EdgeList result = new EdgeList(0);
-        for (final Task t: tasks) {
+        for (final Task t : tasks) {
             synchronized (t) {
                 EdgeList res = t.getResult();
                 if (res != null) {
@@ -55,14 +55,22 @@ public class NetworkEstimator {
 
         try {
             es.awaitTermination(1_000_000, TimeUnit.HOURS);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private class Task implements Runnable {
         private MetaModel model;
         private EdgeList result;
+        private final BayesianNetwork bn;
+        private final Int mc;
 
         public Task(BayesianNetwork bn, Int mc) {
+            this.bn = bn;
+            this.mc = mc;
+        }
+
+        private void init() {
             SplittableRandom random = re.split();
             int chains = params.chains();
             List<Model> models = new ArrayList<>(chains);
@@ -72,12 +80,13 @@ public class NetworkEstimator {
                 model.init(false);
                 models.add(model);
             }
-            model = new MetaModel(models, random,  mc);
+            model = new MetaModel(models, random, mc);
             result = null;
         }
 
         @Override
         public void run() {
+            init();
             EdgeList result;
             try {
                 result = model.run(params.swapPeriod(), params.coldChainSteps(), params.warmup(), params.powerBase());
