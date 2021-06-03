@@ -68,7 +68,7 @@ public class Multinomial {
         }
 
         double ll = disabledActions.get(action);
-//        assert (ll == computeLL.apply((int) action));
+        assert (ll == computeLL.apply((int) action));
         disabledActions.remove(action);
 
         if (!initialized) {

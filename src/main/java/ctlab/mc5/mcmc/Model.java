@@ -54,7 +54,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 0;//1.0 / ((double) n * 50 );
+        double reverseProb = 1.0 / ((double) n * 50 );
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -218,8 +218,12 @@ public class Model {
             double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
             double systemLLRev = scoreFRev + scoreTRev;
             if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
-                updateLL(to, scoreTRev - ll[to]);
-                updateLL(from, scoreFRev - ll[from]);
+                bn.removeEdge(to, from);
+                bn.addEdge(from, to);
+                removeEdge(from, to, scoreTRev - ll[to]);
+                addEdge(to, from, scoreFRev - ll[from]);
+//                updateLL(to, scoreTRev - ll[to]);
+//                updateLL(from, scoreFRev - ll[from]);
                 time[to][from] = steps;
                 fix_delete(from, to);
             } else {
@@ -233,7 +237,6 @@ public class Model {
 
     public boolean step(long limit) {
         double trll = transitions.likelihood();
-//        double rmll = Math.min(reverseLL, trll);
         double rmll = reverseLL;
 
         double all_ll = Multinomial.likelihoodsSum(trll, rmll);
@@ -261,13 +264,11 @@ public class Model {
             assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
             return steps == limit;
         }
-//        assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
         Short parent = mult.randomAction(true);
         transitions.set(node, mult.logLikelihood());
-//        assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
 
         if (parent == null) {
             return steps == limit;
@@ -281,7 +282,6 @@ public class Model {
             fix_delete(parent, node);
             assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         } else {
-//            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
 
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
@@ -326,17 +326,27 @@ public class Model {
     }
 
     private void addEdge(int from, int to, double actionLL) {
+        distributions.get(to).deactivate();
         bn.addEdge(from, to);
         ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(to);
+        List<Integer> parentSet = bn.ingoingEdges(to);
+        Collections.sort(parentSet);
+        Multinomial mult = caches.get(to).request(parentSet);
+        distributions.set(to, mult);
+        transitions.set(to, mult.logLikelihood());
     }
 
     private void removeEdge(int from, int to, double actionLL) {
+        distributions.get(to).deactivate();
         bn.removeEdge(from, to);
         ll[to] += actionLL;
         loglik += actionLL;
-        updateDistribution(to);
+        List<Integer> parentSet = bn.ingoingEdges(to);
+        Collections.sort(parentSet);
+        Multinomial mult = caches.get(to).request(parentSet);
+        distributions.set(to, mult);
+        transitions.set(to, mult.logLikelihood());
     }
 
     private void updateLL(int to, double actionLL) {
