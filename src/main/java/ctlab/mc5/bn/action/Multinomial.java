@@ -120,7 +120,6 @@ public class Multinomial {
             return Double.NEGATIVE_INFINITY;
         }
         assert (ll1 >= ll2);
-        //return Double.NEGATIVE_INFINITY;
 
         return Math.log(Math.exp(ll1) - Math.exp(ll2)) + maxLL;
     }

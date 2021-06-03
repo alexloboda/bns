@@ -99,9 +99,9 @@ public class Model {
 
     private Function<List<Integer>, Multinomial> multinomials(int to_node) {
         return ps -> {
+            double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
-                double currLL = ll[to_node];
-//                assert(currLL == ll[to_node]);
+                assert(currLL == ll[to_node]);
                 if (i >= to_node) {
                     ++i;
                 }

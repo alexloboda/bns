@@ -1,10 +1,8 @@
 package ctlab.mc5.bn;
 
-import org.apache.commons.math3.distribution.BinomialDistribution;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -161,7 +159,6 @@ public class Variable {
             for (Variable p : ps) {
                 selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
-
             result[i] = selector.get();
         }
         return result;
