@@ -10,6 +10,11 @@ public class K2 extends ScoringFunction {
     }
 
     @Override
+    public ScoringFunction cp_internal() {
+        return new K2();
+    }
+
+    @Override
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
 
         int num_cls = 0;

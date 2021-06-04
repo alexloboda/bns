@@ -218,12 +218,8 @@ public class Model {
             double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
             double systemLLRev = scoreFRev + scoreTRev;
             if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
-                bn.removeEdge(to, from);
-                bn.addEdge(from, to);
-                removeEdge(from, to, scoreTRev - ll[to]);
-                addEdge(to, from, scoreFRev - ll[from]);
-//                updateLL(to, scoreTRev - ll[to]);
-//                updateLL(from, scoreFRev - ll[from]);
+                updateLL(to, scoreTRev - ll[to]);
+                updateLL(from, scoreFRev - ll[from]);
                 time[to][from] = steps;
                 fix_delete(from, to);
             } else {
@@ -326,27 +322,17 @@ public class Model {
     }
 
     private void addEdge(int from, int to, double actionLL) {
-        distributions.get(to).deactivate();
         bn.addEdge(from, to);
         ll[to] += actionLL;
         loglik += actionLL;
-        List<Integer> parentSet = bn.ingoingEdges(to);
-        Collections.sort(parentSet);
-        Multinomial mult = caches.get(to).request(parentSet);
-        distributions.set(to, mult);
-        transitions.set(to, mult.logLikelihood());
+        updateDistribution(to);
     }
 
     private void removeEdge(int from, int to, double actionLL) {
-        distributions.get(to).deactivate();
         bn.removeEdge(from, to);
         ll[to] += actionLL;
         loglik += actionLL;
-        List<Integer> parentSet = bn.ingoingEdges(to);
-        Collections.sort(parentSet);
-        Multinomial mult = caches.get(to).request(parentSet);
-        distributions.set(to, mult);
-        transitions.set(to, mult.logLikelihood());
+        updateDistribution(to);
     }
 
     private void updateLL(int to, double actionLL) {

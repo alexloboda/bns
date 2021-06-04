@@ -55,7 +55,7 @@ public class HashTableCache implements Cache {
 
     @Override
     public Short randomAction() {
-        short node = (short)actions.randomChoice(re);
+        short node = (short) actions.randomChoice(re);
         ll = actions.get(node);
         return topActions[node];
     }
@@ -70,19 +70,21 @@ public class HashTableCache implements Cache {
     }
 
     @Override
-    public Short add(short action, double ll) {
+    public RetAdd add(short action, double ll) {
         Short ret = null;
+        double lls = 0.;
         short pos = (short) topActionNodes.size();
         if (topActionNodes.size() == topActions.length) {
             pos = topActionsMin.extractMin();
             ret = topActions[pos];
             topActionNodes.remove(topActions[pos]);
+            lls = actions.get(pos);
         }
         topActions[pos] = action;
         actions.set(pos, ll);
         topActionNodes.put(action, pos);
         topActionsMin.add(pos, ll);
-        return ret;
+        return ret == null ? null : new RetAdd(ret, lls);
     }
 
     @Override

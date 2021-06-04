@@ -62,8 +62,8 @@ public class NetworkEstimator {
     private class Task implements Runnable {
         private MetaModel model;
         private EdgeList result;
-        private final BayesianNetwork bn;
-        private final Int mc;
+        private BayesianNetwork bn;
+        private Int mc;
 
         public Task(BayesianNetwork bn, Int mc) {
             this.bn = bn;
@@ -84,23 +84,35 @@ public class NetworkEstimator {
             result = null;
         }
 
+        private void unInit() {
+            model = null;
+            bn = null;
+            mc = null;
+
+//            System.gc();
+        }
+
+
         @Override
         public void run() {
-            init();
             EdgeList result;
             try {
+                init();
                 result = model.run(params.swapPeriod(), params.coldChainSteps(), params.warmup(), params.powerBase());
             } catch (InterruptedException e) {
+                unInit();
                 return;
             } catch (Error | Exception e) {
                 System.err.println("Exception occurred: ");
                 System.err.println(e);
                 e.printStackTrace();
+                unInit();
                 return;
             }
             synchronized (this) {
                 this.result = result;
             }
+            unInit();
         }
 
         public EdgeList getResult() {

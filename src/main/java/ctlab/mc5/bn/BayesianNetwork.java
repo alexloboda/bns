@@ -58,7 +58,7 @@ public class BayesianNetwork {
         }
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
-        sf = bn.sf;
+        sf = bn.sf.cp();
         cache = new IngoingCache(bn.cache);
     }
 

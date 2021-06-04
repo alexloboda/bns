@@ -68,7 +68,6 @@ public class Multinomial {
         }
 
         double ll = disabledActions.get(action);
-        assert (ll == computeLL.apply((int) action));
         disabledActions.remove(action);
 
         if (!initialized) {
@@ -249,35 +248,32 @@ public class Multinomial {
         return action / batchSize;
     }
 
-    private void insertBack(Short action) {
+    private void insertBack(Short action, double ll) {
         if (action == null || disabledActions.containsKey(action)) {
             return;
         }
-        double finalLL = Math.min(beta * computeLL.apply((int) action), 0.0) + initialLL;
+        double finalLL = Math.min(beta * ll, 0.0) + initialLL;
         int b = batch(action);
         batchMaxLL[b] = Math.max(batchMaxLL[b], (float) finalLL);
         actions.set(b, likelihoodsSum(actions.get(b), finalLL));
     }
 
-    private double resolveAction(short action, Double loglik) {
+    private double resolveAction(short action, double loglik) {
         if (disabledActions.containsKey(action)) {
             return Double.NEGATIVE_INFINITY;
         }
         int b = batch(action);
         double batchLL = Double.NEGATIVE_INFINITY;
 
-        if (loglik == null) {
-            loglik = computeLL.apply((int) action);
-        }
         double finalLL = Math.min(beta * loglik, 0.0) + initialLL;
 
         if (!cache.isFull() || loglik > cache.min() + EPS) {
-            Short other = cache.add(action, loglik);
+            Cache.RetAdd other = cache.add(action, loglik);
             if (other != null) {
-                if (batch(other) == b) {
-                    batchLL = likelihoodsSum(resolveAction(other, null), batchLL);
+                if (batch(other.action) == b) {
+                    batchLL = likelihoodsSum(resolveAction(other.action, other.ll), batchLL);
                 } else {
-                    insertBack(other);
+                    insertBack(other.action, other.ll);
                 }
             }
         } else {
@@ -291,7 +287,7 @@ public class Multinomial {
         double batchLL = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < batchSize(b); i++) {
             short action = (short) (i + batchSize * b);
-            batchLL = likelihoodsSum(batchLL, resolveAction(action, null));
+            batchLL = likelihoodsSum(batchLL, resolveAction(action, computeLL.apply((int) action)));
         }
         actions.set(b, batchLL);
         batchResolved.set(b, true);

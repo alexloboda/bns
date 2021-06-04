@@ -24,6 +24,7 @@ public class Variable {
     private int ub;
 
     private int number;
+    private Trie.Selector[] selectors;
 
     public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
@@ -97,6 +98,7 @@ public class Variable {
         this.ub = v.ub;
         random = ThreadLocalRandom.current();
         number = v.number;
+        selectors = new Trie.Selector[obsNum()];
     }
 
     void setLF(LogFactorial lf) {
@@ -153,14 +155,16 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
-            }
-            result[i] = selector.get();
+            selectors[i] = t.selector();
         }
+        for (Variable p : ps) {
+            for (int i = 0; i < m; ++i) {
+                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            }
+        }
+        for (int i = 0; i < m; ++i)
+            result[i] = selectors[i].get();
         return result;
     }
 
@@ -179,41 +183,20 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
-        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
+            selectors[i] = t.selector();
+        }
+        for (Variable p : ps) {
+            for (int i = 0; i < m; ++i) {
+                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
             }
-            selector.choose(this.discreteValue(orderedObs[i]) - 1);
-
-            result[i] = selector.get();
+        }
+        for (int i = 0; i < m; ++i) {
+            selectors[i].choose(discreteValue(orderedObs[i]) - 1);
+            result[i] = selectors[i].get();
         }
         return result;
-    }
 
-    public int[] mapObsNoMemAnd(List<Variable> ps, Variable extra, int[] arrOut, int[] arrTmp) {
-        int m = obsNum();
-        int ps_size = ps.size();
-        for (int i = 0; i < ps_size; i++) {
-            arrTmp[i] = ps.get(i).cardinality();
-        }
-        arrTmp[ps_size] = extra.cardinality();
-        arrTmp[ps_size + 1] = 1;
-
-        Trie t = new Trie(arrTmp);
-
-        Trie.Selector selector = t.selector();
-        for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
-            }
-            selector.choose(extra.discreteValue(orderedObs[i]) - 1);
-
-            arrOut[i] = selector.get();
-        }
-        return arrOut;
     }
 
     public String getName() {

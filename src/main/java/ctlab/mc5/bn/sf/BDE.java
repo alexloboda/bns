@@ -14,6 +14,11 @@ public class BDE extends ScoringFunction {
         this.iss = 1;
     }
 
+    @Override
+    public ScoringFunction cp_internal() {
+        return new BDE(iss);
+    }
+
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
         int num_cls = 0;
         int num_all_cls = 0;

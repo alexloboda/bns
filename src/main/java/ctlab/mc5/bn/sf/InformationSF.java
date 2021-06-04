@@ -14,6 +14,11 @@ public class InformationSF extends ScoringFunction {
     }
 
     @Override
+    public ScoringFunction cp_internal() {
+        return new InformationSF(beta);
+    }
+
+    @Override
     double score(int[] parent_cls, int[] all_cls, int cardinality) {
         int num_cls = Arrays.stream(parent_cls).max().getAsInt() + 1;
         int num_all_cls = Arrays.stream(all_cls).max().getAsInt() + 1;
