@@ -1,15 +1,17 @@
 package ctlab.mc5.bn.sf;
 
+import ctlab.mc5.bn.BayesianNetwork;
 import ctlab.mc5.bn.Variable;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public abstract class ScoringFunction {
 
     static class LRUCache {
 
-        final ArrayList<Map<Set<Variable>, Double>> map = new ArrayList<>();
+        final ArrayList<Map<List<Variable>, Double>> map = new ArrayList<>();
         boolean inited = false;
 
         void init(int varSize) {
@@ -20,20 +22,22 @@ public abstract class ScoringFunction {
             }
         }
 
-        Double get(int num, Set<Variable> parents) {
-            final Map<Set<Variable>, Double> curParents = map.get(num);
+        Double get(int num, List<Variable> parents) {
+            final Map<List<Variable>, Double> curParents = map.get(num);
             return curParents.get(parents);
         }
 
-        void add(int num, Set<Variable> parents, double res) {
-            final Map<Set<Variable>, Double> curParents = map.get(num);
-            Set<Variable> copySet;
-            copySet = new LinkedHashSet<>(parents);
+        void add(int num, List<Variable> parents, double res) {
+            final Map<List<Variable>, Double> curParents = map.get(num);
+            List<Variable> copySet;
+            copySet = new ArrayList<>(parents);
             curParents.put(copySet, res);
         }
     }
 
     LRUCache ht;
+    long take = 0;
+    long miss = 0;
 
     ScoringFunction() {
         ht = new LRUCache();
@@ -52,17 +56,20 @@ public abstract class ScoringFunction {
 
     abstract public ScoringFunction cp_internal();
 
-    public double score(Variable v, Set<Variable> ps, int n) {
+    public double score(Variable v, List<Variable> ps, int n) {
         Double resCache = ht.get(v.getNumber(), ps);
         if (resCache != null) {
-            assert score(v.mapObs(ps), v.mapObsAnd(ps), v.cardinality()) == resCache;
+            assert score(v.mapObs(ps).getFirst(), v.mapObs(ps).getSecond(), v.cardinality()) == resCache;
+//            take++;
+//            System.out.print("\r" + take * 1. / (take + miss));
             return resCache;
         }
-        int[] parent_cls = v.mapObs(ps);
+//        miss++;
+//        System.out.print("\r" + take * 1. / (take + miss));
+        Pair<int[], int[]> cls = v.mapObs(ps);
 
-        int[] all_cls = v.mapObsAnd(ps);
 
-        double res = score(parent_cls, all_cls, v.cardinality());
+        double res = score(cls.getFirst(), cls.getSecond(), v.cardinality());
         ht.add(v.getNumber(), ps, res);
         return res;
     }

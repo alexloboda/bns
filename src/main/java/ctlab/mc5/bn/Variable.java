@@ -1,12 +1,14 @@
 package ctlab.mc5.bn;
 
 
+import org.apache.commons.math3.util.Pair;
+
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Variable {
+public class Variable implements Comparable<Variable> {
     private String name;
 
     private List<Double> data;
@@ -24,7 +26,6 @@ public class Variable {
     private int ub;
 
     private int number;
-    private Trie.Selector[] selectors;
 
     public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
@@ -98,7 +99,6 @@ public class Variable {
         this.ub = v.ub;
         random = ThreadLocalRandom.current();
         number = v.number;
-        selectors = new Trie.Selector[obsNum()];
     }
 
     void setLF(LogFactorial lf) {
@@ -141,34 +141,44 @@ public class Variable {
                 .max().getAsInt() + 1;
     }
 
-    public int[] mapObs(Set<Variable> ps) {
+    public Pair<int[], int[]> mapObs(List<Variable> ps) {
         int m = obsNum();
-        int[] result = new int[m];
+        int[] result1 = new int[m];
+        int[] result2 = new int[m];
         int ps_size = ps.size();
-        int[] cds = new int[ps_size + 1];
+        int[] cds1 = new int[ps_size + 1];
+        int[] cds2 = new int[ps_size + 1 + 1];
         int i1 = 0;
         for (Variable p : ps) {
-            cds[i1] = p.cardinality();
+            cds1[i1] = p.cardinality();
+            cds2[i1] = cds1[i1];
             i1++;
         }
-        cds[ps_size] = 1;
+        cds1[ps_size] = 1;
+        cds2[ps_size] = this.cardinality();
+        cds2[ps_size + 1] = 1;
 
-        Trie t = new Trie(cds);
+        Trie t1 = new Trie(cds1);
+        Trie t2 = new Trie(cds2);
 
+        Trie.Selector selector1 = t1.selector();
+        Trie.Selector selector2 = t2.selector();
         for (int i = 0; i < m; i++) {
-            selectors[i] = t.selector();
-        }
-        for (Variable p : ps) {
-            for (int i = 0; i < m; ++i) {
-                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            selector1.reuse();
+            selector2.reuse();
+            for (Variable p : ps) {
+                selector1.choose(p.discreteValue(orderedObs[i]) - 1);
+                selector2.choose(p.discreteValue(orderedObs[i]) - 1);
             }
+
+            selector2.choose(this.discreteValue(orderedObs[i]) - 1);
+            result1[i] = selector1.get();
+            result2[i] = selector2.get();
         }
-        for (int i = 0; i < m; ++i)
-            result[i] = selectors[i].get();
-        return result;
+        return new Pair<>(result1, result2);
     }
 
-    public int[] mapObsAnd(Set<Variable> ps) {
+    public int[] mapObsAnd(List<Variable> ps) {
         int m = obsNum();
         int[] result = new int[m];
         int ps_size = ps.size();
@@ -183,20 +193,17 @@ public class Variable {
 
         Trie t = new Trie(cds);
 
+        Trie.Selector selector = t.selector();
         for (int i = 0; i < m; i++) {
-            selectors[i] = t.selector();
-        }
-        for (Variable p : ps) {
-            for (int i = 0; i < m; ++i) {
-                selectors[i].choose(p.discreteValue(orderedObs[i]) - 1);
+            selector.reuse();
+            for (Variable p : ps) {
+                selector.choose(p.discreteValue(orderedObs[i]) - 1);
             }
-        }
-        for (int i = 0; i < m; ++i) {
-            selectors[i].choose(discreteValue(orderedObs[i]) - 1);
-            result[i] = selectors[i].get();
+            selector.choose(this.discreteValue(orderedObs[i]) - 1);
+
+            result[i] = selector.get();
         }
         return result;
-
     }
 
     public String getName() {
@@ -262,5 +269,10 @@ public class Variable {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    @Override
+    public int compareTo(Variable variable) {
+        return number - variable.number;
     }
 }

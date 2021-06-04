@@ -14,7 +14,7 @@ public class BayesianNetwork {
     private Graph g;
     private ScoringFunction sf;
     private Map<String, Integer> names;
-    private IngoingCache cache;
+//    private IngoingCache cache;
 
 
     public BayesianNetwork(List<Variable> variables) {
@@ -32,7 +32,7 @@ public class BayesianNetwork {
         }
         this.sf = sf;
         sf.init(g.size());
-        this.cache = new IngoingCache(g.size());
+//        this.cache = new IngoingCache(g.size());
     }
 
     public void setScoringFunction(ScoringFunction sf) {
@@ -59,44 +59,94 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
         sf = bn.sf.cp();
-        cache = new IngoingCache(bn.cache);
+//        cache = new IngoingCache(bn.cache);
     }
 
     public Pair<Integer, Integer> randomEdge(SplittableRandom random) {
         return g.randomEdge(random);
     }
 
-    static class IngoingCache {
-        ArrayList<LinkedHashSet<Variable>> map;
+//    public static class SuperSet extends TreeSet<Variable> {
+//        int val1 = 0;
+//        int val2 = 0;
+//
+//        public SuperSet() {
+//        }
+//
+//        public SuperSet(Set<Variable> variables) {
+//            super(variables);
+//            if (variables instanceof SuperSet) {
+//                val1 = ((SuperSet) variables).val1;
+//                val2 = ((SuperSet) variables).val2;
+//            } else {
+//                variables.forEach(v -> {
+//                    val1 += v.getNumber();
+//                    val2 ^= v.getNumber();
+//                });
+//            }
+//        }
+//
+//        @Override
+//        public boolean add(Variable t) {
+//            val1 += t.getNumber();
+//            val2 ^= t.getNumber();
+//            return super.add(t);
+//        }
+//
+//        @Override
+//        public boolean remove(Object o) {
+//            if (o instanceof Variable) {
+//                val1 -= ((Variable) o).getNumber();
+//                val2 ^= ((Variable) o).getNumber();
+//            }
+//            return super.remove(o);
+//        }
+//
+//        @Override
+//        public boolean equals(Object o) {
+//            if (o instanceof SuperSet) {
+//                return val1 == ((SuperSet) o).val1 && val2 == ((SuperSet) o).val2 && super.equals(o);
+//            }
+//            return super.equals(o);
+//        }
+//
+//        @Override
+//        public int hashCode() {
+//            return val1 ^ ~val2;
+//        }
+//    }
 
-        IngoingCache(int n) {
-            map = new ArrayList<>();
-            for (int i = 0; i < n; ++i) {
-                map.add(new LinkedHashSet<>());
-            }
-        }
-
-        IngoingCache(IngoingCache other) {
-            map = new ArrayList<>();
-            for (int i = 0; i < other.map.size(); ++i) {
-                map.add(new LinkedHashSet<>(other.map.get(i)));
-            }
-        }
-
-        void add(int to, Variable v) {
-            assert !map.get(to).contains(v);
-            map.get(to).add(v);
-        }
-
-        void rem(int to, Variable v) {
-            assert map.get(to).contains(v);
-            map.get(to).remove(v);
-        }
-
-        Set<Variable> get(int to) {
-            return map.get(to);
-        }
-    }
+//    static class IngoingCache {
+//        ArrayList<Set<Variable>> map;
+//
+//        IngoingCache(int n) {
+//            map = new ArrayList<>();
+//            for (int i = 0; i < n; ++i) {
+//                map.add(new TreeSet<>());
+//            }
+//        }
+//
+//        IngoingCache(IngoingCache other) {
+//            map = new ArrayList<>();
+//            for (int i = 0; i < other.map.size(); ++i) {
+//                map.add(new TreeSet<>(other.map.get(i)));
+//            }
+//        }
+//
+//        void add(int to, Variable v) {
+//            assert !map.get(to).contains(v);
+//            map.get(to).add(v);
+//        }
+//
+//        void rem(int to, Variable v) {
+//            assert map.get(to).contains(v);
+//            map.get(to).remove(v);
+//        }
+//
+//        Set<Variable> get(int to) {
+//            return map.get(to);
+//        }
+//    }
 
     public boolean isSubscribed(int from, int to) {
         return g.isSubscribed(from, to);
@@ -104,21 +154,23 @@ public class BayesianNetwork {
 
     public void addEdge(int from, int to) {
         g.addEdge(from, to);
-        cache.add(to, var(from));
+//        cache.add(to, var(from));
     }
 
     public void removeEdge(int from, int to) {
         g.removeEdge(from, to);
-        cache.rem(to, var(from));
+//        cache.rem(to, var(from));
     }
 
     public int getEdgeCount() {
         return g.getEdgeCount();
     }
 
-    public Set<Variable> parentSet(int to) {
-        assert (cache.get(to)).equals(ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toSet()));
-        return cache.get(to);
+    public List<Variable> parentSet(int to) {
+
+//        assert (cache.get(to)).equals(ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toSet()));
+//        return cache.get(to);
+        return ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toList());
     }
 
     public void randomPolicy() {
@@ -138,7 +190,7 @@ public class BayesianNetwork {
     }
 
     public double scoreIncluding(int from, int to) {
-        Set<Variable> parents = cache.get(to);
+        List<Variable> parents = parentSet(to);
         assert !parents.contains(var(from));
 
         parents.add(var(from));
@@ -148,7 +200,7 @@ public class BayesianNetwork {
     }
 
     public double scoreExcluding(int from, int to) {
-        Set<Variable> parents = cache.get(to);
+        List<Variable> parents = parentSet(to);
         assert parents.contains(var(from));
         parents.remove(var(from));
         double val = sf.score(var(to), parents, variables.size());
@@ -177,10 +229,6 @@ public class BayesianNetwork {
             return true;
         }
         return g.pathExists(from, to);
-    }
-
-    public int getDegree(int to) {
-        return cache.get(to).size();
     }
 
     public List<Integer> ingoingEdges(int to) {
