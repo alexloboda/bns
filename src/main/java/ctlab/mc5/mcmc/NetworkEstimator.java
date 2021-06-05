@@ -34,8 +34,8 @@ public class NetworkEstimator {
         return result;
     }
 
-    static class Int {
-        int count = 0;
+    public static class Int {
+        public long count = 0;
 
         public void inc() {
             count++;
@@ -77,7 +77,7 @@ public class NetworkEstimator {
             for (int i = 0; i < chains; i++) {
                 MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
                 Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0, params.multipleCollectors() == 0);
-                model.init(false);
+                model.init(false, true);
                 models.add(model);
             }
             model = new MetaModel(models, random, mc);
@@ -88,8 +88,6 @@ public class NetworkEstimator {
             model = null;
             bn = null;
             mc = null;
-
-//            System.gc();
         }
 
 
@@ -100,19 +98,18 @@ public class NetworkEstimator {
                 init();
                 result = model.run(params.swapPeriod(), params.coldChainSteps(), params.warmup(), params.powerBase());
             } catch (InterruptedException e) {
-                unInit();
                 return;
             } catch (Error | Exception e) {
                 System.err.println("Exception occurred: ");
                 System.err.println(e);
                 e.printStackTrace();
-                unInit();
                 return;
+            } finally {
+                unInit();
             }
             synchronized (this) {
                 this.result = result;
             }
-            unInit();
         }
 
         public EdgeList getResult() {

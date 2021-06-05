@@ -1,6 +1,5 @@
 package ctlab.mc5.bn.sf;
 
-import ctlab.mc5.bn.BayesianNetwork;
 import ctlab.mc5.bn.Variable;
 import org.apache.commons.math3.util.Pair;
 
@@ -36,8 +35,6 @@ public abstract class ScoringFunction {
     }
 
     LRUCache ht;
-    long take = 0;
-    long miss = 0;
 
     ScoringFunction() {
         ht = new LRUCache();
@@ -49,7 +46,6 @@ public abstract class ScoringFunction {
 
     public ScoringFunction cp() {
         ScoringFunction sf =  cp_internal();
-        sf.ht = new LRUCache();
         sf.init(ht.map.size());
         return sf;
     }
@@ -57,17 +53,14 @@ public abstract class ScoringFunction {
     abstract public ScoringFunction cp_internal();
 
     public double score(Variable v, List<Variable> ps, int n) {
+        Collections.sort(ps);
         Double resCache = ht.get(v.getNumber(), ps);
+
         if (resCache != null) {
             assert score(v.mapObs(ps).getFirst(), v.mapObs(ps).getSecond(), v.cardinality()) == resCache;
-//            take++;
-//            System.out.print("\r" + take * 1. / (take + miss));
             return resCache;
         }
-//        miss++;
-//        System.out.print("\r" + take * 1. / (take + miss));
         Pair<int[], int[]> cls = v.mapObs(ps);
-
 
         double res = score(cls.getFirst(), cls.getSecond(), v.cardinality());
         ht.add(v.getNumber(), ps, res);

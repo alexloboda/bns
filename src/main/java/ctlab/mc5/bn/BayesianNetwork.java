@@ -154,12 +154,10 @@ public class BayesianNetwork {
 
     public void addEdge(int from, int to) {
         g.addEdge(from, to);
-//        cache.add(to, var(from));
     }
 
     public void removeEdge(int from, int to) {
         g.removeEdge(from, to);
-//        cache.rem(to, var(from));
     }
 
     public int getEdgeCount() {
@@ -167,10 +165,21 @@ public class BayesianNetwork {
     }
 
     public List<Variable> parentSet(int to) {
+        List<Integer> numbers = ingoingEdges(to);
+        List<Variable> set = new ArrayList<>(numbers.size());
+        for (Integer number : numbers) {
+            set.add(variables.get(number));
+        }
+        return set;
+    }
 
-//        assert (cache.get(to)).equals(ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toSet()));
-//        return cache.get(to);
-        return ingoingEdges(to).stream().map(x -> variables.get(x)).collect(Collectors.toList());
+    public List<Variable> parentSetAnd(int to, int and) {
+        List<Integer> numbers = ingoingEdges(to);
+        List<Variable> set = new ArrayList<>(numbers.size());
+        for (Integer number : numbers) {
+            set.add(variables.get(number));
+        }
+        return set;
     }
 
     public void randomPolicy() {
@@ -190,22 +199,18 @@ public class BayesianNetwork {
     }
 
     public double scoreIncluding(int from, int to) {
-        List<Variable> parents = parentSet(to);
+        List<Variable> parents = parentSetAnd(to, from);
         assert !parents.contains(var(from));
 
         parents.add(var(from));
-        double val = sf.score(var(to), parents, variables.size());
-        parents.remove(var(from));
-        return val;
+        return sf.score(var(to), parents, variables.size());
     }
 
     public double scoreExcluding(int from, int to) {
         List<Variable> parents = parentSet(to);
         assert parents.contains(var(from));
         parents.remove(var(from));
-        double val = sf.score(var(to), parents, variables.size());
-        parents.add(var(from));
-        return val;
+        return sf.score(var(to), parents, variables.size());
     }
 
     public void clearEdges() {

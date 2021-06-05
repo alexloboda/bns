@@ -31,7 +31,7 @@ public class MetaModel {
 
 //        PrintWriter pw = null;
 //        try {
-//            pw = new PrintWriter(new FileOutputStream("likelihood.out"));
+//            pw = new PrintWriter(new FileOutputStream("likelihood1.out"));
 //        } catch (FileNotFoundException e) {
 //            e.printStackTrace();
 //        }

@@ -54,7 +54,7 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double) n * 50 );
+        double reverseProb = 1.0 / ((double) n * 50);
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
@@ -101,7 +101,7 @@ public class Model {
         return ps -> {
             double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
-                assert(currLL == ll[to_node]);
+                assert (currLL == ll[to_node]);
                 if (i >= to_node) {
                     ++i;
                 }
@@ -143,9 +143,9 @@ public class Model {
         return n;
     }
 
-    public void init(boolean randomDAG) {
+    public void init(boolean randomDAG, boolean randomPolicy) {
         bn = new BayesianNetwork(bn);
-        bn.randomPolicy();
+        if (randomPolicy) bn.randomPolicy();
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
         bn.setCallback(this::processPathElimination);
