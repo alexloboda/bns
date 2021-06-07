@@ -154,7 +154,7 @@ public class Variable implements Comparable<Variable> {
         int[] result1 = new int[m];
         int[] result2 = new int[m];
 
-        if (ps.size() > maxLog) {
+        if (ps.size() + 1 > maxLog) {
             int ps_size = ps.size();
             int[] cds1 = new int[ps_size + 1];
             int[] cds2 = new int[ps_size + 1 + 1];
@@ -187,10 +187,9 @@ public class Variable implements Comparable<Variable> {
             }
             return new Pair<>(result1, result2);
         }
-
-
-        Map<Long, Integer> mapa1 = new HashMap<>();
-        Map<Long, Integer> mapa2 = new HashMap<>();
+        
+        Map<Long, Integer> mapa1 = new HashMap<>(m);
+        Map<Long, Integer> mapa2 = new HashMap<>(m);
         int n1 = 0;
         int n2 = 0;
         for (int i = 0; i < m; i++) {
