@@ -24,12 +24,18 @@ public class Variable implements Comparable<Variable> {
 
     private int lb;
     private int ub;
+    private int maxLog;
 
-    private int number;
+    private final int number;
+
+    private void updateMaxLog() {
+        maxLog = (int) Math.floor(Math.log(Long.MAX_VALUE) / Math.log(ub));
+    }
 
     public void setDiscLimits(int lb, int ub) {
         this.lb = lb;
         this.ub = ub;
+        updateMaxLog();
     }
 
     private String stripName(String name) {
@@ -82,6 +88,7 @@ public class Variable implements Comparable<Variable> {
         initial(discClasses);
         ub = obsNum();
         lb = 1;
+        updateMaxLog();
     }
 
     Variable(Variable v) {
@@ -99,6 +106,7 @@ public class Variable implements Comparable<Variable> {
         this.ub = v.ub;
         random = ThreadLocalRandom.current();
         number = v.number;
+        updateMaxLog();
     }
 
     void setLF(LogFactorial lf) {
@@ -146,6 +154,41 @@ public class Variable implements Comparable<Variable> {
         int[] result1 = new int[m];
         int[] result2 = new int[m];
 
+        if (ps.size() > maxLog) {
+            int ps_size = ps.size();
+            int[] cds1 = new int[ps_size + 1];
+            int[] cds2 = new int[ps_size + 1 + 1];
+            int i1 = 0;
+            for (Variable p : ps) {
+                cds1[i1] = p.cardinality();
+                cds2[i1] = cds1[i1];
+                i1++;
+            }
+            cds1[ps_size] = 1;
+            cds2[ps_size] = this.cardinality();
+            cds2[ps_size + 1] = 1;
+
+            Trie t1 = new Trie(cds1);
+            Trie t2 = new Trie(cds2);
+
+            Trie.Selector selector1 = t1.selector();
+            Trie.Selector selector2 = t2.selector();
+            for (int i = 0; i < m; i++) {
+                selector1.reuse();
+                selector2.reuse();
+                for (Variable p : ps) {
+                    selector1.choose(p.discreteValue(orderedObs[i]) - 1);
+                    selector2.choose(p.discreteValue(orderedObs[i]) - 1);
+                }
+
+                selector2.choose(this.discreteValue(orderedObs[i]) - 1);
+                result1[i] = selector1.get();
+                result2[i] = selector2.get();
+            }
+            return new Pair<>(result1, result2);
+        }
+
+
         Map<Long, Integer> mapa1 = new HashMap<>();
         Map<Long, Integer> mapa2 = new HashMap<>();
         int n1 = 0;
@@ -153,10 +196,10 @@ public class Variable implements Comparable<Variable> {
         for (int i = 0; i < m; i++) {
             long val1 = 0;
             for (Variable p : ps) {
-                val1 = val1 * 3 + (p.discreteValue(orderedObs[i]) - 1);
+                val1 = val1 * ub + (p.discreteValue(orderedObs[i]) - 1);
             }
 
-            long val2 = val1 * 3 + (this.discreteValue(orderedObs[i]) - 1);
+            long val2 = val1 * ub + (this.discreteValue(orderedObs[i]) - 1);
             int res1;
             if (mapa1.containsKey(val1)) {
                 res1 = mapa1.get(val1);
