@@ -7,29 +7,29 @@ public class Trie {
 
     public Trie(int[] choices) {
         this.choices = choices;
-        root = new Node(0);
+        root = new Node();
     }
 
     public Selector selector() {
         return new Selector(root);
     }
 
-    class Node {
+    static class Node {
         int c = -1;
-        int lvl;
         Node[] ss;
 
-        Node(int lvl) {
-            ss = new Node[choices[lvl]];
-            this.lvl = lvl;
+        Node() {
+            ss = new Node[16];
         }
     }
 
-    public class Selector {
+    static public class Selector {
         private Node ptr;
+        private final Node ptrBase;
+        private int n = 0;
 
         Selector(Node ptr) {
-            this.ptr = ptr;
+            this.ptr = ptr; this.ptrBase = ptr;
         }
 
         public int get() {
@@ -41,13 +41,13 @@ public class Trie {
 
         public void choose(int x) {
             if (ptr.ss[x] == null) {
-                ptr.ss[x] = new Node(ptr.lvl + 1);
+                ptr.ss[x] = new Node();
             }
             ptr = ptr.ss[x];
         }
 
         public void reuse() {
-            ptr = root;
+            ptr = ptrBase;
         }
     }
 }

@@ -173,15 +173,6 @@ public class BayesianNetwork {
         return set;
     }
 
-    public List<Variable> parentSetAnd(int to, int and) {
-        List<Integer> numbers = ingoingEdges(to);
-        List<Variable> set = new ArrayList<>(numbers.size());
-        for (Integer number : numbers) {
-            set.add(variables.get(number));
-        }
-        return set;
-    }
-
     public void randomPolicy() {
         variables.forEach(Variable::randomPolicy);
     }
@@ -199,7 +190,7 @@ public class BayesianNetwork {
     }
 
     public double scoreIncluding(int from, int to) {
-        List<Variable> parents = parentSetAnd(to, from);
+        List<Variable> parents = parentSet(to);
         assert !parents.contains(var(from));
 
         parents.add(var(from));
