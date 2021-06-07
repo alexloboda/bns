@@ -80,7 +80,7 @@ if __name__ == '__main__':
             print(val)
         except ValueError:
             pass
-        plt.step(recall, precision, where='post',  label=sys.argv[i + 1] + " AUROC: " + "{:.5f}".format(val))
+        plt.step(recall, precision, where='post',  label=sys.argv[i + 1] + " AUPR: " + "{:.5f}".format(val))
 
     plt.ylim([-0.01, 1.05])
     plt.xlim([-0.01, 1.05])

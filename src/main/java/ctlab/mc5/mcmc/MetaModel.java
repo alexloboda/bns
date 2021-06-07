@@ -60,7 +60,7 @@ public class MetaModel {
                 }
                 synchronized (modelCounter) {
                     modelCounter.inc();
-                    System.err.print("\rIteration: " + modelCounter.count);
+                    System.err.print("\rIteration: " + modelCounter.count.get());
                 }
 //                pw.close();
                 return models.get(0).results();

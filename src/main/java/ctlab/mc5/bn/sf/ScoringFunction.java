@@ -5,7 +5,6 @@ import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
 
-
 public abstract class ScoringFunction {
 
     static class LRUCache {
@@ -35,7 +34,6 @@ public abstract class ScoringFunction {
     }
 
     LRUCache ht;
-
     ScoringFunction() {
         ht = new LRUCache();
     }
@@ -53,9 +51,11 @@ public abstract class ScoringFunction {
     abstract public ScoringFunction cp_internal();
 
     public double score(Variable v, List<Variable> ps, int n) {
+        if (ps.size() > 10) {
+            return Double.NEGATIVE_INFINITY;
+        }
         Collections.sort(ps);
         Double resCache = ht.get(v.getNumber(), ps);
-
         if (resCache != null) {
             assert score(v.mapObs(ps).getFirst(), v.mapObs(ps).getSecond(), v.cardinality()) == resCache;
             return resCache;

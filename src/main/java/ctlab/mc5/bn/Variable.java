@@ -178,34 +178,6 @@ public class Variable implements Comparable<Variable> {
         return new Pair<>(result1, result2);
     }
 
-    public int[] mapObsAnd(List<Variable> ps) {
-        int m = obsNum();
-        int[] result = new int[m];
-        int ps_size = ps.size();
-        int[] cds = new int[ps_size + 1 + 1];
-        int i1 = 0;
-        for (Variable p : ps) {
-            cds[i1] = p.cardinality();
-            i1++;
-        }
-        cds[ps_size] = this.cardinality();
-        cds[ps_size + 1] = 1;
-
-        Trie t = new Trie(cds);
-
-        Trie.Selector selector = t.selector();
-        for (int i = 0; i < m; i++) {
-            selector.reuse();
-            for (Variable p : ps) {
-                selector.choose(p.discreteValue(orderedObs[i]) - 1);
-            }
-            selector.choose(this.discreteValue(orderedObs[i]) - 1);
-
-            result[i] = selector.get();
-        }
-        return result;
-    }
-
     public String getName() {
         return name;
     }
@@ -263,12 +235,12 @@ public class Variable implements Comparable<Variable> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Variable variable = (Variable) o;
-        return name.equals(variable.name);
+        return number == variable.number;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return number;
     }
 
     @Override

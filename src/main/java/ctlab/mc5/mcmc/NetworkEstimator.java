@@ -9,6 +9,7 @@ import java.util.SplittableRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NetworkEstimator {
     private EstimatorParams params;
@@ -35,10 +36,10 @@ public class NetworkEstimator {
     }
 
     public static class Int {
-        public long count = 0;
+        public AtomicLong count = new AtomicLong(0);
 
-        public void inc() {
-            count++;
+        public long inc() {
+            return count.incrementAndGet();
         }
     }
 

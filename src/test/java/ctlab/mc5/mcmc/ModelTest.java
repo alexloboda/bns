@@ -50,8 +50,8 @@ public class ModelTest {
             Model model = new Model(bn, new MultinomialFactory(1, 2),
                     10, 1.0, true);
             model.setRandomGenerator(sr);
-            model.init(true, false);
-            while (!model.step(1000)) {}
+            model.init(true, true);
+            while (!model.step(10000)) {}
 
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
@@ -64,9 +64,6 @@ public class ModelTest {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (i == j) {
-                    continue;
-                }
                 System.out.print(actual[i][j] / (double)models + " ");
             }
             System.out.println("");
