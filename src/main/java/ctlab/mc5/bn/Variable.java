@@ -188,8 +188,8 @@ public class Variable implements Comparable<Variable> {
             return new Pair<>(result1, result2);
         }
         
-        Map<Long, Integer> mapa1 = new HashMap<>(m);
-        Map<Long, Integer> mapa2 = new HashMap<>(m);
+        Map<Long, Integer> mapa1 = new HashMap<>(2 * m);
+        Map<Long, Integer> mapa2 = new HashMap<>(2 * m);
         int n1 = 0;
         int n2 = 0;
         for (int i = 0; i < m; i++) {

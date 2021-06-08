@@ -1,3 +1,4 @@
+options(stringsAsFactors=FALSE)
 library(RGBM)
 args = commandArgs(trailingOnly=TRUE)
 filename <- args[1]
@@ -20,3 +21,4 @@ for (i in 1:nrow(res)) {
 }
 res_df <- res_df[order(res_df[, 3], decreasing = TRUE), ]
 data.table::fwrite(res_df, args[2], col.names = FALSE, sep = "\t")
+warnings()
