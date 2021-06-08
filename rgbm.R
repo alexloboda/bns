@@ -4,11 +4,17 @@ args = commandArgs(trailingOnly=TRUE)
 filename <- args[1]
 df <- data.table::fread(filename, data.table = F)
 
+tmp = dim(df)
+x = tmp[1]
+y = tmp[2]
+
 m <- as.matrix(df)
-K <- matrix(0, 100, 100)
+K <- matrix(0, x, y)
 colnames(K) <- colnames(m)
-res <- RGBM(E = m, K, g_M = matrix(1, 100, 100), tfs = paste0("G", c(1:100)), 
-            targets = paste0("G", 1:100))
+
+res <- RGBM(E = m, K, g_M = matrix(1, y, y), tfs = paste0("G", c(1:y)), 
+            targets = paste0("G", 1:y))
+
 
 res_df <- data.frame(from = c(), to = c(), score = c())
 for (i in 1:nrow(res)) {
