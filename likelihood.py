@@ -22,7 +22,7 @@ if __name__ == '__main__':
     size = len(sys.argv) - 3
 
     for i in range(2):
-        finy = [0 for _ in range(40000010)]
+        finy = [0 for _ in range(200010)]
         x1 = [i1 for i1 in range(len(finy))]
         for j in range(size // 2):
             ll = read_csv(sys.argv[1 + size // 2 * i + j])
@@ -62,5 +62,6 @@ if __name__ == '__main__':
     #     plt.xscale('log')
     plt.xlabel('Steps')
     plt.ylabel('logLikelihood (More is better)')
+    plt.yticks(fontsize=8, rotation=45)
     plt.legend()
     plt.savefig("plt.png")
