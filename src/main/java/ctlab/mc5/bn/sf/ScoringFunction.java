@@ -45,7 +45,7 @@ public abstract class ScoringFunction implements Serializable {
 
     public void init(int n) {
         for (int i = 0 ; i < n ; i++) {
-            ht.set(i, new Cache());
+            ht.add(i, new Cache());
         }
     }
 

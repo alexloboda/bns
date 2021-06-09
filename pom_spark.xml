@@ -31,7 +31,7 @@
                     <finalName>spark_grn_inferer</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>ctlab.mc5.SparkMain</mainClass>
+                            <mainClass>ctlab.mc5.SparkMain,ctlab.mc5.Main</mainClass>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
