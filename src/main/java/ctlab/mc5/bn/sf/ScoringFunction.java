@@ -8,44 +8,50 @@ import java.util.*;
 
 public abstract class ScoringFunction implements Serializable {
 
-    static class LRUCache implements Serializable {
+    private static class Cache implements Serializable {
+        private static final int CACHE_SIZE = 20_000;
 
-        final ArrayList<Map<List<Variable>, Double>> map = new ArrayList<>();
-        boolean inited = false;
+        private Queue<List<Variable>> queue;
+        private Map<List<Variable>, Double> map;
 
-        void init(int varSize) {
-            if (inited) return;
-            inited = true;
-            for (int i = 0; i < varSize; ++i) {
-                map.add(new HashMap<>());
+        Cache() {
+            queue = new ArrayDeque<>();
+            map = new HashMap<>();
+        }
+
+        Double get(List<Variable> ps) {
+            return map.getOrDefault(ps, null);
+        }
+
+        void add(List<Variable> ps, double score) {
+            if (queue.size() == CACHE_SIZE) {
+                List<Variable> key = queue.poll();
+                map.remove(key);
             }
+            map.put(ps, score);
+            queue.add(ps);
         }
 
-        Double get(int num, List<Variable> parents) {
-            final Map<List<Variable>, Double> curParents = map.get(num);
-            return curParents.get(parents);
-        }
-
-        void add(int num, List<Variable> parents, double res) {
-            final Map<List<Variable>, Double> curParents = map.get(num);
-            List<Variable> copySet;
-            copySet = new ArrayList<>(parents);
-            curParents.put(copySet, res);
+        void clear() {
+            map.clear();
+            queue.clear();
         }
     }
 
-    LRUCache ht;
+    private List<Cache> ht;
     ScoringFunction() {
-        ht = new LRUCache();
+        ht = new ArrayList<>();
     }
 
     public void init(int n) {
-        ht.init(n);
+        for (int i = 0 ; i < n ; i++) {
+            ht.set(i, new Cache());
+        }
     }
 
     public ScoringFunction cp() {
         ScoringFunction sf =  cp_internal();
-        sf.init(ht.map.size());
+        sf.init(ht.size());
         return sf;
     }
 
@@ -56,7 +62,7 @@ public abstract class ScoringFunction implements Serializable {
             return Double.NEGATIVE_INFINITY;
         }
         Collections.sort(ps);
-        Double resCache = ht.get(v.getNumber(), ps);
+        Double resCache = ht.get(v.getNumber()).get(ps);
         if (resCache != null) {
             assert score(v.mapObs(ps).getFirst(), v.mapObs(ps).getSecond(), v.cardinality()) == resCache;
             return resCache;
@@ -64,7 +70,7 @@ public abstract class ScoringFunction implements Serializable {
         Pair<int[], int[]> cls = v.mapObs(ps);
 
         double res = score(cls.getFirst(), cls.getSecond(), v.cardinality());
-        ht.add(v.getNumber(), ps, res);
+        ht.get(v.getNumber()).add(ps, res);
         return res;
     }
 
