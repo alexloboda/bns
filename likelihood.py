@@ -64,4 +64,4 @@ if __name__ == '__main__':
     plt.ylabel('logLikelihood (More is better)')
     plt.yticks(fontsize=8, rotation=45)
     plt.legend()
-    plt.savefig("plt.png")
+    plt.savefig("likelihood.png")

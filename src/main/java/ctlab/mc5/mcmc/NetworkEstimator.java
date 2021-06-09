@@ -5,6 +5,7 @@ import ctlab.mc5.bn.action.MultinomialFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.SplittableRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,7 +49,7 @@ public class NetworkEstimator {
         tasks = new ArrayList<>();
         Int model_counter = new Int();
         for (int i = 0; i < params.nRuns(); i++) {
-            Task task = new Task(bn, model_counter);
+            Task task = new Task(bn, model_counter, re, params);
             tasks.add(task);
             es.submit(task);
         }
@@ -60,24 +61,60 @@ public class NetworkEstimator {
         }
     }
 
-    private class Task implements Runnable {
+    public static class Task implements Runnable {
         private MetaModel model;
         private EdgeList result;
         private BayesianNetwork bn;
+        private SplittableRandom re;
         private Int mc;
+        private final int chains;
+        private final int batchSize;
+        private final int mainCacheSize;
+        private final int numberOfCachedStates;
+        private final int multipleCollectors;
+        private final long swapPeriod;
+        private final long coldChainSteps;
+        private final long warmup;
+        private final double powerBase;
 
-        public Task(BayesianNetwork bn, Int mc) {
+        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params) {
             this.bn = bn;
-            this.mc = mc;
+            this.mc = Objects.requireNonNullElseGet(mc, Int::new);
+            this.re = rn;
+            this.chains = params.chains();
+            this.batchSize = params.batchSize();
+            this.mainCacheSize = params.mainCacheSize();
+            this.numberOfCachedStates = params.numberOfCachedStates();
+            this.multipleCollectors = params.multipleCollectors();
+            this.swapPeriod = params.swapPeriod();
+            this.coldChainSteps = params.coldChainSteps();
+            this.warmup = params.warmup();
+            this.powerBase = params.powerBase();
+        }
+
+        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn,
+                    int chains, int batchSize, int mainCacheSize, int numberOfCachedStates,
+                    int multipleCollectors, long swapPeriod, long coldChainSteps, long warmup, double powerBase) {
+            this.bn = bn;
+            this.mc = Objects.requireNonNullElseGet(mc, Int::new);
+            this.re = rn;
+            this.chains = chains;
+            this.batchSize = batchSize;
+            this.mainCacheSize = mainCacheSize;
+            this.numberOfCachedStates = numberOfCachedStates;
+            this.multipleCollectors = multipleCollectors;
+            this.swapPeriod = swapPeriod;
+            this.coldChainSteps = coldChainSteps;
+            this.warmup = warmup;
+            this.powerBase = powerBase;
         }
 
         private void init() {
             SplittableRandom random = re.split();
-            int chains = params.chains();
             List<Model> models = new ArrayList<>(chains);
             for (int i = 0; i < chains; i++) {
-                MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
-                Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0, params.multipleCollectors() == 0);
+                MultinomialFactory mults = new MultinomialFactory(batchSize, mainCacheSize);
+                Model model = new Model(bn, mults, numberOfCachedStates, 1.0, multipleCollectors == 0);
                 model.init(false, true);
                 models.add(model);
             }
@@ -97,7 +134,7 @@ public class NetworkEstimator {
             EdgeList result;
             try {
                 init();
-                result = model.run(params.swapPeriod(), params.coldChainSteps(), params.warmup(), params.powerBase());
+                result = model.run(swapPeriod, coldChainSteps, warmup, powerBase);
             } catch (InterruptedException e) {
                 return;
             } catch (Error | Exception e) {

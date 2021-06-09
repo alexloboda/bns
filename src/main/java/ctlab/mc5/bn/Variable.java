@@ -3,12 +3,13 @@ package ctlab.mc5.bn;
 
 import org.apache.commons.math3.util.Pair;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Variable implements Comparable<Variable> {
+public class Variable implements Comparable<Variable>, Serializable {
     private String name;
 
     private List<Double> data;

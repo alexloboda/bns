@@ -1,6 +1,5 @@
 package ctlab.mc5;
 
-import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.sf.ScoringFunction;
 import picocli.CommandLine.*;
 
@@ -42,4 +41,10 @@ interface Parameters {
 
     @Option(names = {"-print"}, defaultValue = "0")
     int print();
+
+    @Option(names = {"--jar"})
+    File jar();
+
+    @Option(names = {"--spark-site"})
+    String sparkMaster();
 }

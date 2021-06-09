@@ -3,11 +3,12 @@ package ctlab.mc5.bn.sf;
 import ctlab.mc5.bn.Variable;
 import org.apache.commons.math3.util.Pair;
 
+import java.io.Serializable;
 import java.util.*;
 
-public abstract class ScoringFunction {
+public abstract class ScoringFunction implements Serializable {
 
-    static class LRUCache {
+    static class LRUCache implements Serializable {
 
         final ArrayList<Map<List<Variable>, Double>> map = new ArrayList<>();
         boolean inited = false;

@@ -14,7 +14,6 @@ public class BayesianNetwork {
     private Graph g;
     private ScoringFunction sf;
     private Map<String, Integer> names;
-//    private IngoingCache cache;
 
 
     public BayesianNetwork(List<Variable> variables) {
@@ -32,7 +31,6 @@ public class BayesianNetwork {
         }
         this.sf = sf;
         sf.init(g.size());
-//        this.cache = new IngoingCache(g.size());
     }
 
     public void setScoringFunction(ScoringFunction sf) {
@@ -59,94 +57,11 @@ public class BayesianNetwork {
         g = new Graph(bn.g);
         names = new HashMap<>(bn.names);
         sf = bn.sf.cp();
-//        cache = new IngoingCache(bn.cache);
     }
 
     public Pair<Integer, Integer> randomEdge(SplittableRandom random) {
         return g.randomEdge(random);
     }
-
-//    public static class SuperSet extends TreeSet<Variable> {
-//        int val1 = 0;
-//        int val2 = 0;
-//
-//        public SuperSet() {
-//        }
-//
-//        public SuperSet(Set<Variable> variables) {
-//            super(variables);
-//            if (variables instanceof SuperSet) {
-//                val1 = ((SuperSet) variables).val1;
-//                val2 = ((SuperSet) variables).val2;
-//            } else {
-//                variables.forEach(v -> {
-//                    val1 += v.getNumber();
-//                    val2 ^= v.getNumber();
-//                });
-//            }
-//        }
-//
-//        @Override
-//        public boolean add(Variable t) {
-//            val1 += t.getNumber();
-//            val2 ^= t.getNumber();
-//            return super.add(t);
-//        }
-//
-//        @Override
-//        public boolean remove(Object o) {
-//            if (o instanceof Variable) {
-//                val1 -= ((Variable) o).getNumber();
-//                val2 ^= ((Variable) o).getNumber();
-//            }
-//            return super.remove(o);
-//        }
-//
-//        @Override
-//        public boolean equals(Object o) {
-//            if (o instanceof SuperSet) {
-//                return val1 == ((SuperSet) o).val1 && val2 == ((SuperSet) o).val2 && super.equals(o);
-//            }
-//            return super.equals(o);
-//        }
-//
-//        @Override
-//        public int hashCode() {
-//            return val1 ^ ~val2;
-//        }
-//    }
-
-//    static class IngoingCache {
-//        ArrayList<Set<Variable>> map;
-//
-//        IngoingCache(int n) {
-//            map = new ArrayList<>();
-//            for (int i = 0; i < n; ++i) {
-//                map.add(new TreeSet<>());
-//            }
-//        }
-//
-//        IngoingCache(IngoingCache other) {
-//            map = new ArrayList<>();
-//            for (int i = 0; i < other.map.size(); ++i) {
-//                map.add(new TreeSet<>(other.map.get(i)));
-//            }
-//        }
-//
-//        void add(int to, Variable v) {
-//            assert !map.get(to).contains(v);
-//            map.get(to).add(v);
-//        }
-//
-//        void rem(int to, Variable v) {
-//            assert map.get(to).contains(v);
-//            map.get(to).remove(v);
-//        }
-//
-//        Set<Variable> get(int to) {
-//            return map.get(to);
-//        }
-//    }
 
     public boolean isSubscribed(int from, int to) {
         return g.isSubscribed(from, to);

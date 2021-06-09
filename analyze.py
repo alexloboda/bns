@@ -39,13 +39,17 @@ def read_csv(file):
             lines.append(line.split())
     return lines
 
+def get_last(name):
+    idx = name.rfind('/')
+    return name[idx + 1:]
 
 if __name__ == '__main__':
     print(sys.argv)
 
     size = len(sys.argv) - 2
 
-    for i in range(size):
+    i = 0
+    while i < size:
         ress = []
         read_out_tsv = read_csv(sys.argv[size + 1])
 
@@ -80,7 +84,12 @@ if __name__ == '__main__':
             print(val)
         except ValueError:
             pass
-        plt.step(recall, precision, where='post',  label=sys.argv[i + 1] + " AUPR: " + "{:.5f}".format(val))
+        if i + 2 != size and sys.argv[i + 2] == 'as':
+            plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 3]) + " AUPR: " + "{:.5f}".format(val))
+            i += 2
+        else:
+            plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 1]) + " AUPR: " + "{:.5f}".format(val))
+        i += 1
 
     plt.ylim([-0.01, 1.05])
     plt.xlim([-0.01, 1.05])
