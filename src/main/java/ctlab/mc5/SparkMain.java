@@ -162,22 +162,26 @@ public class SparkMain {
 
         JavaRDD<EdgeList> RddTasks =
                 sparkContext.parallelize(IntStream.range(0, estimatorParams.nRuns()).boxed().collect(Collectors.toList()))
-                        .repartition(estimatorParams.nRuns())
+                        .repartition(Math.max(1, estimatorParams.nRuns() / 4))
                         .map(integer -> {
-                                    final NetworkEstimator.Task task = new NetworkEstimator.Task(new BayesianNetwork(genes, sf),
-                                            null,
-                                            new SplittableRandom(),
-                                            chains,
-                                            batchSize,
-                                            mainCacheSize,
-                                            numberOfCachedStates,
-                                            multipleCollectors,
-                                            swapPeriod,
-                                            coldChainSteps,
-                                            warmup,
-                                            powerBase);
-                                    task.run();
-                                    return task.getResult();
+                                    try {
+                                        final NetworkEstimator.Task task = new NetworkEstimator.Task(new BayesianNetwork(genes, sf),
+                                                null,
+                                                new SplittableRandom(),
+                                                chains,
+                                                batchSize,
+                                                mainCacheSize,
+                                                numberOfCachedStates,
+                                                multipleCollectors,
+                                                swapPeriod,
+                                                coldChainSteps,
+                                                warmup,
+                                                powerBase);
+                                        task.run();
+                                        return task.getResult();
+                                    } catch (Error | Exception e) {
+                                        return null;
+                                    }
                                 }
                         );
         EdgeList resultData = RddTasks.reduce(EdgeList::merge);

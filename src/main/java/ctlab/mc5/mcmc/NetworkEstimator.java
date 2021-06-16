@@ -1,6 +1,7 @@
 package ctlab.mc5.mcmc;
 
 import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.Variable;
 import ctlab.mc5.bn.action.MultinomialFactory;
 
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class NetworkEstimator {
     private EstimatorParams params;
@@ -49,7 +52,7 @@ public class NetworkEstimator {
         tasks = new ArrayList<>();
         Int model_counter = new Int();
         for (int i = 0; i < params.nRuns(); i++) {
-            Task task = new Task(bn, model_counter, re, params);
+            Task task = new Task(bn, model_counter, re, params, i);
             tasks.add(task);
             es.submit(task);
         }
@@ -76,8 +79,9 @@ public class NetworkEstimator {
         private final long coldChainSteps;
         private final long warmup;
         private final double powerBase;
+        private final int number;
 
-        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params) {
+        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params, int number) {
             this.bn = bn;
             this.mc = Objects.requireNonNullElseGet(mc, Int::new);
             this.re = rn;
@@ -90,6 +94,7 @@ public class NetworkEstimator {
             this.coldChainSteps = params.coldChainSteps();
             this.warmup = params.warmup();
             this.powerBase = params.powerBase();
+            this.number = number;
         }
 
         public Task(BayesianNetwork bn, Int mc, SplittableRandom rn,
@@ -107,6 +112,7 @@ public class NetworkEstimator {
             this.coldChainSteps = coldChainSteps;
             this.warmup = warmup;
             this.powerBase = powerBase;
+            this.number = 0;
         }
 
         private void init() {
@@ -114,11 +120,12 @@ public class NetworkEstimator {
             List<Model> models = new ArrayList<>(chains);
             for (int i = 0; i < chains; i++) {
                 MultinomialFactory mults = new MultinomialFactory(batchSize, mainCacheSize);
-                Model model = new Model(bn, mults, numberOfCachedStates, 1.0, multipleCollectors == 0);
+                Model model = new Model(bn, mults, numberOfCachedStates, 1.0, multipleCollectors == 0,
+                        IntStream.range(0, 195).boxed().map(bn::var).collect(Collectors.toList()));
                 model.init(false, true);
                 models.add(model);
             }
-            model = new MetaModel(models, random, mc);
+            model = new MetaModel(models, random, mc, number);
             result = null;
         }
 
@@ -126,6 +133,8 @@ public class NetworkEstimator {
             model = null;
             bn = null;
             mc = null;
+            re = null;
+            System.gc();
         }
 
 

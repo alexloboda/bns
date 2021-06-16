@@ -1,5 +1,7 @@
 package ctlab.mc5.mcmc;
 
+import ctlab.mc5.Main;
+
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -11,13 +13,14 @@ public class MetaModel {
     private List<Model> models;
     private SplittableRandom random;
     final private NetworkEstimator.Int modelCounter;
+    int number;
 
-
-    public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc) {
+    public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc, int number) {
         modelCounter = mc;
         this.models = models;
         this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
+        this.number = number;
     }
 
     public EdgeList run(long swapPeriod, long coldChainSteps, long warmup, double powerBase) throws InterruptedException {
@@ -29,12 +32,6 @@ public class MetaModel {
             model.finish_warmup();
         }
 
-//        PrintWriter pw = null;
-//        try {
-//            pw = new PrintWriter(new FileOutputStream("likelihood1.out"));
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
@@ -46,10 +43,8 @@ public class MetaModel {
             for (int i = 0; i < models.size(); i++) {
                 long currentTarget = (long) (targetSteps / Math.pow(powerBase, i));
                 while (!models.get(i).step(currentTarget)) {
-//                    pw.println(models.get(i).getSteps() + " " + models.get(i).logLikelihood());
                 }
             }
-//            pw.println(models.get(0).getSteps() + " " + models.get(0).logLikelihood());
 
 
             if (targetSteps == coldChainSteps) {
@@ -62,7 +57,6 @@ public class MetaModel {
                     modelCounter.inc();
                     System.err.print("\rIteration: " + modelCounter.count.get());
                 }
-//                pw.close();
                 return models.get(0).results();
             }
             if (models.size() > 1) {

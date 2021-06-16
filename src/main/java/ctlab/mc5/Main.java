@@ -13,6 +13,8 @@ import picocli.CommandLine.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
         resourceBundle = "ctlab.mc5.Parameters")
@@ -100,7 +102,7 @@ public class Main {
         return Math.min(max, Math.max(min, actual));
     }
 
-    private void printResultsToOutput(EdgeList edges, PrintWriter pw) {
+    public static void printResultsToOutput(EdgeList edges, PrintWriter pw, BayesianNetwork bn) {
         for (EdgeList.Edge e : edges.edges()) {
             pw.println(bn.var(e.v()).getName() + "\t" + bn.var(e.u()).getName() + "\t" + e.p(edges.get_number_merged()));
         }
@@ -112,7 +114,7 @@ public class Main {
         }
         EdgeList results = estimator.resultsFromCompletedTasks();
         try (PrintWriter pw = new PrintWriter(outputStreamWriter)) {
-            printResultsToOutput(results, pw);
+            printResultsToOutput(results, pw, bn);
         }
     }
 
@@ -163,7 +165,7 @@ public class Main {
         }
 
         bn = new BayesianNetwork(genes, params.mainSF());
-
+        params.mainSF().setTFs(IntStream.range(0, 195).boxed().map(i -> bn.var(i)).collect(Collectors.toUnmodifiableSet()));
         bn.clearEdges();
 
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));

@@ -1,7 +1,5 @@
 package ctlab.mc5.bn.action;
 
-import ctlab.mc5.bn.BayesianNetwork;
-
 import java.util.SplittableRandom;
 import java.util.function.Function;
 

@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     sns.set_theme(style="darkgrid")
     myplot = sns.lineplot(x = "step", y = "time" , data = df, hue = 'algo')
-    myplot.set_yscale("log")
+#     myplot.set_yscale("log")
 
     myplot.set(xlabel="Steps", ylabel = "Time, seconds (Less is better)")
 #     myplot.set_yticklabels(myplot.get_yticks(), size = 5)

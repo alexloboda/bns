@@ -44,6 +44,9 @@ public class EdgeList implements Serializable {
     }
 
     public EdgeList merge(EdgeList other) {
+        if (other == null) {
+            return this;
+        }
         for (Edge e : other.edgeList) {
             Edge local = getEdge(e.v(), e.u());
             if (local == null) {

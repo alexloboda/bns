@@ -2,7 +2,9 @@ package ctlab.mc5.bn.action;
 
 import ctlab.mc5.algo.SegmentTree;
 import ctlab.mc5.bn.BayesianNetwork;
+import ctlab.mc5.bn.Variable;
 
+import javax.xml.validation.Validator;
 import java.util.*;
 import java.util.function.Function;
 

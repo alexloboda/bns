@@ -11,10 +11,12 @@ y = tmp[2]
 m <- as.matrix(df)
 K <- matrix(0, x, y)
 colnames(K) <- colnames(m)
-
-res <- RGBM(E = m, K, g_M = matrix(1, y, y), tfs = paste0("G", c(1:y)), 
+library(doParallel)
+registerDoParallel(cores=32)
+cl <- makeCluster(32)
+res <- RGBM(E = m, K, g_M = matrix(1, 195, y), tfs = paste0("G", c(1:195)),
             targets = paste0("G", 1:y))
-
+stopCluster(cl)
 
 res_df <- data.frame(from = c(), to = c(), score = c())
 for (i in 1:nrow(res)) {

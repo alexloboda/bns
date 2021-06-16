@@ -28,7 +28,12 @@ public class Model {
     private final MultinomialFactory multFactory;
     private SegmentTree transitions;
 
+    public BayesianNetwork getBn() {
+        return oldBn;
+    }
+
     private BayesianNetwork bn;
+    private BayesianNetwork oldBn;
     private SplittableRandom random;
 
     private List<Integer> permutation;
@@ -39,9 +44,16 @@ public class Model {
     private final long[][] time;
 
     private final boolean raw;
+    private final List<Variable> tf;
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta, boolean raw) {
+        this(bn, multFactory, nCachedStates, beta, raw, IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList()));
+    }
+
+    public Model(BayesianNetwork bn, MultinomialFactory multFactory,
+                 int nCachedStates, double beta, boolean raw, List<Variable> tf) {
+        this.tf = tf;
         this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
         this.n = bn.size();
@@ -54,9 +66,9 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double) n * 50);
+        double reverseProb = 1.0 / ((double) n);
         this.reverseLL = Math.log(reverseProb);
-        double totalTransitions = n * (n - 1);
+        double totalTransitions = tf.size() * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
         this.raw = raw;
@@ -102,6 +114,7 @@ public class Model {
             double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
                 assert (currLL == ll[to_node]);
+                i = toVarIdx(i);
                 if (i >= to_node) {
                     ++i;
                 }
@@ -111,7 +124,7 @@ public class Model {
                     return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(bn.size() - 1, computeLL, initLL, beta);
+            return multFactory.spark(tf.size() - 1, computeLL, initLL, beta);
         };
     }
 
@@ -144,6 +157,7 @@ public class Model {
     }
 
     public void init(boolean randomDAG, boolean randomPolicy) {
+        oldBn = bn;
         bn = new BayesianNetwork(bn);
         if (randomPolicy) bn.randomPolicy();
         permutation = bn.shuffleVariables(new Random(random.nextInt()));
@@ -270,6 +284,8 @@ public class Model {
             return steps == limit;
         }
 
+        parent = (short) toVarIdx((int) parent);
+
         if (parent >= node) {
             ++parent;
         }
@@ -278,7 +294,6 @@ public class Model {
             fix_delete(parent, node);
             assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         } else {
-
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
@@ -290,6 +305,11 @@ public class Model {
             assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         }
         return steps == limit;
+    }
+
+    private int toVarIdx(int parent) {
+        return tf.get(parent).getNumber();
+//        return parent;
     }
 
     public EdgeList edgeList() {

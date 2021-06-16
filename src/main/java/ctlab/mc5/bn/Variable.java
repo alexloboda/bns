@@ -28,9 +28,21 @@ public class Variable implements Comparable<Variable>, Serializable {
     private int maxLog;
 
     private final int number;
+    private int [] result1;
+    private int [] result2;
+    private Map<Long, Integer> mapa1;
+    private Map<Long, Integer> mapa2;
 
     private void updateMaxLog() {
         maxLog = (int) Math.floor(Math.log(Long.MAX_VALUE) / Math.log(ub));
+    }
+
+    private void loadCaches() {
+        int m = obsNum();
+        result1 = new int[m];
+        result2 = new int[m];
+        mapa1 = new HashMap<>(2 * m);
+        mapa2 = new HashMap<>(2 * m);
     }
 
     public void setDiscLimits(int lb, int ub) {
@@ -90,6 +102,7 @@ public class Variable implements Comparable<Variable>, Serializable {
         ub = obsNum();
         lb = 1;
         updateMaxLog();
+        loadCaches();
     }
 
     Variable(Variable v) {
@@ -108,6 +121,7 @@ public class Variable implements Comparable<Variable>, Serializable {
         random = ThreadLocalRandom.current();
         number = v.number;
         updateMaxLog();
+        loadCaches();
     }
 
     void setLF(LogFactorial lf) {
@@ -152,8 +166,6 @@ public class Variable implements Comparable<Variable>, Serializable {
 
     public Pair<int[], int[]> mapObs(List<Variable> ps) {
         int m = obsNum();
-        int[] result1 = new int[m];
-        int[] result2 = new int[m];
 
         if (ps.size() + 1 > maxLog) {
             int ps_size = ps.size();
@@ -189,8 +201,9 @@ public class Variable implements Comparable<Variable>, Serializable {
             return new Pair<>(result1, result2);
         }
         
-        Map<Long, Integer> mapa1 = new HashMap<>(2 * m);
-        Map<Long, Integer> mapa2 = new HashMap<>(2 * m);
+        mapa1.clear();
+        mapa2.clear();
+
         int n1 = 0;
         int n2 = 0;
         for (int i = 0; i < m; i++) {
