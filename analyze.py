@@ -46,6 +46,10 @@ def get_last(name):
 if __name__ == '__main__':
     print(sys.argv)
 
+    f = True
+    if (sys.argv[-1] == "noau"):
+        sys.argv = sys.argv[:-1:]
+        f = False
     size = len(sys.argv) - 2
 
     i = 0
@@ -84,15 +88,22 @@ if __name__ == '__main__':
             print(val)
         except ValueError:
             pass
-        if i + 2 != size and sys.argv[i + 2] == 'as':
-            plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 3]) + " AUPR: " + "{:.5f}".format(val))
-            i += 2
+        if (f):
+            if i + 2 != size and sys.argv[i + 2] == 'as':
+                plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 3]) + " AUPR: " + "{:.5f}".format(val))
+                i += 2
+            else:
+                plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 1]) + " AUPR: " + "{:.5f}".format(val))
         else:
-            plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 1]) + " AUPR: " + "{:.5f}".format(val))
+            if i + 2 != size and sys.argv[i + 2] == 'as':
+                plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 3]))
+                i += 2
+            else:
+                plt.step(recall, precision, where='post', label=get_last(sys.argv[i + 1]))
         i += 1
 
-    plt.ylim([-0.01, 1.05])
-    plt.xlim([-0.01, 1.05])
+    plt.ylim([0.0, 1.05])
+    plt.xlim([0.0, 1.05])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.legend()
