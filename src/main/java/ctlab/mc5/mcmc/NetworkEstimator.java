@@ -16,14 +16,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class NetworkEstimator {
-    private EstimatorParams params;
-    private SplittableRandom re;
+    private final EstimatorParams params;
+    private final SplittableRandom re;
+    private final List<Variable> tf;
 
     private List<Task> tasks;
 
-    public NetworkEstimator(EstimatorParams params, SplittableRandom re) {
+    public NetworkEstimator(EstimatorParams params, SplittableRandom re, List<Variable> tf) {
         this.params = params;
         this.re = re;
+        this.tf = tf;
     }
 
     public EdgeList resultsFromCompletedTasks() {
@@ -52,7 +54,7 @@ public class NetworkEstimator {
         tasks = new ArrayList<>();
         Int model_counter = new Int();
         for (int i = 0; i < params.nRuns(); i++) {
-            Task task = new Task(bn, model_counter, re, params, i);
+            Task task = new Task(bn, model_counter, re, params, tf);
             tasks.add(task);
             es.submit(task);
         }
@@ -79,27 +81,19 @@ public class NetworkEstimator {
         private final long coldChainSteps;
         private final long warmup;
         private final double powerBase;
-        private final int number;
+        private final List<Variable> tf;
 
-        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params, int number) {
-            this.bn = bn;
-            this.mc = Objects.requireNonNullElseGet(mc, Int::new);
-            this.re = rn;
-            this.chains = params.chains();
-            this.batchSize = params.batchSize();
-            this.mainCacheSize = params.mainCacheSize();
-            this.numberOfCachedStates = params.numberOfCachedStates();
-            this.multipleCollectors = params.multipleCollectors();
-            this.swapPeriod = params.swapPeriod();
-            this.coldChainSteps = params.coldChainSteps();
-            this.warmup = params.warmup();
-            this.powerBase = params.powerBase();
-            this.number = number;
+        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params, List<Variable> tf) {
+            this(bn, mc, rn, params.chains(), params.batchSize(),
+                    params.mainCacheSize(), params.numberOfCachedStates(),
+                    params.multipleCollectors(), params.swapPeriod(),
+                    params.coldChainSteps(), params.warmup(),
+                    params.powerBase(), tf);
         }
 
         public Task(BayesianNetwork bn, Int mc, SplittableRandom rn,
                     int chains, int batchSize, int mainCacheSize, int numberOfCachedStates,
-                    int multipleCollectors, long swapPeriod, long coldChainSteps, long warmup, double powerBase) {
+                    int multipleCollectors, long swapPeriod, long coldChainSteps, long warmup, double powerBase, List<Variable> tf) {
             this.bn = bn;
             this.mc = Objects.requireNonNullElseGet(mc, Int::new);
             this.re = rn;
@@ -112,7 +106,7 @@ public class NetworkEstimator {
             this.coldChainSteps = coldChainSteps;
             this.warmup = warmup;
             this.powerBase = powerBase;
-            this.number = 0;
+            this.tf = tf;
         }
 
         private void init() {
@@ -120,12 +114,11 @@ public class NetworkEstimator {
             List<Model> models = new ArrayList<>(chains);
             for (int i = 0; i < chains; i++) {
                 MultinomialFactory mults = new MultinomialFactory(batchSize, mainCacheSize);
-                Model model = new Model(bn, mults, numberOfCachedStates, 1.0, multipleCollectors == 0,
-                        IntStream.range(0, 195).boxed().map(bn::var).collect(Collectors.toList()));
+                Model model = new Model(bn, mults, numberOfCachedStates, 1.0, multipleCollectors == 0, tf);
                 model.init(false, true);
                 models.add(model);
             }
-            model = new MetaModel(models, random, mc, number);
+            model = new MetaModel(models, random, mc);
             result = null;
         }
 

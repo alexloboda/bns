@@ -292,7 +292,6 @@ public class Model {
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
             fix_delete(parent, node);
-            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         } else {
             if (bn.pathExists(node, parent)) {
                 mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
@@ -302,14 +301,13 @@ public class Model {
             }
             addEdge(parent, node, mult.getLastLL());
             time[parent][node] = steps;
-            assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         }
+        assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
         return steps == limit;
     }
 
     private int toVarIdx(int parent) {
         return tf.get(parent).getNumber();
-//        return parent;
     }
 
     public EdgeList edgeList() {

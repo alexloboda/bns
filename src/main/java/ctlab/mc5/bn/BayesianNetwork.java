@@ -41,7 +41,7 @@ public class BayesianNetwork {
         return sf;
     }
 
-    public int getID(String name) {
+    public Integer getID(String name) {
         return names.get(name);
     }
 

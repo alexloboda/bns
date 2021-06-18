@@ -13,14 +13,12 @@ public class MetaModel {
     private List<Model> models;
     private SplittableRandom random;
     final private NetworkEstimator.Int modelCounter;
-    int number;
 
-    public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc, int number) {
+    public MetaModel(List<Model> models, SplittableRandom random, NetworkEstimator.Int mc) {
         modelCounter = mc;
         this.models = models;
         this.models.sort(Comparator.comparingDouble(Model::beta));
         this.random = random;
-        this.number = number;
     }
 
     public EdgeList run(long swapPeriod, long coldChainSteps, long warmup, double powerBase) throws InterruptedException {

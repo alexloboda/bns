@@ -7,7 +7,6 @@ import ctlab.mc5.mcmc.EdgeList;
 import ctlab.mc5.mcmc.EstimatorParams;
 import ctlab.mc5.mcmc.NetworkEstimator;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import picocli.CommandLine;
@@ -176,7 +175,7 @@ public class SparkMain {
                                                 swapPeriod,
                                                 coldChainSteps,
                                                 warmup,
-                                                powerBase);
+                                                powerBase, null);
                                         task.run();
                                         return task.getResult();
                                     } catch (Error | Exception e) {

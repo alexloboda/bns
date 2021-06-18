@@ -18,6 +18,9 @@ interface Parameters {
     @Option(names = {"-g", "--gene-expression-table"}, required = true)
     File geneExpressionFile();
 
+    @Option(names = {"-tf"})
+    File tf();
+
     @Option(names = {"-o", "-output"}, required = true)
     File output();
 

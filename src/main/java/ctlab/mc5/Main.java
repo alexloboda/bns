@@ -23,7 +23,6 @@ public class Main {
     private static final String MAIN_PARAMS = "MainParams";
 
     private Parameters params;
-    private boolean completed;
     private NetworkEstimator estimator;
     private BayesianNetwork bn;
 
@@ -109,7 +108,7 @@ public class Main {
     }
 
     private synchronized void writeResults(OutputStreamWriter outputStreamWriter) {
-        if (completed || estimator == null) {
+        if (estimator == null) {
             return;
         }
         EdgeList results = estimator.resultsFromCompletedTasks();
@@ -133,6 +132,7 @@ public class Main {
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         System.out.println("Parameters:");
         System.out.println("geneExpressionFile = " + params.geneExpressionFile().getPath());
+        System.out.println("tf = " + params.tf().getPath());
         if (params.gold() != null)
             System.out.println("gold = " + params.gold().getPath());
         System.out.println("threads = " + estimatorParams.nThreads());
@@ -165,10 +165,10 @@ public class Main {
         }
 
         bn = new BayesianNetwork(genes, params.mainSF());
-        params.mainSF().setTFs(IntStream.range(0, 195).boxed().map(i -> bn.var(i)).collect(Collectors.toUnmodifiableSet()));
+        List<Variable> tf = getTF(params.tf(), bn);
         bn.clearEdges();
 
-        estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+        estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()), tf);
         long cur_time = System.currentTimeMillis();
         estimator.run(bn);
         long elapsed_time = System.currentTimeMillis() - cur_time;
@@ -195,6 +195,29 @@ public class Main {
         if (params.print() != 0) {
             System.out.println("Edges:");
             writeResults(new OutputStreamWriter(System.out));
+        }
+    }
+
+    private static List<Variable> getTF(File tfFile, BayesianNetwork bn) {
+        if (tfFile == null) {
+            return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
+        }
+        try {
+            Scanner scanner = new Scanner(tfFile).useLocale(Locale.US);
+            List<Variable> tfs = new ArrayList<>();
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                Integer id = bn.getID(line);
+                if (id == null) {
+                    System.err.println("Corrupted TF file");
+                    return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
+                }
+                tfs.add(bn.var(id));
+            }
+            return tfs;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
         }
     }
 

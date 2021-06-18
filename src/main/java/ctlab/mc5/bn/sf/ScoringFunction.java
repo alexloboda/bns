@@ -8,12 +8,6 @@ import java.util.*;
 
 public abstract class ScoringFunction implements Serializable {
 
-//    private Set<Variable> TFs;
-
-    public void setTFs(Set<Variable> TFs) {
-//        this.TFs = TFs;
-    }
-
     private static class Cache implements Serializable {
         private static final int CACHE_SIZE = 1000;
 
@@ -58,7 +52,6 @@ public abstract class ScoringFunction implements Serializable {
 
     public ScoringFunction cp() {
         ScoringFunction sf = cp_internal();
-//        sf.TFs = TFs;
         sf.init(ht.size());
         return sf;
     }
@@ -69,11 +62,6 @@ public abstract class ScoringFunction implements Serializable {
         if (ps.size() > 10) {
             return Double.NEGATIVE_INFINITY;
         }
-//        for (Variable var : ps) {
-//            if (!TFs.contains(var)) {
-//                return Double.NEGATIVE_INFINITY;
-//            }
-//        }
         Collections.sort(ps);
         Double resCache = ht.get(v.getNumber()).get(ps);
         if (resCache != null) {
