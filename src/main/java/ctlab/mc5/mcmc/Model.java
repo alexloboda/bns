@@ -23,7 +23,7 @@ public class Model {
     private List<Cache> caches;
     private int nCachedStates;
 
-    private final List<Multinomial> distributions;
+    private List<Multinomial> distributions;
     private final MultinomialFactory multFactory;
     private SegmentTree transitions;
 
@@ -46,11 +46,12 @@ public class Model {
         this.nCachedStates = nCachedStates;
         this.caches = new ArrayList<>();
 
-        double reverseProb = 1.0 / ((double)n / 2.0);
+        double reverseProb = 1.0 / ((double) n / 2.0);
         this.reverseLL = Math.log(reverseProb);
         double totalTransitions = n * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
+//        bn.randomPolicy();
     }
 
     public void setRandomGenerator(SplittableRandom re) {
@@ -86,8 +87,8 @@ public class Model {
 
     private Function<List<Integer>, Multinomial> multinomials(int to_node) {
         return ps -> {
-            double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
+                double currLL = ll[to_node];
                 if (i >= to_node) {
                     ++i;
                 }
@@ -167,7 +168,6 @@ public class Model {
     }
 
     private boolean reverse(long limit) {
-        steps++;
         if (bn.getEdgeCount() == 0) {
             return steps == limit;
         }
@@ -177,38 +177,34 @@ public class Model {
 
         assert from != to;
 
-        if (bn.edgeExists(from, to)) {
-            if (bn.isSubscribed(to, from)) {
-                return steps == limit;
-            }
-            Set<Variable> parentFrom = bn.parentSet(from);
-            Set<Variable> parentTo = bn.parentSet(to);
-            Variable fromVar = bn.var(from);
-            Variable toVar = bn.var(to);
-            double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
-            double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
-            double systemLL = scoreF + scoreT;
-            bn.removeEdge(from, to);
-            if (!bn.pathExists(from, to)) {
-                bn.addEdge(to, from);
-                parentTo.remove(fromVar);
-                parentFrom.add(toVar);
-                double scoreFRev = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
-                double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
-                double systemLLRev = scoreFRev + scoreTRev;
-                if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
-                    updateLL(to, scoreTRev - ll[to]);
-                    updateLL(from, scoreFRev - ll[from]);
-                } else {
-                    bn.removeEdge(to, from);
-                    bn.addEdge(from, to);
-                }
-                return steps == limit;
+        assert bn.edgeExists(from, to);
+        if (bn.isSubscribed(to, from)) {
+            return steps == limit;
+        }
+        Set<Variable> parentFrom = bn.parentSet(from);
+        Set<Variable> parentTo = bn.parentSet(to);
+        Variable fromVar = bn.var(from);
+        Variable toVar = bn.var(to);
+        double scoreF = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+        double scoreT = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+        double systemLL = scoreF + scoreT;
+        bn.removeEdge(from, to);
+        if (!bn.pathExists(from, to)) {
+            bn.addEdge(to, from);
+            parentTo.remove(fromVar);
+            parentFrom.add(toVar);
+            double scoreFRev = bn.getScoringFunction().score(fromVar, parentFrom, bn.size());
+            double scoreTRev = bn.getScoringFunction().score(toVar, parentTo, bn.size());
+            double systemLLRev = scoreFRev + scoreTRev;
+            if (Math.log(random.nextDouble()) < systemLLRev - systemLL) {
+                updateLL(to, scoreTRev - ll[to]);
+                updateLL(from, scoreFRev - ll[from]);
             } else {
+                bn.removeEdge(to, from);
                 bn.addEdge(from, to);
             }
         } else {
-            throw new IllegalStateException("Reversing non-existing edge");
+            bn.addEdge(from, to);
         }
         return steps == limit;
     }
@@ -243,7 +239,7 @@ public class Model {
 
         int node = transitions.randomChoice(random);
         Multinomial mult = distributions.get(node);
-        Short parent = mult.randomAction();
+        Short parent = mult.randomAction(true);
         transitions.set(node, mult.logLikelihood());
         if (parent == null) {
             return steps == limit;
@@ -316,22 +312,61 @@ public class Model {
     }
 
     public static void swapNetworks(Model model, Model other) {
+        List<Set<Integer>> modelAllEdges = new ArrayList<>();
+        List<Set<Integer>> otherModelAllEdges = new ArrayList<>();
+
         for (int to = 0; to < model.bn.size(); to++) {
-            Set<Integer> modelEdges = new LinkedHashSet<>(model.bn.ingoingEdges(to));
-            Set<Integer> otherModelEdges = new LinkedHashSet<>(other.bn.ingoingEdges(to));
+            modelAllEdges.add(new LinkedHashSet<>(model.bn.ingoingEdges(to)));
+            otherModelAllEdges.add(new LinkedHashSet<>(other.bn.ingoingEdges(to)));
+        }
+
+        {
+            List<Cache> tmp = model.caches;
+            model.caches = other.caches;
+            other.caches = tmp;
+        }
+        {
+            List<Integer> tmpperm = model.permutation;
+            model.permutation = other.permutation;
+            other.permutation = tmpperm;
+        }
+        {
+            List<Multinomial> tmp1 = model.distributions;
+            model.distributions = other.distributions;
+            other.distributions = tmp1;
+        }
+//        {
+//            SegmentTree tmp1 = model.transitions;
+//            model.transitions = other.transitions;
+//            other.transitions = tmp1;
+//        }
+
+        for (int to = 0; to < model.bn.size(); to++) {
             final int finalTo = to;
-            modelEdges.stream()
-                    .filter(x -> !otherModelEdges.contains(x))
+            modelAllEdges.get(to)
                     .forEach(from -> {
                         model.bn.removeEdge(from, finalTo);
-                        other.bn.addEdge(from, finalTo);
                     });
-            otherModelEdges.stream()
-                    .filter(x -> !modelEdges.contains(x))
+            otherModelAllEdges.get(to)
                     .forEach(from -> {
-                        model.bn.addEdge(from, finalTo);
                         other.bn.removeEdge(from, finalTo);
                     });
+//            model.updateDistribution(to);
+//            other.updateDistribution(to);
+        }
+
+
+        for (int to = 0; to < model.bn.size(); to++) {
+            final int finalTo = to;
+            modelAllEdges.get(to)
+                    .forEach(from -> {
+                        other.bn.addEdge(from, finalTo);
+                    });
+            otherModelAllEdges.get(to)
+                    .forEach(from -> {
+                        model.bn.addEdge(from, finalTo);
+                    });
+
             double ll = model.ll[to];
             model.ll[to] = other.ll[to];
             other.ll[to] = ll;
@@ -342,6 +377,7 @@ public class Model {
         double ll = model.loglik;
         model.loglik = other.loglik;
         other.loglik = ll;
+
     }
 
     public double beta() {

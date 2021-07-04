@@ -4,7 +4,6 @@ import ctlab.mc5.bn.Variable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ScoringFunction {
 
@@ -16,24 +15,24 @@ public abstract class ScoringFunction {
             if (inited) return;
             inited = true;
             for (int i = 0; i < varSize; ++i) {
-                map.add(new HashMap<>());
+                map.add(new ConcurrentHashMap<>());
             }
         }
 
         Double get(int num, Set<Variable> parents) {
 
             final Map<Set<Variable>, Double> curParents = map.get(num);
-            synchronized (curParents) {
-                return curParents.get(parents);
-            }
+//            synchronized (curParents) {
+            return curParents.get(parents);
+//            }
         }
 
         void add(int num, Set<Variable> parents, double res) {
             final Map<Set<Variable>, Double> curParents = map.get(num);
             Set<Variable> copySet = new LinkedHashSet<>(parents);
-            synchronized (curParents) {
-                curParents.put(copySet, res);
-            }
+//            synchronized (curParents) {
+            curParents.put(copySet, res);
+//            }
         }
     }
 
@@ -48,18 +47,18 @@ public abstract class ScoringFunction {
     }
 
     public double score(Variable v, Set<Variable> ps, int n) {
-        Double resCache = ht.get(v.getNumber(), ps);
-        if (resCache != null) {
-            return resCache;
-        }
+//        Double resCache = ht.get(v.getNumber(), ps);
+//        if (resCache != null) {
+//            return resCache;
+//        }
 
-        int[] parent_cls = v.mapObs(ps);
+        double parent_cls = v.mapObs(ps, true);
 
-        int[] all_cls = v.mapObsAnd(ps);
+        double all_cls = v.mapObs(ps, false);
 
-        double res = score(parent_cls, all_cls, v.cardinality());
-        ht.add(v.getNumber(), ps, res);
-        return res;
+//        double res = score(parent_cls, all_cls, v.cardinality());
+//        ht.add(v.getNumber(), ps, res);
+        return parent_cls - all_cls;
     }
 
     abstract double score(int[] parent_cls, int[] all_cls, int cardinality);

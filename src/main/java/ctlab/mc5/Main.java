@@ -12,6 +12,7 @@ import picocli.CommandLine.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class,
         resourceBundle = "ctlab.mc5.Parameters")
@@ -28,9 +29,9 @@ public class Main {
         List<Variable> res = new ArrayList<>();
         List<String> names = new ArrayList<>();
         List<List<Double>> data = new ArrayList<>();
-        try (Scanner sc = new Scanner(file).useLocale(Locale.US);) {
+        try (Scanner sc = new Scanner(file).useLocale(Locale.US)) {
             String firstLine = sc.nextLine();
-            Scanner line_sc = new Scanner(firstLine).useLocale(Locale.US);;
+            Scanner line_sc = new Scanner(firstLine).useLocale(Locale.US);
             while (line_sc.hasNext()) {
                 names.add(line_sc.next());
             }
@@ -56,7 +57,7 @@ public class Main {
     private Graph parseBound(BayesianNetwork bn) throws FileNotFoundException {
         Graph g = new Graph(bn.size());
         try (Scanner scanner = new Scanner(params.preranking())) {
-            while(scanner.hasNext()) {
+            while (scanner.hasNext()) {
                 int from = bn.getID(scanner.next());
                 int to = bn.getID(scanner.next());
                 scanner.next();
@@ -105,28 +106,14 @@ public class Main {
         }
     }
 
-    private synchronized void writeResults() {
+    private synchronized void writeResults(OutputStreamWriter outputStreamWriter) {
         if (completed || estimator == null) {
             return;
         }
         EdgeList results = estimator.resultsFromCompletedTasks();
-        try (PrintWriter pw = new PrintWriter(params.output())) {
+        try (PrintWriter pw = new PrintWriter(outputStreamWriter)) {
             printResultsToOutput(results, pw);
-        } catch (IOException e) {
-            try {
-                File tmp = File.createTempFile("bn_inference_", "");
-                try (PrintWriter pw = new PrintWriter(tmp)) {
-                    pw.println("Can't write to specified output file. Created temp file " + tmp);
-                    printResultsToOutput(results, pw);
-                }
-            } catch (IOException e1) {
-                try (PrintWriter pw = new PrintWriter(System.out)) {
-                    pw.println("Can't write to specified output file. Failed to write to temp file. Output: ");
-                    printResultsToOutput(results, pw);
-                }
-            }
         }
-        completed = true;
     }
 
     private void printParameters(Parameters params, EstimatorParams estimatorParams) {
@@ -168,13 +155,33 @@ public class Main {
         bn.clearEdges();
 
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()));
+        long cur_time = System.currentTimeMillis();
         estimator.run(bn);
+        long elapsed_time = System.currentTimeMillis() - cur_time;
 
-        writeResults();
+        System.out.printf("%02d:%02d:%02d\n",
+                TimeUnit.MILLISECONDS.toHours(elapsed_time),
+                TimeUnit.MILLISECONDS.toMinutes(elapsed_time) -
+                        TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(elapsed_time)),
+                TimeUnit.MILLISECONDS.toSeconds(elapsed_time) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(elapsed_time)));
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::writeResults));
+        writeResults(new OutputStreamWriter(new FileOutputStream(params.output())));
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                writeResults(new OutputStreamWriter(new FileOutputStream(params.output())));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }));
 
         analyzeGS();
+
+        if (params.print() != 0) {
+            System.out.println("Edges:");
+            writeResults(new OutputStreamWriter(System.out));
+        }
     }
 
     private void analyzeGS() {

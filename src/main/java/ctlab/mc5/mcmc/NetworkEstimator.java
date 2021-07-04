@@ -58,7 +58,7 @@ public class NetworkEstimator {
             List<Model> models = new ArrayList<>();
             for (int i = 0; i < params.chains(); i++) {
                 MultinomialFactory mults = new MultinomialFactory(params.batchSize(), params.mainCacheSize());
-                Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0 - params.deltaT() * i);
+                Model model = new Model(bn, mults, params.numberOfCachedStates(), 1.0);
                 model.init(false);
                 models.add(model);
             }

@@ -44,14 +44,14 @@ public class ModelTest {
         SplittableRandom sr = new SplittableRandom(42);
         int[][] actual = new int[bn.size()][bn.size()];
 
-        int models = 10000;
+        int models = 1000;
 
         for (int i = 0; i < models; i++) {
             Model model = new Model(bn, new MultinomialFactory(1, 2),
                     10, 1.0);
             model.setRandomGenerator(sr);
             model.init(true);
-            while (!model.step(5000)) {}
+            while (!model.step(1000)) {}
 
             Assert.assertEquals(model.computeLogLikelihood(), model.logLikelihood(), 0.1);
             boolean[][] adj = model.adjMatrix();
