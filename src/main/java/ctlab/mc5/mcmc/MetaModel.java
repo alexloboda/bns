@@ -25,8 +25,7 @@ public class MetaModel {
         long targetSteps = 0;
 
         for (Model model : models) {
-            while (!model.step(warmup)) {
-            }
+            while (!model.step(warmup)) {}
             model.finish_warmup();
         }
 
@@ -43,7 +42,6 @@ public class MetaModel {
                 while (!models.get(i).step(currentTarget)) {
                 }
             }
-
 
             if (targetSteps == coldChainSteps) {
                 if (Math.abs(models.get(0).computeLogLikelihood() - models.get(0).logLikelihood()) >= 0.1) {
@@ -72,7 +70,6 @@ public class MetaModel {
                 double acceptLL = iBeta * (jLL - iLL) + jBeta * (iLL - jLL);
                 if (Math.log(random.nextDouble()) < acceptLL) {
                     Model.swapNetworks(models.get(i), models.get(j));
-//                    Model.swapNetworks(models.get(j), models.get(i));
                 }
             }
         }

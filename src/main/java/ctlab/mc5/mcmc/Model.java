@@ -160,7 +160,6 @@ public class Model {
         oldBn = bn;
         bn = new BayesianNetwork(bn);
         if (randomPolicy) bn.randomPolicy();
-//        permutation = bn.shuffleVariables(new Random(random.nextInt()));
 
         bn.setCallback(this::processPathElimination);
         if (randomDAG) {
