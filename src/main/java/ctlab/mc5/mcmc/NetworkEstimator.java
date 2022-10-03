@@ -18,11 +18,11 @@ import java.util.stream.IntStream;
 public class NetworkEstimator {
     private final EstimatorParams params;
     private final SplittableRandom re;
-    private final List<Variable> tf;
+    private final List<List<Variable>> tf;
 
     private List<Task> tasks;
 
-    public NetworkEstimator(EstimatorParams params, SplittableRandom re, List<Variable> tf) {
+    public NetworkEstimator(EstimatorParams params, SplittableRandom re, List<List<Variable>> tf) {
         this.params = params;
         this.re = re;
         this.tf = tf;
@@ -81,9 +81,9 @@ public class NetworkEstimator {
         private final long coldChainSteps;
         private final long warmup;
         private final double powerBase;
-        private final List<Variable> tf;
+        private final List<List<Variable>> tf;
 
-        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params, List<Variable> tf) {
+        public Task(BayesianNetwork bn, Int mc, SplittableRandom rn, EstimatorParams params, List<List<Variable>> tf) {
             this(bn, mc, rn, params.chains(), params.batchSize(),
                     params.mainCacheSize(), params.numberOfCachedStates(),
                     params.multipleCollectors(), params.swapPeriod(),
@@ -93,7 +93,7 @@ public class NetworkEstimator {
 
         public Task(BayesianNetwork bn, Int mc, SplittableRandom rn,
                     int chains, int batchSize, int mainCacheSize, int numberOfCachedStates,
-                    int multipleCollectors, long swapPeriod, long coldChainSteps, long warmup, double powerBase, List<Variable> tf) {
+                    int multipleCollectors, long swapPeriod, long coldChainSteps, long warmup, double powerBase, List<List<Variable>> tf) {
             this.bn = bn;
             this.mc = Objects.requireNonNullElseGet(mc, Int::new);
             this.re = rn;

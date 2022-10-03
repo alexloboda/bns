@@ -44,15 +44,15 @@ public class Model {
     private final long[][] time;
 
     private final boolean raw;
-    private final List<Variable> tf;
+    private final List<List<Variable>> tf;
+
+    //public Model(BayesianNetwork bn, MultinomialFactory multFactory,
+    //             int nCachedStates, double beta, boolean raw) {
+    //    this(bn, multFactory, nCachedStates, beta, raw, IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList()));
+    //}
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
-                 int nCachedStates, double beta, boolean raw) {
-        this(bn, multFactory, nCachedStates, beta, raw, IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList()));
-    }
-
-    public Model(BayesianNetwork bn, MultinomialFactory multFactory,
-                 int nCachedStates, double beta, boolean raw, List<Variable> tf) {
+                 int nCachedStates, double beta, boolean raw, List<List<Variable>> tf) {
         this.tf = tf;
         this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
@@ -68,7 +68,7 @@ public class Model {
 
         double reverseProb = 1.0 / ((double) n);
         this.reverseLL = Math.log(reverseProb);
-        double totalTransitions = tf.size() * (n - 1);
+        double totalTransitions = tf.get(0).size() * (n - 1);
         this.initLL = Math.log((1.0 - reverseProb) / totalTransitions);
         setRandomGenerator(new SplittableRandom());
         this.raw = raw;
@@ -114,7 +114,7 @@ public class Model {
             double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
                 assert (currLL == ll[to_node]);
-                i = toVarIdx(i);
+                i = toVarIdx(to_node, i);
                 if (i >= to_node) {
                     ++i;
                 }
@@ -124,7 +124,7 @@ public class Model {
                     return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(tf.size() - 1, computeLL, initLL, beta);
+            return multFactory.spark(tf.get(to_node).size() - 1, computeLL, initLL, beta);
         };
     }
 
@@ -283,7 +283,7 @@ public class Model {
             return steps == limit;
         }
 
-        parent = (short) toVarIdx((int) parent);
+        parent = (short) toVarIdx((int)node, (int) parent);
 
         if (parent >= node) {
             ++parent;
@@ -305,8 +305,8 @@ public class Model {
         return steps == limit;
     }
 
-    private int toVarIdx(int parent) {
-        return tf.get(parent).getNumber();
+    private int toVarIdx(int to_node, int parent) {
+        return tf.get(to_node).get(parent).getNumber();
     }
 
     public EdgeList edgeList() {

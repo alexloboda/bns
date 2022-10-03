@@ -165,7 +165,7 @@ public class Main {
         }
 
         bn = new BayesianNetwork(genes, params.mainSF());
-        List<Variable> tf = getTF(params.tf(), bn);
+        List<List<Variable>> tf = getTF(params.tf(), bn);
         bn.clearEdges();
 
         estimator = new NetworkEstimator(estimatorParams, new SplittableRandom(params.seed()), tf);
@@ -198,26 +198,26 @@ public class Main {
         }
     }
 
-    private static List<Variable> getTF(File tfFile, BayesianNetwork bn) {
+    private static List<List<Variable>> getTF(File tfFile, BayesianNetwork bn) {
         if (tfFile == null) {
-            return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
+            throw new UnsupportedOperationException("BZBZZ");
         }
         try {
             Scanner scanner = new Scanner(tfFile).useLocale(Locale.US);
-            List<Variable> tfs = new ArrayList<>();
-            while (scanner.hasNextLine()) {
+            List<List<Variable>> tfs = new ArrayList<>();
+            for (int i = 0; i < bn.size(); i++) {
                 String line = scanner.nextLine();
-                Integer id = bn.getID(line);
-                if (id == null) {
-                    System.err.println("Corrupted TF file");
-                    return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
+                List<Variable> variables = new ArrayList<>();
+                String[] tokens = line.split("\\t");
+                for  (String s: tokens) {
+                    Integer id = bn.getID(s);
+                    variables.add(bn.var(id));
                 }
-                tfs.add(bn.var(id));
+                tfs.add(variables);
             }
             return tfs;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList());
+            throw new UnsupportedOperationException();
         }
     }
 
