@@ -114,10 +114,11 @@ public class Model {
             double currLL = ll[to_node];
             Function<Integer, Double> computeLL = i -> {
                 assert (currLL == ll[to_node]);
+                int mem = i;
                 i = toVarIdx(to_node, i);
-                if (i >= to_node) {
-                    ++i;
-                }
+                //if (i >= to_node) {
+                //    ++i;
+                //}
                 if (bn.edgeExists(i, to_node)) {
                     return bn.scoreExcluding(i, to_node) - currLL;
                 } else {
@@ -283,11 +284,11 @@ public class Model {
             return steps == limit;
         }
 
-        parent = (short) toVarIdx((int)node, (int) parent);
+        parent = (short) toVarIdx(node, (int) parent);
 
-        if (parent >= node) {
-            ++parent;
-        }
+        //if (parent >= node) {
+        //    ++parent;
+        //}
         if (bn.edgeExists(parent, node)) {
             removeEdge(parent, node, mult.getLastLL());
             fix_delete(parent, node);
