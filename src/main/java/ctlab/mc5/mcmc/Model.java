@@ -124,7 +124,7 @@ public class Model {
                     return bn.scoreIncluding(i, to_node) - currLL;
                 }
             };
-            return multFactory.spark(tf.get(to_node).size() - 1, computeLL, initLL, beta);
+            return multFactory.spark(tf.get(to_node).size(), computeLL, initLL, beta);
         };
     }
 
