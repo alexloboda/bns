@@ -284,6 +284,7 @@ public class Model {
             return steps == limit;
         }
 
+        int mem = parent;
         parent = (short) toVarIdx(node, (int) parent);
 
         //if (parent >= node) {
@@ -294,7 +295,7 @@ public class Model {
             fix_delete(parent, node);
         } else {
             if (bn.pathExists(node, parent)) {
-                mult.disableAction((short) (parent > node ? parent - 1 : parent), mult.getLastLL());
+                mult.disableAction((short) (mem), mult.getLastLL());
                 transitions.set(node, mult.logLikelihood());
                 assert (Math.abs(computeLogLikelihood() - logLikelihood()) < 0.1);
                 return steps == limit;
