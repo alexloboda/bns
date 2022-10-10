@@ -46,13 +46,23 @@ public class Model {
     private final boolean raw;
     private final List<List<Variable>> tf;
 
-    //public Model(BayesianNetwork bn, MultinomialFactory multFactory,
-    //             int nCachedStates, double beta, boolean raw) {
-    //    this(bn, multFactory, nCachedStates, beta, raw, IntStream.range(0, bn.size()).boxed().map(bn::var).collect(Collectors.toList()));
-    //}
+    public Model(BayesianNetwork bn, MultinomialFactory multFactory,
+                 int nCachedStates, double beta, boolean raw) {
+
+        this(bn, multFactory, nCachedStates, beta, raw, null);
+    }
 
     public Model(BayesianNetwork bn, MultinomialFactory multFactory,
                  int nCachedStates, double beta, boolean raw, List<List<Variable>> tf) {
+        if (tf == null) {
+            tf = IntStream.range(0, bn.size())
+                .mapToObj(i -> IntStream.range(0, bn.size())
+                        .filter(x -> x != i)
+                        .boxed()
+                        .map(bn::var)
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+        }
         this.tf = tf;
         this.permutation = IntStream.range(0, bn.size()).boxed().collect(Collectors.toList());
         this.beta = beta;
@@ -116,9 +126,6 @@ public class Model {
                 assert (currLL == ll[to_node]);
                 int mem = i;
                 i = toVarIdx(to_node, i);
-                //if (i >= to_node) {
-                //    ++i;
-                //}
                 if (bn.edgeExists(i, to_node)) {
                     return bn.scoreExcluding(i, to_node) - currLL;
                 } else {

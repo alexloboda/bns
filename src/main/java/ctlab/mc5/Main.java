@@ -132,7 +132,8 @@ public class Main {
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         System.out.println("Parameters:");
         System.out.println("geneExpressionFile = " + params.geneExpressionFile().getPath());
-        System.out.println("tf = " + params.tf().getPath());
+        if (params.tf() != null)
+            System.out.println("tf = " + params.tf().getPath());
         if (params.gold() != null)
             System.out.println("gold = " + params.gold().getPath());
         System.out.println("threads = " + estimatorParams.nThreads());
@@ -200,7 +201,7 @@ public class Main {
 
     private static List<List<Variable>> getTF(File tfFile, BayesianNetwork bn) {
         if (tfFile == null) {
-            throw new UnsupportedOperationException("BZBZZ");
+            return null;
         }
         try {
             Scanner scanner = new Scanner(tfFile).useLocale(Locale.US);
